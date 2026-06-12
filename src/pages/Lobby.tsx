@@ -60,12 +60,26 @@ export default function Lobby() {
             歡迎，{user?.displayName ?? '訪客'}
           </p>
         </div>
-        <button
-          onClick={() => signOut()}
-          className="rounded bg-slate-700 px-3 py-1.5 text-sm hover:bg-slate-600"
-        >
-          登出
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => navigate('/leaderboard')}
+            className="rounded bg-slate-700 px-3 py-1.5 text-sm hover:bg-slate-600"
+          >
+            排行榜
+          </button>
+          <button
+            onClick={() => navigate('/profile')}
+            className="rounded bg-slate-700 px-3 py-1.5 text-sm hover:bg-slate-600"
+          >
+            我的檔案
+          </button>
+          <button
+            onClick={() => signOut()}
+            className="rounded bg-slate-700 px-3 py-1.5 text-sm hover:bg-slate-600"
+          >
+            登出
+          </button>
+        </div>
       </header>
 
       <section className="mb-6 grid gap-3 sm:grid-cols-2">

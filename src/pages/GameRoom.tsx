@@ -1,6 +1,7 @@
 import { useParams, useNavigate, Navigate } from 'react-router-dom';
 import { useAuth } from '../core/auth/useAuth';
 import { useRoom } from '../core/hooks/useRoom';
+import { usePresence } from '../core/hooks/usePresence';
 import {
   leaveRoom,
   setPlayerReady,
@@ -18,6 +19,7 @@ export default function GameRoom() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { room, loading, error: roomError } = useRoom(roomId ?? null);
+  const presence = usePresence(roomId ?? null);
   const [actionPending, setActionPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -177,40 +179,53 @@ export default function GameRoom() {
           {room.players.length === 0 ? (
             <li className="text-slate-500">房間沒有玩家</li>
           ) : (
-            room.players.map((p) => (
-              <li
-                key={p.uid}
-                className="flex items-center gap-3 rounded bg-slate-900/50 p-2"
-              >
-                {p.photoURL && (
-                  <img
-                    src={p.photoURL}
-                    alt={p.displayName}
-                    className="h-8 w-8 rounded-full"
-                  />
-                )}
-                <div className="flex-1">
-                  <p className="text-sm font-medium">
-                    {p.displayName}
-                    {p.isHost && (
-                      <span className="ml-2 rounded bg-yellow-900/50 px-1.5 py-0.5 text-xs text-yellow-300">
-                        房主
-                      </span>
-                    )}
-                  </p>
-                  <p className="text-xs text-slate-400">符號：{p.symbol}</p>
-                </div>
-                <span
-                  className={`rounded px-2 py-0.5 text-xs ${
-                    p.ready
-                      ? 'bg-green-900/50 text-green-300'
-                      : 'bg-slate-700 text-slate-400'
-                  }`}
+            room.players.map((p) => {
+              const isOnline = presence[p.uid]?.online === true;
+              return (
+                <li
+                  key={p.uid}
+                  className="flex items-center gap-3 rounded bg-slate-900/50 p-2"
                 >
-                  {p.ready ? '準備' : '未準備'}
-                </span>
-              </li>
-            ))
+                  <div className="relative">
+                    {p.photoURL ? (
+                      <img
+                        src={p.photoURL}
+                        alt={p.displayName}
+                        className="h-8 w-8 rounded-full"
+                      />
+                    ) : (
+                      <div className="h-8 w-8 rounded-full bg-slate-700" />
+                    )}
+                    <span
+                      className={`absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-slate-900 ${
+                        isOnline ? 'bg-green-500' : 'bg-slate-500'
+                      }`}
+                      title={isOnline ? '在線' : '離線'}
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium">
+                      {p.displayName}
+                      {p.isHost && (
+                        <span className="ml-2 rounded bg-yellow-900/50 px-1.5 py-0.5 text-xs text-yellow-300">
+                          房主
+                        </span>
+                      )}
+                    </p>
+                    <p className="text-xs text-slate-400">符號：{p.symbol}</p>
+                  </div>
+                  <span
+                    className={`rounded px-2 py-0.5 text-xs ${
+                      p.ready
+                        ? 'bg-green-900/50 text-green-300'
+                        : 'bg-slate-700 text-slate-400'
+                    }`}
+                  >
+                    {p.ready ? '準備' : '未準備'}
+                  </span>
+                </li>
+              );
+            })
           )}
         </ul>
       </section>
