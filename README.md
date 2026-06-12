@@ -32,9 +32,17 @@ multiplayer-games/
 - [x] 階段 0：建立專案文件與計畫書
 - [x] 階段 1：環境建置與 Firebase 設定
 - [x] 階段 2：認證系統（Google 登入）
-- [ ] 階段 3：房間系統
-- [ ] 階段 4：井字遊戲核心
+- [x] 階段 3：房間系統
+- [x] 階段 4：井字遊戲核心
 - [ ] 階段 5：部署與測試
+
+### 測試
+
+```bash
+npm test         # 跑單元測試
+npm run typecheck  # TypeScript 型別檢查
+npm run build    # 生產建置
+```
 
 ## 開始開發
 

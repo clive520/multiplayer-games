@@ -6,6 +6,7 @@ import {
   setPlayerReady,
   startGame,
   resetRoom,
+  finishGame,
 } from '../core/services/roomService';
 import { getGameDefinition } from '@/registry';
 import { useEffect, useState } from 'react';
@@ -187,13 +188,21 @@ export default function GameRoom() {
         </div>
       )}
 
-      {isPlaying && gameDef && (
-        <section className="rounded-lg border border-slate-700 bg-slate-800 p-6 text-center">
-          <p className="text-slate-300">遊戲進行中</p>
-          <p className="mt-2 text-sm text-slate-500">
-            （遊戲元件將在 Phase 3 整合）
-          </p>
-        </section>
+      {isPlaying && gameDef && currentPlayer && (
+        <gameDef.component
+          roomId={roomId}
+          currentUserId={user!.uid}
+          players={room.players.map((p) => ({
+            uid: p.uid,
+            symbol: p.symbol,
+            displayName: p.displayName,
+            photoURL: p.photoURL,
+          }))}
+          isHost={isHost}
+          onGameFinished={async (winnerId, isDraw) => {
+            await finishGame(roomId, winnerId, isDraw);
+          }}
+        />
       )}
 
       {isFinished && (
