@@ -9,6 +9,7 @@ import {
   finishGame,
 } from '../core/services/roomService';
 import { resetGameState } from '@/games/tictactoe/sync';
+import { ResultScreen } from '@/games/tictactoe/ResultScreen';
 import { getGameDefinition } from '@/registry';
 import { useEffect, useState } from 'react';
 
@@ -117,6 +118,7 @@ export default function GameRoom() {
   const handleStart = async () => {
     await runAction(async () => {
       await startGame(roomId);
+      await resetGameState(roomId);
     });
   };
 
@@ -256,26 +258,15 @@ export default function GameRoom() {
       )}
 
       {isFinished && (
-        <section className="rounded-lg border border-slate-700 bg-slate-800 p-6 text-center">
-          <h2 className="mb-2 text-xl font-bold">遊戲結束</h2>
-          {room.isDraw ? (
-            <p className="text-slate-300">平手！</p>
-          ) : (
-            <p className="text-slate-300">
-              獲勝者：
-              {room.players.find((p) => p.uid === room.winnerId)?.displayName ?? '未知'}
-            </p>
-          )}
-          {isHost && (
-            <button
-              onClick={handleReset}
-              disabled={actionPending}
-              className="mt-4 rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-500 disabled:opacity-50"
-            >
-              再來一局
-            </button>
-          )}
-        </section>
+        <ResultScreen
+          room={room}
+          currentUserId={user!.uid}
+          isHost={isHost}
+          leaving={actionPending}
+          onLeave={handleLeave}
+          onPlayAgain={handleReset}
+          autoLeaveSeconds={20}
+        />
       )}
     </div>
   );
