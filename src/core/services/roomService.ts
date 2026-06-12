@@ -19,6 +19,8 @@ import { db } from '../firebase/firestore';
 import { auth } from '../auth/firebaseInstances';
 import { generateRoomCode, normalizeRoomCode } from '../utils/roomCode';
 import { getGameDefinition } from '@/registry';
+import { recordGameResult } from './statsService';
+import { recordGameHistory } from './historyService';
 import type { GameType, Room, RoomPlayer, RoomStatus, RoomSummary } from '../types/room';
 
 const ROOMS_COLLECTION = 'rooms';
@@ -207,12 +209,42 @@ export async function finishGame(
   isDraw: boolean
 ): Promise<void> {
   const ref = doc(db, ROOMS_COLLECTION, roomId);
+  const snap = await getDoc(ref);
+  if (!snap.exists()) return;
+  const room = roomFromDoc(snap.id, snap.data());
+  if (room.status === 'finished') return; // already finished, idempotent
+
   await updateDoc(ref, {
     status: 'finished' as RoomStatus,
     endedAt: serverTimestamp(),
     winnerId,
     isDraw,
   });
+
+  const playersForStats = room.players.map((p) => ({
+    uid: p.uid,
+    displayName: p.displayName,
+    photoURL: p.photoURL,
+  }));
+  await Promise.all([
+    recordGameResult({ winnerId, isDraw, players: playersForStats }).catch((err) => {
+      console.error('更新使用者 stats 失敗', err);
+    }),
+    recordGameHistory({
+      roomId,
+      gameType: room.gameType,
+      winnerId,
+      isDraw,
+      players: room.players.map((p) => ({
+        uid: p.uid,
+        displayName: p.displayName,
+        photoURL: p.photoURL,
+        symbol: p.symbol,
+      })),
+    }).catch((err) => {
+      console.error('寫入對戰歷史失敗', err);
+    }),
+  ]);
 }
 
 export async function resetRoom(roomId: string): Promise<void> {

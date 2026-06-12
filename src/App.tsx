@@ -2,6 +2,8 @@ import { Routes, Route, useNavigate } from 'react-router-dom';
 import Home from './pages/Home';
 import Lobby from './pages/Lobby';
 import GameRoom from './pages/GameRoom';
+import Leaderboard from './pages/Leaderboard';
+import Profile from './pages/Profile';
 import { RequireAuth } from './core/components/RequireAuth';
 import { useAuth } from './core/auth/useAuth';
 
@@ -31,12 +33,26 @@ function HomePage() {
           )}
           <p className="text-slate-300">{user.displayName}</p>
         </div>
-        <button
-          onClick={() => navigate('/lobby')}
-          className="rounded-lg bg-blue-600 px-6 py-3 font-medium text-white hover:bg-blue-500"
-        >
-          進入遊戲大廳
-        </button>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <button
+            onClick={() => navigate('/lobby')}
+            className="rounded-lg bg-blue-600 px-6 py-3 font-medium text-white hover:bg-blue-500"
+          >
+            進入遊戲大廳
+          </button>
+          <button
+            onClick={() => navigate('/leaderboard')}
+            className="rounded-lg bg-slate-700 px-6 py-3 font-medium text-white hover:bg-slate-600"
+          >
+            排行榜
+          </button>
+          <button
+            onClick={() => navigate('/profile')}
+            className="rounded-lg bg-slate-700 px-6 py-3 font-medium text-white hover:bg-slate-600"
+          >
+            我的檔案
+          </button>
+        </div>
       </div>
     );
   }
@@ -61,6 +77,22 @@ export default function App() {
         element={
           <RequireAuth>
             <GameRoom />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/leaderboard"
+        element={
+          <RequireAuth>
+            <Leaderboard />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/profile"
+        element={
+          <RequireAuth>
+            <Profile />
           </RequireAuth>
         }
       />
