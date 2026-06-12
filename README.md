@@ -30,15 +30,26 @@ multiplayer-games/
 ## 開發進度
 
 - [x] 階段 0：建立專案文件與計畫書
-- [ ] 階段 1：環境建置與 Firebase 設定
-- [ ] 階段 2：認證系統
+- [x] 階段 1：環境建置與 Firebase 設定
+- [x] 階段 2：認證系統（Google 登入）
 - [ ] 階段 3：房間系統
 - [ ] 階段 4：井字遊戲核心
 - [ ] 階段 5：部署與測試
 
 ## 開始開發
 
-請參考 [docs/DEVELOPMENT_PLAN.md](docs/DEVELOPMENT_PLAN.md) 取得完整規劃。
+請參考 [docs/DEVELOPMENT_PLAN.md](docs/DEVELOPMENT_PLAN.md) 取得完整規劃，
+[docs/FIREBASE_SETUP.md](docs/FIREBASE_SETUP.md) 取得 Firebase 設定教學。
+
+### 本機啟動
+
+```bash
+npm install
+cp .env.example .env.local   # 填入你的 Firebase config
+npm run dev
+```
+
+開啟 http://localhost:5173
 
 ## 授權
 

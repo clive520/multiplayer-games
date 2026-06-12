@@ -6,6 +6,8 @@ node_modules/
 dist/
 build/
 *.tsbuildinfo
+vite.config.d.ts
+vite.config.js
 
 # Environment variables
 .env
