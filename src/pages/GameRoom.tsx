@@ -15,9 +15,21 @@ export default function GameRoom() {
   const { roomId } = useParams<{ roomId: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { room, loading } = useRoom(roomId ?? null);
+  const { room, loading, error: roomError } = useRoom(roomId ?? null);
   const [actionPending, setActionPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyCode = async () => {
+    if (!room?.code) return;
+    try {
+      await navigator.clipboard.writeText(room.code);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      setError('複製失敗，請手動選取');
+    }
+  };
 
   useEffect(() => {
     if (!roomId || !user) return;
@@ -33,6 +45,25 @@ export default function GameRoom() {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <p className="text-slate-400">載入房間中...</p>
+      </div>
+    );
+  }
+  if (roomError) {
+    return (
+      <div className="mx-auto flex min-h-screen max-w-md flex-col items-center justify-center gap-4 p-6">
+        <div className="rounded-lg border border-red-700 bg-red-900/30 p-4 text-sm text-red-300">
+          載入房間失敗：{roomError.message}
+          <br />
+          <span className="text-xs text-red-400">
+            請確認 Firebase Console 中的 Firestore 規則是否允許讀取
+          </span>
+        </div>
+        <button
+          onClick={() => navigate('/lobby')}
+          className="rounded bg-slate-700 px-4 py-2 hover:bg-slate-600"
+        >
+          回到大廳
+        </button>
       </div>
     );
   }
@@ -112,6 +143,23 @@ export default function GameRoom() {
           離開房間
         </button>
       </header>
+
+      {room.status === 'waiting' && (
+        <section className="mb-6 rounded-lg border border-yellow-700 bg-yellow-900/20 p-4">
+          <p className="mb-1 text-xs text-yellow-300">邀請朋友加入此房間</p>
+          <div className="flex items-center gap-3">
+            <span className="font-mono text-3xl font-bold tracking-widest text-yellow-400">
+              {room.code}
+            </span>
+            <button
+              onClick={handleCopyCode}
+              className="rounded bg-yellow-700 px-3 py-1 text-sm text-white hover:bg-yellow-600"
+            >
+              {copied ? '已複製' : '複製房號'}
+            </button>
+          </div>
+        </section>
+      )}
 
       {error && (
         <div className="mb-4 rounded-lg border border-red-700 bg-red-900/30 p-3 text-sm text-red-300">

@@ -33,6 +33,7 @@ function tsToMillis(value: unknown): number {
 function roomFromDoc(id: string, data: Record<string, unknown>): Room {
   return {
     id,
+    code: (data.code as string) ?? '',
     gameType: data.gameType as GameType,
     hostId: data.hostId as string,
     status: data.status as RoomStatus,
@@ -51,6 +52,7 @@ function roomSummaryFromDoc(id: string, data: Record<string, unknown>): RoomSumm
   const def = getGameDefinition(data.gameType as GameType);
   return {
     id,
+    code: (data.code as string) ?? '',
     gameType: data.gameType as GameType,
     hostName: host?.displayName ?? 'Unknown',
     playerCount: players.length,
@@ -232,26 +234,50 @@ export async function resetRoom(roomId: string): Promise<void> {
   });
 }
 
-export function subscribeRoom(roomId: string, callback: (room: Room | null) => void): Unsubscribe {
+export function subscribeRoom(
+  roomId: string,
+  onRoom: (room: Room | null) => void,
+  onError?: (err: Error) => void
+): Unsubscribe {
   const ref = doc(db, ROOMS_COLLECTION, roomId);
-  return onSnapshot(ref, (snap) => {
-    if (!snap.exists()) {
-      callback(null);
-      return;
+  return onSnapshot(
+    ref,
+    (snap) => {
+      if (!snap.exists()) {
+        onRoom(null);
+        return;
+      }
+      onRoom(roomFromDoc(snap.id, snap.data()));
+    },
+    (err) => {
+      console.error('subscribeRoom error', err);
+      onError?.(err);
     }
-    callback(roomFromDoc(snap.id, snap.data()));
-  });
+  );
 }
 
-export function subscribeLobby(callback: (rooms: RoomSummary[]) => void): Unsubscribe {
+export function subscribeLobby(
+  onRooms: (rooms: RoomSummary[]) => void,
+  onError?: (err: Error) => void
+): Unsubscribe {
+  // 避免 where + orderBy 複合索引：先 orderBy + limit 拉最新，再在 client 端過濾 status
   const q = query(
     collection(db, ROOMS_COLLECTION),
-    where('status', 'in', ['waiting', 'playing']),
     orderBy('createdAt', 'desc'),
-    limit(MAX_LOBBY_ROOMS)
+    limit(MAX_LOBBY_ROOMS * 3)
   );
-  return onSnapshot(q, (snapshot) => {
-    const rooms = snapshot.docs.map((d) => roomSummaryFromDoc(d.id, d.data()));
-    callback(rooms);
-  });
+  return onSnapshot(
+    q,
+    (snapshot) => {
+      const rooms = snapshot.docs
+        .map((d) => roomSummaryFromDoc(d.id, d.data()))
+        .filter((r) => r.status === 'waiting' || r.status === 'playing')
+        .slice(0, MAX_LOBBY_ROOMS);
+      onRooms(rooms);
+    },
+    (err) => {
+      console.error('subscribeLobby error', err);
+      onError?.(err);
+    }
+  );
 }

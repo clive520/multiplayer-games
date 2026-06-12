@@ -13,20 +13,20 @@ const GAME_LABELS: Record<GameType, string> = {
 export default function Lobby() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { rooms, loading } = useLobby();
+  const { rooms, loading, error: lobbyError } = useLobby();
   const [creating, setCreating] = useState(false);
   const [joining, setJoining] = useState(false);
   const [joinCode, setJoinCode] = useState('');
-  const [error, setError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const handleCreate = async () => {
-    setError(null);
+    setActionError(null);
     setCreating(true);
     try {
       const roomId = await createRoom('tictactoe');
       navigate(`/rooms/${roomId}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : '建立房間失敗');
+      setActionError(err instanceof Error ? err.message : '建立房間失敗');
     } finally {
       setCreating(false);
     }
@@ -34,14 +34,14 @@ export default function Lobby() {
 
   const handleJoin = async (e: FormEvent) => {
     e.preventDefault();
-    setError(null);
+    setActionError(null);
     if (!joinCode.trim()) return;
     setJoining(true);
     try {
       const roomId = await joinRoomByCode(joinCode);
       navigate(`/rooms/${roomId}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : '加入房間失敗');
+      setActionError(err instanceof Error ? err.message : '加入房間失敗');
     } finally {
       setJoining(false);
     }
@@ -96,16 +96,24 @@ export default function Lobby() {
         </form>
       </section>
 
-      {error && (
+      {actionError && (
         <div className="mb-4 rounded-lg border border-red-700 bg-red-900/30 p-3 text-sm text-red-300">
-          {error}
+          {actionError}
         </div>
       )}
 
       <section>
         <h2 className="mb-3 text-lg font-semibold">開放中的房間</h2>
 
-        {loading ? (
+        {lobbyError ? (
+          <div className="rounded-lg border border-red-700 bg-red-900/30 p-4 text-sm text-red-300">
+            載入房間列表失敗：{lobbyError.message}
+            <br />
+            <span className="text-xs text-red-400">
+              請確認 Firebase Console 中的 Firestore 規則是否允許讀取
+            </span>
+          </div>
+        ) : loading ? (
           <p className="text-slate-400">載入中...</p>
         ) : rooms.length === 0 ? (
           <p className="rounded-lg border border-dashed border-slate-700 p-8 text-center text-slate-500">

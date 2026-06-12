@@ -15,6 +15,7 @@ export interface RoomPlayer {
 
 export interface Room {
   id: string;
+  code: string;
   gameType: GameType;
   hostId: string;
   status: RoomStatus;
@@ -28,6 +29,7 @@ export interface Room {
 
 export interface RoomSummary {
   id: string;
+  code: string;
   gameType: GameType;
   hostName: string;
   playerCount: number;
