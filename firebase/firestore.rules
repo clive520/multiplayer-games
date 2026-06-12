@@ -1,0 +1,64 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isSelf(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    function isPlayer(players) {
+      return isSignedIn() && request.auth.uid in players.map((p) => p.uid);
+    }
+
+    // 使用者資料：所有人可讀，僅自己可寫
+    match /users/{uid} {
+      allow read: if isSignedIn();
+      allow create: if isSelf(uid);
+      allow update: if isSelf(uid) &&
+        // 防止使用者竄改 stats（由系統透過 recordGameResult 寫入）
+        // 這裡只允許更新非 stats 欄位
+        !request.resource.data.diff(resource.data).affectedKeys()
+          .hasAny(['wins', 'losses', 'draws', 'totalGames']);
+      allow delete: if false;
+    }
+
+    // 房間：所有人可讀，房間玩家可寫
+    match /rooms/{roomId} {
+      allow read: if isSignedIn();
+
+      allow create: if isSignedIn() &&
+        request.resource.data.hostId == request.auth.uid &&
+        request.resource.data.status == 'waiting';
+
+      // 更新：僅房間玩家，且只能改特定欄位
+      allow update: if isPlayer(resource.data.players) &&
+        request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['players', 'status', 'startedAt', 'endedAt', 'winnerId', 'isDraw']);
+
+      allow delete: if isSignedIn() && resource.data.hostId == request.auth.uid;
+
+      // 對戰歷史子集合
+      match /history/{moveId} {
+        allow read: if isSignedIn();
+        allow create: if isSignedIn();
+        allow update, delete: if false;
+      }
+    }
+
+    // 對戰歷史集合：玩家可讀自己有參與的記錄
+    match /gameHistory/{entryId} {
+      allow read: if isSignedIn() && request.auth.uid in resource.data.playerUids;
+      allow create: if isSignedIn();
+      allow update, delete: if false;
+    }
+
+    // 其他集合預設拒絕
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

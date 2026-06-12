@@ -1,0 +1,24 @@
+{
+  "rules": {
+    "rooms-live": {
+      "$roomId": {
+        // 棋盤狀態：僅房間玩家可讀寫
+        "state": {
+          ".read": "auth != null",
+          ".write": "auth != null && (
+            !data.exists() ||
+            data.child('players').hasChild(auth.uid)
+          )",
+          ".validate": "newData.hasChildren(['board', 'nextSymbol', 'moveCount'])"
+        },
+        // 玩家在線狀態：僅自己可寫
+        "presence": {
+          "$uid": {
+            ".read": "auth != null",
+            ".write": "auth != null && auth.uid === $uid"
+          }
+        }
+      }
+    }
+  }
+}
