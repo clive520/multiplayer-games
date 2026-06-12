@@ -18,7 +18,7 @@ describe('tictactoeEngine', () => {
   describe('initial state', () => {
     it('回傳全空棋盤與 X 為先手', () => {
       const s = tictactoeEngine.getInitialState();
-      expect(s.board).toEqual(Array(9).fill(null));
+      expect(s.board).toEqual(Array(9).fill(''));
       expect(s.nextSymbol).toBe('X');
       expect(s.moveCount).toBe(0);
     });
@@ -32,6 +32,13 @@ describe('tictactoeEngine', () => {
     it('拒絕已佔用的格子', () => {
       const s = tictactoeEngine.applyMove(createInitialState(), move(0, 0));
       expect(tictactoeEngine.validateMove(s, move(0, 0))).toBe(false);
+    });
+
+    it('拒絕空字串以外的格子', () => {
+      // sanity check: Cell 為 'X' | 'O' | ''
+      const s = tictactoeEngine.applyMove(createInitialState(), move(1, 1));
+      expect(s.board[4]).toBe('X');
+      expect(s.board[0]).toBe('');
     });
 
     it('拒絕超出範圍的座標', () => {
@@ -69,7 +76,7 @@ describe('tictactoeEngine', () => {
       const s0 = createInitialState();
       const s1 = tictactoeEngine.applyMove(s0, move(0, 0));
       expect(s0.board).not.toBe(s1.board);
-      expect(s0.board[0]).toBeNull();
+      expect(s0.board[0]).toBe('');
     });
   });
 

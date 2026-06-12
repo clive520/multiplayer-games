@@ -1,6 +1,7 @@
 import type { GameEngine, GameResult } from '../../core/types/game';
 import {
   BOARD_SIZE,
+  EMPTY_CELL,
   WIN_LINES,
   createInitialState,
   type TicTacToeMove,
@@ -31,7 +32,7 @@ export const tictactoeEngine: GameEngine<TicTacToeState> = {
     const payload = move.payload as TicTacToeMove;
     if (!inBounds(payload.row, payload.col)) return false;
     const idx = payload.row * BOARD_SIZE + payload.col;
-    return state.board[idx] === null;
+    return state.board[idx] === EMPTY_CELL;
   },
 
   applyMove(state, move) {

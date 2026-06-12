@@ -28,7 +28,7 @@ export default function TicTacToe({
   }, [roomId]);
 
   useEffect(() => {
-    if (!state || finishedReportedRef.current) return;
+    if (!state || !Array.isArray(state.board) || finishedReportedRef.current) return;
     const result = tictactoeEngine.checkResult(state, players);
     if (result.finished) {
       finishedReportedRef.current = true;
@@ -59,6 +59,14 @@ export default function TicTacToe({
     return (
       <div className="rounded-lg border border-slate-700 bg-slate-800 p-6 text-center">
         <p className="text-slate-400">遊戲載入中...</p>
+      </div>
+    );
+  }
+
+  if (!Array.isArray(state.board) || state.board.length !== BOARD_SIZE * BOARD_SIZE) {
+    return (
+      <div className="rounded-lg border border-red-700 bg-red-900/30 p-4 text-center text-sm text-red-300">
+        遊戲狀態損壞，請重新整理或重置房間
       </div>
     );
   }
@@ -113,11 +121,12 @@ export default function TicTacToe({
             state.lastMove &&
             state.lastMove.row === row &&
             state.lastMove.col === col;
+          const isEmpty = cell === '';
           return (
             <button
               key={idx}
               onClick={() => handleCellClick(row, col)}
-              disabled={!isMyTurn || cell !== null}
+              disabled={!isMyTurn || !isEmpty}
               className={`aspect-square rounded text-5xl font-bold transition ${
                 cell === 'X'
                   ? 'text-blue-400'
@@ -129,12 +138,12 @@ export default function TicTacToe({
                   ? 'bg-yellow-900/40 ring-2 ring-yellow-500'
                   : 'bg-slate-900'
               } ${
-                isMyTurn && cell === null
+                isMyTurn && isEmpty
                   ? 'hover:bg-slate-700 cursor-pointer'
                   : 'cursor-not-allowed'
               }`}
             >
-              {cell}
+              {isEmpty ? '' : cell}
             </button>
           );
         })}
@@ -150,6 +159,9 @@ export default function TicTacToe({
 }
 
 function findWinnerSymbol(state: TicTacToeState): string | null {
+  if (!state || !Array.isArray(state.board) || state.board.length < 9) {
+    return null;
+  }
   const lines: ReadonlyArray<ReadonlyArray<number>> = [
     [0, 1, 2], [3, 4, 5], [6, 7, 8],
     [0, 3, 6], [1, 4, 7], [2, 5, 8],

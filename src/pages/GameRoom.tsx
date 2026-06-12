@@ -8,6 +8,7 @@ import {
   resetRoom,
   finishGame,
 } from '../core/services/roomService';
+import { resetGameState } from '@/games/tictactoe/sync';
 import { getGameDefinition } from '@/registry';
 import { useEffect, useState } from 'react';
 
@@ -122,6 +123,7 @@ export default function GameRoom() {
   const handleReset = async () => {
     await runAction(async () => {
       await resetRoom(roomId);
+      await resetGameState(roomId);
     });
   };
 

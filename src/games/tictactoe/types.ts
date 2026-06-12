@@ -1,4 +1,4 @@
-export type Cell = 'X' | 'O' | null;
+export type Cell = 'X' | 'O' | '';
 export type Board = Cell[]; // 9 個格子，索引 = row*3 + col
 
 export interface TicTacToeState {
@@ -14,6 +14,7 @@ export interface TicTacToeMove {
 }
 
 export const BOARD_SIZE = 3;
+export const EMPTY_CELL: Cell = '';
 
 export const WIN_LINES: ReadonlyArray<ReadonlyArray<number>> = [
   [0, 1, 2], [3, 4, 5], [6, 7, 8],
@@ -23,7 +24,7 @@ export const WIN_LINES: ReadonlyArray<ReadonlyArray<number>> = [
 
 export function createInitialState(): TicTacToeState {
   return {
-    board: Array(9).fill(null),
+    board: Array<Cell>(9).fill(EMPTY_CELL),
     nextSymbol: 'X',
     moveCount: 0,
     lastMove: null,
@@ -32,4 +33,13 @@ export function createInitialState(): TicTacToeState {
 
 export function getCell(state: TicTacToeState, row: number, col: number): Cell {
   return state.board[row * BOARD_SIZE + col];
+}
+
+export function isValidState(value: unknown): value is TicTacToeState {
+  if (!value || typeof value !== 'object') return false;
+  const v = value as Record<string, unknown>;
+  if (!Array.isArray(v.board) || v.board.length !== BOARD_SIZE * BOARD_SIZE) return false;
+  if (v.nextSymbol !== 'X' && v.nextSymbol !== 'O') return false;
+  if (typeof v.moveCount !== 'number') return false;
+  return true;
 }

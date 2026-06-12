@@ -1,7 +1,7 @@
 import { ref, onValue, runTransaction, type Unsubscribe } from 'firebase/database';
 import { rtdb } from '../../core/firebase/rtdb';
 import { tictactoeEngine } from './engine';
-import { createInitialState, type TicTacToeState } from './types';
+import { createInitialState, isValidState, type TicTacToeState } from './types';
 import type { GameMove } from '../../core/types/game';
 
 const statePath = (roomId: string) => `rooms-live/${roomId}/state`;
@@ -27,6 +27,11 @@ export async function submitMove(
   await runTransaction(stateRef, (current) => {
     if (!current) {
       result = { applied: false, reason: '遊戲尚未初始化' };
+      return;
+    }
+
+    if (!isValidState(current)) {
+      result = { applied: false, reason: '遊戲狀態損壞' };
       return;
     }
 
@@ -58,7 +63,17 @@ export function subscribeGameState(
 ): Unsubscribe {
   const stateRef = ref(rtdb, statePath(roomId));
   return onValue(stateRef, (snap) => {
-    callback(snap.val() as TicTacToeState | null);
+    const value = snap.val();
+    if (!value) {
+      callback(null);
+      return;
+    }
+    if (!isValidState(value)) {
+      console.warn('RTDB returned invalid game state, ignoring', value);
+      callback(null);
+      return;
+    }
+    callback(value);
   });
 }
 
