@@ -8,6 +8,20 @@
 
 ## 2026-06-12（Day 2）— 部署、文件整理
 
+### ~22:50 — 修正 Firestore 規則運算子優先順序 bug
+- **問題**：使用者回報加入房間時仍出現「Missing or insufficient permissions」
+- **根因**：上一版修正的規則有運算子優先順序 bug
+  ```javascript
+  // 我寫的：解析為 (!uid) in list（錯）
+  !request.auth.uid in resource.data.playerUids
+  // 應該寫：解析為 !(uid in list)（對）
+  !(request.auth.uid in resource.data.playerUids)
+  ```
+- **症狀**：! 套用在 uid（字串）上產生 false，再去檢查 false 是否在 list 裡，永遠是錯的邏輯
+- **第一次嘗試用 not()**：Firestore 規則不支援 not() 函式
+- **最終修正**：用括號明確表達意圖
+- **狀態**：✓ 規則部署成功
+
 ### ~22:40 — 修正 Firestore 規則兩處錯誤
 - **問題 1**：使用者點擊房間加入時出現「Missing or insufficient permissions」
 - **根因 1**：更新規則要求玩家「已加入」才能更新（`request.auth.uid in resource.data.playerUids`），
