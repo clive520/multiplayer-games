@@ -20,7 +20,9 @@ export interface Room {
   hostId: string;
   status: RoomStatus;
   players: RoomPlayer[];
+  hasPassword: boolean;
   createdAt: number;
+  lastActivityAt: number;
   startedAt: number | null;
   endedAt: number | null;
   winnerId: string | null;
@@ -35,5 +37,6 @@ export interface RoomSummary {
   playerCount: number;
   maxPlayers: number;
   status: RoomStatus;
+  hasPassword: boolean;
   createdAt: number;
 }

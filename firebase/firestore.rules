@@ -14,13 +14,20 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid in players.map((p) => p.uid);
     }
 
+    function isEmptyRoom() {
+      return resource.data.players.size() == 0;
+    }
+
+    function isAbandonedRoom() {
+      return request.time.toMillis() - resource.data.lastActivityAt.toMillis()
+        > 30 * 60 * 1000;
+    }
+
     // 使用者資料：所有人可讀，僅自己可寫
     match /users/{uid} {
       allow read: if isSignedIn();
       allow create: if isSelf(uid);
       allow update: if isSelf(uid) &&
-        // 防止使用者竄改 stats（由系統透過 recordGameResult 寫入）
-        // 這裡只允許更新非 stats 欄位
         !request.resource.data.diff(resource.data).affectedKeys()
           .hasAny(['wins', 'losses', 'draws', 'totalGames']);
       allow delete: if false;
@@ -37,9 +44,23 @@ service cloud.firestore {
       // 更新：僅房間玩家，且只能改特定欄位
       allow update: if isPlayer(resource.data.players) &&
         request.resource.data.diff(resource.data).affectedKeys()
-          .hasOnly(['players', 'status', 'startedAt', 'endedAt', 'winnerId', 'isDraw']);
+          .hasOnly(['players', 'status', 'startedAt', 'endedAt', 'winnerId', 'isDraw', 'lastActivityAt']);
 
-      allow delete: if isSignedIn() && resource.data.hostId == request.auth.uid;
+      // 刪除：房主可刪，或房間已空，或超過 30 分鐘無活動
+      allow delete: if isSignedIn() && (
+        resource.data.hostId == request.auth.uid ||
+        isEmptyRoom() ||
+        isAbandonedRoom()
+      );
+
+      // 房間密碼（秘密子集合）：所有人可讀（用於驗證密碼），僅房主可寫
+      match /secret/{document=**} {
+        allow read: if isSignedIn();
+        allow create, update: if isSignedIn() &&
+          get(/databases/$(database)/documents/rooms/$(roomId)).data.hostId == request.auth.uid;
+        allow delete: if isSignedIn() &&
+          get(/databases/$(database)/documents/rooms/$(roomId)).data.hostId == request.auth.uid;
+      }
 
       // 對戰歷史子集合
       match /history/{moveId} {
@@ -47,6 +68,15 @@ service cloud.firestore {
         allow create: if isSignedIn();
         allow update, delete: if false;
       }
+    }
+
+    // 密碼唯一性索引：用密碼 hash 當 document ID
+    // 建立後不可修改（強制使用 create），避免覆蓋
+    match /passwordIndex/{hash} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if false;  // 不可改，只能建立後整個刪除
+      allow delete: if isSignedIn();  // 房主離開時刪除
     }
 
     // 對戰歷史集合：玩家可讀自己有參與的記錄
