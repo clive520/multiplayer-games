@@ -1,0 +1,19 @@
+import type { GameDefinition } from '../../core/types/game';
+import Gomoku from './Gomoku';
+import { gomokuEngine } from './engine';
+import type { GomokuState } from './types';
+
+export const gomokuDefinition: GameDefinition<GomokuState> = {
+  id: 'gomoku',
+  name: '五子棋',
+  description: `兩人輪流在 15x15 棋盤上落子，先連成 5 子者獲勝。`,
+  minPlayers: 2,
+  maxPlayers: 2,
+  component: Gomoku,
+  engine: gomokuEngine,
+  syncStrategy: 'hybrid',
+};
+
+export { default as Gomoku } from './Gomoku';
+export { gomokuEngine } from './engine';
+export * from './types';

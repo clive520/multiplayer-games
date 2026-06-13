@@ -1,4 +1,4 @@
-export type GameType = 'tictactoe';
+export type GameType = 'tictactoe' | 'gomoku';
 
 export type RoomStatus = 'waiting' | 'playing' | 'finished';
 

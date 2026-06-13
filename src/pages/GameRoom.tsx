@@ -9,8 +9,9 @@ import {
   resetRoom,
   finishGame,
 } from '../core/services/roomService';
-import { resetGameState } from '@/games/tictactoe/sync';
-import { ResultScreen } from '@/games/tictactoe/ResultScreen';
+import { resetGameState as resetTictactoeState } from '@/games/tictactoe/sync';
+import { resetGameState as resetGomokuState } from '@/games/gomoku/sync';
+import { ResultScreen } from '../core/components/ResultScreen';
 import { getGameDefinition } from '@/registry';
 import { useEffect, useState } from 'react';
 
@@ -23,6 +24,11 @@ export default function GameRoom() {
   const [actionPending, setActionPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+
+  const resetGameStateFor = async (gameType: string, id: string): Promise<void> => {
+    if (gameType === 'tictactoe') return resetTictactoeState(id);
+    if (gameType === 'gomoku') return resetGomokuState(id);
+  };
 
   const handleCopyCode = async () => {
     if (!room?.code) return;
@@ -120,14 +126,14 @@ export default function GameRoom() {
   const handleStart = async () => {
     await runAction(async () => {
       await startGame(roomId);
-      await resetGameState(roomId);
+      await resetGameStateFor(room.gameType, roomId);
     });
   };
 
   const handleReset = async () => {
     await runAction(async () => {
       await resetRoom(roomId);
-      await resetGameState(roomId);
+      await resetGameStateFor(room.gameType, roomId);
     });
   };
 

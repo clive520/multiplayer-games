@@ -15,6 +15,5 @@ export const tictactoeDefinition: GameDefinition<TicTacToeState> = {
 };
 
 export { default as TicTacToe } from './TicTacToe';
-export { ResultScreen } from './ResultScreen';
 export { tictactoeEngine } from './engine';
 export * from './types';
