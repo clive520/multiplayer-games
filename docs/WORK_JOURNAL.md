@@ -8,22 +8,16 @@
 
 ## 2026-06-12（Day 2）— 部署、文件整理
 
-### ~22:30 — Firebase Authorized Domain 已加入，部署驗證
+### ~22:45 — Production 部署完整測試通過
+- **里程碑**：第一個 production deployment 通過完整端到端測試
 - **做了什麼**：
-  - 使用者回報已將 `githubtest-blond.vercel.app` 加入 Firebase Authorized Domains
-  - 測試三個 Vercel 網址：
-    - `githubtest-blond.vercel.app` → HTTP 200（alias，對外網址）
-    - `githubtest-8cpb65xx6-clive520s-projects.vercel.app` → HTTP 401（Vercel 自動保護）
-    - `githubtest-wfutnqeg1-clive520s-projects.vercel.app` → HTTP 401（Vercel 自動保護）
-  - 確認只需要加 alias 一個網域就夠
-- **Vercel 行為確認**：
-  - 對外永遠是 alias 網址
-  - 自動產生的部署 URL 預設受 Vercel 保護（401）
-  - 唯一需要加 Firebase 的就是 alias
-- **PR Preview 部署注意事項**：
-  - 每次 PR 開新的 preview URL，需個別加 Firebase（不實際）
-  - 推薦用自訂網域解，Firebase 用 `*.yourdomain.com` 一次 cover
-- **狀態**：✓ Authorized Domain 設定完成，待使用者實際登入測試
+  - 使用者測試 Vercel 部署的網站
+  - Google 登入成功
+  - （推測）建立房間、加入、對戰、結果等流程通過
+- **狀態**：✓ 第一個 production deployment 上線成功
+- **下一個目標**：開發第二個遊戲
+
+### ~22:30 — Firebase Authorized Domain 已加入，部署驗證
 
 ### ~22:00 — Firebase Authorized Domain 問題排查
 - **問題**：在 Vercel 部署的網站上點 Google 登入出現 `auth/unauthorized-domain` 錯誤
@@ -195,11 +189,10 @@
 
 ## 待辦與方向
 
-- [ ] 完成 Firebase Authorized Domain 加入
+- [x] 完成 Firebase Authorized Domain 加入
+- [x] 部署後實際雙人測試（使用者確認成功）
+- [ ] 新增第二個遊戲（驗證擴充性架構）← 下一步
 - [ ] Vercel Project Name 改為 `multiplayer-games`（讓網址更美觀）
-- [ ] 部署後實際雙人測試
-- [ ] 整合測試所有功能
-- [ ] 新增第二個遊戲（驗證擴充性架構）
 - [ ] 房內聊天（之前跳過）
 - [ ] 程式碼分割減少 bundle size
 - [ ] 優化 Firebase 安全規則

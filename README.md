@@ -61,7 +61,14 @@ multiplayer-games/
 - [x] 階段 4：井字遊戲核心
 - [x] 階段 5：進階功能（排行榜、歷史、在線狀態）
 - [x] 階段 6：部署設定（Vercel / Firebase / GitHub Pages）
-- [ ] 階段 7：正式部署到 Vercel（待執行）
+- [x] 階段 7：正式部署到 Vercel ✓ **已上線 https://githubtest-blond.vercel.app**
+- [ ] 階段 8：新增第二個遊戲（驗證擴充性架構）
+
+## 線上 Demo
+
+**https://githubtest-blond.vercel.app**
+
+（需要 Google 帳號登入，支援 2 人即時對戰）
 
 ### 測試與建置
 

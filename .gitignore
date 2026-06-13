@@ -49,3 +49,5 @@ firebase.json.bak
 .cache/
 .parcel-cache/
 .turbo/
+
+.vercel
