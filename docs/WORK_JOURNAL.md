@@ -8,6 +8,14 @@
 
 ## 2026-06-12（Day 2）— 部署、文件整理
 
+### ~10:10 — 修正：點擊房間列表時未實際加入玩家
+- **問題**：使用者回報點選「開放式房間」（無密碼的房間）加入時，只看到建立者，自己不在房間內
+- **根因**：`handleEnterRoom` 只做了頁面跳轉（`navigate(...)`），沒有呼叫 `joinRoomByCode`，所以使用者從未進入 players 列表
+- **修正**：
+  - `handleEnterRoom`：無密碼時先呼叫 `joinRoomByCode(room.code)` 再跳轉
+  - 已有玩家的情況下 `joinRoomByCode` 會早返回（room.players.some(p => p.uid === uid)），不會重複加入
+- **狀態**：✓ 提交並準備部署
+
 ### ~00:00（Day 3 開始）— 房間密碼 + 自動清理
 
 #### 密碼房間需求

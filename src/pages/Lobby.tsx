@@ -140,7 +140,7 @@ export default function Lobby() {
     setActionError(null);
   };
 
-  const handleEnterRoom = (room: RoomSummary) => {
+  const handleEnterRoom = async (room: RoomSummary) => {
     if (room.hasPassword) {
       setPendingJoin({
         roomId: room.id,
@@ -151,7 +151,16 @@ export default function Lobby() {
       setActionError(null);
       return;
     }
-    navigate(`/rooms/${room.id}`);
+    setActionError(null);
+    setJoining(true);
+    try {
+      const roomId = await joinRoomByCode(room.code);
+      navigate(`/rooms/${roomId}`);
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : '加入房間失敗');
+    } finally {
+      setJoining(false);
+    }
   };
 
   return (
