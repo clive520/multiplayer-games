@@ -8,6 +8,53 @@
 
 ## 2026-06-12（Day 2）— 部署、文件整理
 
+### ~00:00（Day 3 開始）— 房間密碼 + 自動清理
+
+#### 密碼房間需求
+- 無密碼房間：自由進入
+- 密碼房間：6 位數字、用戶自訂、唯一性檢查
+- 房間空 30 分鐘自動清理
+
+#### 設計決策
+- **儲存位置**：密碼 hash 放在 `/rooms/{roomId}/secret/password` 子集合
+- **唯一性**：`/passwordIndex/{hash}` 集合，document ID 用 hash
+  - 用 transaction 原子檢查+建立
+  - 房間刪除時一併釋放索引
+- **清理**：`cleanupAbandonedRooms()` 函式，進入 Lobby 時自動呼叫
+  - 條件：status in [waiting/playing] AND (players.length==0 OR lastActivityAt > 30 min ago)
+  - 失敗時 console.warn，不影響 UI
+- **安全規則更新**：
+  - rooms 可以被「房主」或「空房間」或「30 分鐘無活動」刪除
+  - secret 子集合：所有人可讀、房主可寫
+  - passwordIndex：可建立、不可更新（避免覆蓋）、可刪除
+
+#### 實作
+- `core/utils/password.ts`：hashPassword (SHA-256)、verifyPassword、isValidPasswordFormat
+- `core/utils/password.test.ts`：13 個單元測試（格式/唯一性/錯誤處理）
+- `core/types/room.ts`：加 hasPassword、lastActivityAt 欄位
+- `core/services/roomService.ts`：
+  - createRoom 支援 password option
+  - joinRoomByCode 支援 password option
+  - lookupRoomByCode（先查房間屬性，再決定要不要密碼）
+  - cleanupAbandonedRooms
+  - 所有更新動作（leave/ready/start/finish/reset）都更新 lastActivityAt
+- `firebase/firestore.rules`：更新 rooms delete 規則、加入 secret 子集合與 passwordIndex
+- `pages/Lobby.tsx`：
+  - 建立時可選「設定密碼」核取框 + 6 位數字輸入
+  - 加入時先 lookup，有密碼就跳出輸入框
+  - 房間列表顯示「[鎖]」標記密碼房間
+  - 進入 Lobby 時自動呼叫 cleanupAbandonedRooms
+
+#### 測試
+- 39 個單元測試全通過（12 井字 + 14 五子棋 + 13 密碼）
+- TypeScript 0 errors
+- Build 成功（848 KB / 214 KB gzip）
+
+#### 狀態
+✓ 完成。準備提交並部署。
+
+### ~23:30 — 五子棋遊戲上線（驗證擴充性架構成功）
+
 ### ~23:30 — 五子棋遊戲上線（驗證擴充性架構成功）
 - **commit**：`e13ae92` Merge branch 'feature/gomoku' ← `0330831` feat(gomoku)
 - **做了什麼**：
@@ -215,6 +262,7 @@
 - [x] 完成 Firebase Authorized Domain 加入
 - [x] 部署後實際雙人測試（使用者確認成功）
 - [x] 新增第二個遊戲（五子棋，擴充性架構驗證成功）✓
+- [x] 房間密碼 + 自動清理空房間 ← 剛完成
 - [ ] Vercel Project Name 改為 `multiplayer-games`（讓網址更美觀）
 - [ ] 房內聊天（之前跳過）
 - [ ] 程式碼分割減少 bundle size

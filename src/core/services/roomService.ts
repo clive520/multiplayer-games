@@ -11,6 +11,7 @@ import {
   orderBy,
   limit,
   onSnapshot,
+  runTransaction,
   serverTimestamp,
   Timestamp,
   type Unsubscribe,
@@ -18,13 +19,24 @@ import {
 import { db } from '../firebase/firestore';
 import { auth } from '../auth/firebaseInstances';
 import { generateRoomCode, normalizeRoomCode } from '../utils/roomCode';
+import { hashPassword, isValidPasswordFormat, normalizePassword } from '../utils/password';
 import { getGameDefinition } from '@/registry';
 import { recordGameResult } from './statsService';
 import { recordGameHistory } from './historyService';
 import type { GameType, Room, RoomPlayer, RoomStatus, RoomSummary } from '../types/room';
 
 const ROOMS_COLLECTION = 'rooms';
+const PASSWORD_INDEX_COLLECTION = 'passwordIndex';
+const SECRET_PASSWORD_DOC = 'password';
 const MAX_LOBBY_ROOMS = 20;
+const ABANDONED_ROOM_TIMEOUT_MS = 30 * 60 * 1000; // 30 分鐘無活動視為廢棄
+
+const PASSWORD_ERROR_MESSAGES = {
+  invalidFormat: '密碼格式錯誤：必須是 6 位數字',
+  taken: '此密碼已被其他房間使用，請更換一個',
+  incorrect: '密碼錯誤',
+  required: '此房間需要密碼',
+};
 
 function tsToMillis(value: unknown): number {
   if (value instanceof Timestamp) return value.toMillis();
@@ -33,6 +45,7 @@ function tsToMillis(value: unknown): number {
 }
 
 function roomFromDoc(id: string, data: Record<string, unknown>): Room {
+  const now = Date.now();
   return {
     id,
     code: (data.code as string) ?? '',
@@ -40,7 +53,9 @@ function roomFromDoc(id: string, data: Record<string, unknown>): Room {
     hostId: data.hostId as string,
     status: data.status as RoomStatus,
     players: (data.players as RoomPlayer[]) ?? [],
+    hasPassword: (data.hasPassword as boolean) ?? false,
     createdAt: tsToMillis(data.createdAt),
+    lastActivityAt: tsToMillis(data.lastActivityAt) || now,
     startedAt: data.startedAt ? tsToMillis(data.startedAt) : null,
     endedAt: data.endedAt ? tsToMillis(data.endedAt) : null,
     winnerId: (data.winnerId as string) ?? null,
@@ -60,6 +75,7 @@ function roomSummaryFromDoc(id: string, data: Record<string, unknown>): RoomSumm
     playerCount: players.length,
     maxPlayers: def?.maxPlayers ?? 2,
     status: data.status as RoomStatus,
+    hasPassword: (data.hasPassword as boolean) ?? false,
     createdAt: tsToMillis(data.createdAt),
   };
 }
@@ -82,33 +98,125 @@ function buildPlayerEntry(uid: string, symbol: string, isHost: boolean): RoomPla
   };
 }
 
-export async function createRoom(gameType: GameType): Promise<string> {
+async function reservePasswordIndex(hash: string, roomId: string): Promise<void> {
+  const indexRef = doc(db, PASSWORD_INDEX_COLLECTION, hash);
+  try {
+    await runTransaction(db, async (tx) => {
+      const snap = await tx.get(indexRef);
+      if (snap.exists()) {
+        throw new Error(PASSWORD_ERROR_MESSAGES.taken);
+      }
+      tx.set(indexRef, { roomId, createdAt: serverTimestamp() });
+    });
+  } catch (err) {
+    if (err instanceof Error && err.message === PASSWORD_ERROR_MESSAGES.taken) {
+      throw err;
+    }
+    throw new Error(PASSWORD_ERROR_MESSAGES.taken);
+  }
+}
+
+async function releasePasswordIndex(hash: string): Promise<void> {
+  try {
+    await deleteDoc(doc(db, PASSWORD_INDEX_COLLECTION, hash));
+  } catch (err) {
+    console.warn('釋放密碼索引失敗（可能已被清理）', err);
+  }
+}
+
+async function storeRoomPassword(roomId: string, hash: string): Promise<void> {
+  await setDoc(doc(db, ROOMS_COLLECTION, roomId, 'secret', SECRET_PASSWORD_DOC), {
+    hash,
+    updatedAt: serverTimestamp(),
+  });
+}
+
+async function getRoomPasswordHash(roomId: string): Promise<string | null> {
+  const snap = await getDoc(doc(db, ROOMS_COLLECTION, roomId, 'secret', SECRET_PASSWORD_DOC));
+  if (!snap.exists()) return null;
+  return (snap.data().hash as string) ?? null;
+}
+
+async function deleteRoomPassword(roomId: string): Promise<void> {
+  try {
+    await deleteDoc(doc(db, ROOMS_COLLECTION, roomId, 'secret', SECRET_PASSWORD_DOC));
+  } catch (err) {
+    console.warn('刪除房間密碼子文件失敗', err);
+  }
+}
+
+export interface CreateRoomOptions {
+  password?: string;
+}
+
+export async function createRoom(
+  gameType: GameType,
+  options: CreateRoomOptions = {}
+): Promise<string> {
   const uid = ensureAuth();
   const def = getGameDefinition(gameType);
   if (!def) throw new Error(`未註冊的遊戲類型：${gameType}`);
 
+  const password = options.password?.trim() || '';
+  const hasPassword = password.length > 0;
+  let passwordHash: string | null = null;
+
+  if (hasPassword) {
+    if (!isValidPasswordFormat(password)) {
+      throw new Error(PASSWORD_ERROR_MESSAGES.invalidFormat);
+    }
+    passwordHash = await hashPassword(password);
+  }
+
   const roomRef = doc(collection(db, ROOMS_COLLECTION));
   const code = generateRoomCode();
   const player = buildPlayerEntry(uid, 'X', true);
+  const now = Date.now();
 
-  const payload = {
-    code,
-    gameType,
-    hostId: uid,
-    status: 'waiting' as RoomStatus,
-    players: [player],
-    createdAt: serverTimestamp(),
-    startedAt: null,
-    endedAt: null,
-    winnerId: null,
-    isDraw: false,
-  };
+  if (hasPassword && passwordHash) {
+    await reservePasswordIndex(passwordHash, roomRef.id);
+    try {
+      await storeRoomPassword(roomRef.id, passwordHash);
+    } catch (err) {
+      await releasePasswordIndex(passwordHash);
+      throw err;
+    }
+  }
 
-  await setDoc(roomRef, payload);
+  try {
+    await setDoc(roomRef, {
+      code,
+      gameType,
+      hostId: uid,
+      status: 'waiting' as RoomStatus,
+      players: [player],
+      hasPassword,
+      createdAt: serverTimestamp(),
+      lastActivityAt: now,
+      startedAt: null,
+      endedAt: null,
+      winnerId: null,
+      isDraw: false,
+    });
+  } catch (err) {
+    if (hasPassword && passwordHash) {
+      await releasePasswordIndex(passwordHash);
+      await deleteRoomPassword(roomRef.id);
+    }
+    throw err;
+  }
+
   return roomRef.id;
 }
 
-export async function joinRoomByCode(code: string): Promise<string> {
+export interface JoinRoomOptions {
+  password?: string;
+}
+
+export async function joinRoomByCode(
+  code: string,
+  options: JoinRoomOptions = {}
+): Promise<string> {
   const uid = ensureAuth();
   const normalized = normalizeRoomCode(code);
   if (!/^[A-Z2-9]{6}$/.test(normalized)) {
@@ -135,6 +243,24 @@ export async function joinRoomByCode(code: string): Promise<string> {
     return roomDoc.id;
   }
 
+  if (room.hasPassword) {
+    const password = options.password ?? '';
+    if (!password) {
+      throw new Error(PASSWORD_ERROR_MESSAGES.required);
+    }
+    if (!isValidPasswordFormat(normalizePassword(password))) {
+      throw new Error(PASSWORD_ERROR_MESSAGES.invalidFormat);
+    }
+    const storedHash = await getRoomPasswordHash(roomDoc.id);
+    if (!storedHash) {
+      throw new Error(PASSWORD_ERROR_MESSAGES.incorrect);
+    }
+    const inputHash = await hashPassword(password);
+    if (inputHash !== storedHash) {
+      throw new Error(PASSWORD_ERROR_MESSAGES.incorrect);
+    }
+  }
+
   if (room.players.length >= def.maxPlayers) {
     throw new Error('房間已滿');
   }
@@ -145,6 +271,7 @@ export async function joinRoomByCode(code: string): Promise<string> {
 
   await updateDoc(roomDoc.ref, {
     players: [...room.players, newPlayer],
+    lastActivityAt: Date.now(),
   });
   return roomDoc.id;
 }
@@ -160,19 +287,26 @@ export async function leaveRoom(roomId: string): Promise<void> {
 
   if (remaining.length === 0) {
     await deleteDoc(ref);
+    if (room.hasPassword) {
+      const hash = await getRoomPasswordHash(roomId);
+      if (hash) await releasePasswordIndex(hash);
+      await deleteRoomPassword(roomId);
+    }
     return;
   }
+
+  const updates: Record<string, unknown> = {
+    players: remaining,
+    lastActivityAt: Date.now(),
+  };
 
   if (room.hostId === uid) {
     const newHost = remaining[0];
     remaining[0] = { ...newHost, isHost: true, ready: true };
-    await updateDoc(ref, {
-      players: remaining,
-      hostId: newHost.uid,
-    });
-  } else {
-    await updateDoc(ref, { players: remaining });
+    updates.hostId = newHost.uid;
   }
+
+  await updateDoc(ref, updates);
 }
 
 export async function setPlayerReady(roomId: string, ready: boolean): Promise<void> {
@@ -183,7 +317,7 @@ export async function setPlayerReady(roomId: string, ready: boolean): Promise<vo
 
   const room = roomFromDoc(snap.id, snap.data());
   const players = room.players.map((p) => (p.uid === uid ? { ...p, ready } : p));
-  await updateDoc(ref, { players });
+  await updateDoc(ref, { players, lastActivityAt: Date.now() });
 }
 
 export async function startGame(roomId: string): Promise<void> {
@@ -200,6 +334,7 @@ export async function startGame(roomId: string): Promise<void> {
   await updateDoc(ref, {
     status: 'playing' as RoomStatus,
     startedAt: serverTimestamp(),
+    lastActivityAt: Date.now(),
   });
 }
 
@@ -212,13 +347,14 @@ export async function finishGame(
   const snap = await getDoc(ref);
   if (!snap.exists()) return;
   const room = roomFromDoc(snap.id, snap.data());
-  if (room.status === 'finished') return; // already finished, idempotent
+  if (room.status === 'finished') return;
 
   await updateDoc(ref, {
     status: 'finished' as RoomStatus,
     endedAt: serverTimestamp(),
     winnerId,
     isDraw,
+    lastActivityAt: Date.now(),
   });
 
   const playersForStats = room.players.map((p) => ({
@@ -263,7 +399,85 @@ export async function resetRoom(roomId: string): Promise<void> {
     endedAt: null,
     winnerId: null,
     isDraw: false,
+    lastActivityAt: Date.now(),
   });
+}
+
+export interface RoomLookupResult {
+  roomId: string;
+  hasPassword: boolean;
+  gameType: GameType;
+  playerCount: number;
+  maxPlayers: number;
+  status: RoomStatus;
+}
+
+export async function lookupRoomByCode(code: string): Promise<RoomLookupResult | null> {
+  const normalized = normalizeRoomCode(code);
+  if (!/^[A-Z2-9]{6}$/.test(normalized)) return null;
+
+  const q = query(
+    collection(db, ROOMS_COLLECTION),
+    where('code', '==', normalized),
+    where('status', 'in', ['waiting', 'playing']),
+    limit(1)
+  );
+  const snapshot = await getDocs(q);
+  if (snapshot.empty) return null;
+
+  const room = roomFromDoc(snapshot.docs[0].id, snapshot.docs[0].data());
+  const def = getGameDefinition(room.gameType);
+  return {
+    roomId: room.id,
+    hasPassword: room.hasPassword,
+    gameType: room.gameType,
+    playerCount: room.players.length,
+    maxPlayers: def?.maxPlayers ?? 2,
+    status: room.status,
+  };
+}
+
+export interface CleanupResult {
+  deletedCount: number;
+  details: Array<{ roomId: string; reason: 'empty' | 'abandoned' }>;
+}
+
+export async function cleanupAbandonedRooms(): Promise<CleanupResult> {
+  const q = query(
+    collection(db, ROOMS_COLLECTION),
+    where('status', 'in', ['waiting', 'playing']),
+    orderBy('lastActivityAt', 'asc'),
+    limit(50)
+  );
+  const snapshot = await getDocs(q);
+  const now = Date.now();
+  const result: CleanupResult = { deletedCount: 0, details: [] };
+
+  for (const docSnap of snapshot.docs) {
+    const room = roomFromDoc(docSnap.id, docSnap.data());
+    const isEmpty = room.players.length === 0;
+    const isAbandoned = now - room.lastActivityAt > ABANDONED_ROOM_TIMEOUT_MS;
+
+    if (!isEmpty && !isAbandoned) continue;
+
+    try {
+      if (room.hasPassword) {
+        const hash = await getRoomPasswordHash(docSnap.id);
+        if (hash) await releasePasswordIndex(hash);
+        await deleteRoomPassword(docSnap.id);
+      }
+      await deleteDoc(docSnap.ref);
+      result.deletedCount++;
+      result.details.push({
+        roomId: docSnap.id,
+        reason: isEmpty ? 'empty' : 'abandoned',
+      });
+    } catch (err) {
+      console.warn(`清理房間 ${docSnap.id} 失敗`, err);
+    }
+  }
+
+  return result;
 }
 
 export function subscribeRoom(
@@ -292,7 +506,6 @@ export function subscribeLobby(
   onRooms: (rooms: RoomSummary[]) => void,
   onError?: (err: Error) => void
 ): Unsubscribe {
-  // 避免 where + orderBy 複合索引：先 orderBy + limit 拉最新，再在 client 端過濾 status
   const q = query(
     collection(db, ROOMS_COLLECTION),
     orderBy('createdAt', 'desc'),

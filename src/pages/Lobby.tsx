@@ -1,9 +1,14 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../core/auth/useAuth';
 import { signOut } from '../core/auth/googleSignIn';
 import { useLobby } from '../core/hooks/useLobby';
-import { createRoom, joinRoomByCode } from '../core/services/roomService';
+import {
+  createRoom,
+  joinRoomByCode,
+  lookupRoomByCode,
+  cleanupAbandonedRooms,
+} from '../core/services/roomService';
 import { gameRegistry } from '@/registry';
 import type { GameType, RoomSummary } from '../core/types/room';
 
@@ -11,21 +16,62 @@ const GAME_LABELS: Record<string, string> = Object.fromEntries(
   gameRegistry.map((g) => [g.id, g.name])
 );
 
+interface PendingJoin {
+  roomId: string;
+  code: string;
+  gameType: GameType;
+}
+
 export default function Lobby() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { rooms, loading, error: lobbyError } = useLobby();
+
   const [selectedGame, setSelectedGame] = useState<GameType>('tictactoe');
+  const [createPassword, setCreatePassword] = useState('');
+  const [usePassword, setUsePassword] = useState(false);
+
   const [creating, setCreating] = useState(false);
-  const [joining, setJoining] = useState(false);
   const [joinCode, setJoinCode] = useState('');
+  const [joining, setJoining] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
+
+  const [pendingJoin, setPendingJoin] = useState<PendingJoin | null>(null);
+  const [enterPassword, setEnterPassword] = useState('');
+
+  const [cleanupInfo, setCleanupInfo] = useState<string | null>(null);
+
+  useEffect(() => {
+    cleanupAbandonedRooms()
+      .then((result) => {
+        if (result.deletedCount > 0) {
+          setCleanupInfo(
+            `已自動清理 ${result.deletedCount} 個無人的房間`
+          );
+          setTimeout(() => setCleanupInfo(null), 5000);
+        }
+      })
+      .catch((err) => {
+        console.warn('清理廢棄房間失敗', err);
+      });
+  }, []);
 
   const handleCreate = async () => {
     setActionError(null);
+
+    let password: string | undefined;
+    if (usePassword) {
+      const trimmed = createPassword.trim();
+      if (!/^\d{6}$/.test(trimmed)) {
+        setActionError('密碼必須是 6 位數字');
+        return;
+      }
+      password = trimmed;
+    }
+
     setCreating(true);
     try {
-      const roomId = await createRoom(selectedGame);
+      const roomId = await createRoom(selectedGame, { password });
       navigate(`/rooms/${roomId}`);
     } catch (err) {
       setActionError(err instanceof Error ? err.message : '建立房間失敗');
@@ -34,12 +80,30 @@ export default function Lobby() {
     }
   };
 
-  const handleJoin = async (e: FormEvent) => {
+  const handleJoinSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setActionError(null);
-    if (!joinCode.trim()) return;
+    if (!/^[A-Z2-9]{6}$/.test(joinCode)) {
+      setActionError('房號格式錯誤');
+      return;
+    }
+
     setJoining(true);
     try {
+      const lookup = await lookupRoomByCode(joinCode);
+      if (!lookup) {
+        setActionError('找不到此房號的房間');
+        return;
+      }
+      if (lookup.hasPassword) {
+        setPendingJoin({
+          roomId: lookup.roomId,
+          code: joinCode,
+          gameType: lookup.gameType,
+        });
+        setEnterPassword('');
+        return;
+      }
       const roomId = await joinRoomByCode(joinCode);
       navigate(`/rooms/${roomId}`);
     } catch (err) {
@@ -49,7 +113,44 @@ export default function Lobby() {
     }
   };
 
+  const handleJoinWithPassword = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!pendingJoin) return;
+    setActionError(null);
+    if (!/^\d{6}$/.test(enterPassword)) {
+      setActionError('密碼必須是 6 位數字');
+      return;
+    }
+    setJoining(true);
+    try {
+      const roomId = await joinRoomByCode(pendingJoin.code, {
+        password: enterPassword,
+      });
+      navigate(`/rooms/${roomId}`);
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : '加入房間失敗');
+    } finally {
+      setJoining(false);
+    }
+  };
+
+  const handleCancelPassword = () => {
+    setPendingJoin(null);
+    setEnterPassword('');
+    setActionError(null);
+  };
+
   const handleEnterRoom = (room: RoomSummary) => {
+    if (room.hasPassword) {
+      setPendingJoin({
+        roomId: room.id,
+        code: room.code,
+        gameType: room.gameType,
+      });
+      setEnterPassword('');
+      setActionError(null);
+      return;
+    }
     navigate(`/rooms/${room.id}`);
   };
 
@@ -84,6 +185,18 @@ export default function Lobby() {
         </div>
       </header>
 
+      {cleanupInfo && (
+        <div className="mb-4 rounded-lg border border-slate-600 bg-slate-800 p-3 text-sm text-slate-300">
+          {cleanupInfo}
+        </div>
+      )}
+
+      {actionError && (
+        <div className="mb-4 rounded-lg border border-red-700 bg-red-900/30 p-3 text-sm text-red-300">
+          {actionError}
+        </div>
+      )}
+
       <section className="mb-6 space-y-3">
         <div className="rounded-lg border border-slate-700 bg-slate-800 p-4">
           <p className="mb-2 text-sm text-slate-400">選擇遊戲</p>
@@ -108,37 +221,110 @@ export default function Lobby() {
         </div>
 
         <div className="grid gap-3 sm:grid-cols-2">
-          <button
-            onClick={handleCreate}
-            disabled={creating}
-            className="rounded-lg bg-blue-600 px-6 py-4 font-medium text-white hover:bg-blue-500 disabled:opacity-50"
-          >
-            {creating ? '建立中...' : `建立 ${GAME_LABELS[selectedGame]} 房間`}
-          </button>
+          <div className="rounded-lg border border-slate-700 bg-slate-800 p-4">
+            <p className="mb-2 text-sm font-medium text-slate-300">
+              建立新房間
+            </p>
+            <label className="mb-3 flex cursor-pointer items-center gap-2 text-sm text-slate-300">
+              <input
+                type="checkbox"
+                checked={usePassword}
+                onChange={(e) => {
+                  setUsePassword(e.target.checked);
+                  if (!e.target.checked) setCreatePassword('');
+                }}
+                className="h-4 w-4 rounded border-slate-600"
+              />
+              <span>設定 6 位數字密碼</span>
+            </label>
+            {usePassword && (
+              <input
+                type="text"
+                inputMode="numeric"
+                pattern="\d{6}"
+                value={createPassword}
+                onChange={(e) => {
+                  const v = e.target.value.replace(/\D/g, '').slice(0, 6);
+                  setCreatePassword(v);
+                }}
+                placeholder="6 位數字"
+                maxLength={6}
+                className="mb-2 w-full rounded border border-slate-600 bg-slate-900 px-3 py-2 text-center text-lg tracking-widest"
+              />
+            )}
+            <button
+              onClick={handleCreate}
+              disabled={creating}
+              className="w-full rounded-lg bg-blue-600 px-4 py-3 font-medium text-white hover:bg-blue-500 disabled:opacity-50"
+            >
+              {creating
+                ? '建立中...'
+                : `建立 ${usePassword ? '密碼' : ''}房間`}
+            </button>
+          </div>
 
-        <form onSubmit={handleJoin} className="flex gap-2">
-          <input
-            type="text"
-            value={joinCode}
-            onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
-            placeholder="輸入 6 碼房號"
-            maxLength={6}
-            className="flex-1 rounded-lg border border-slate-600 bg-slate-800 px-4 py-2 text-center text-lg tracking-widest uppercase placeholder:normal-case placeholder:tracking-normal placeholder:text-slate-500"
-          />
-          <button
-            type="submit"
-            disabled={joining || joinCode.length !== 6}
-            className="rounded-lg bg-green-600 px-4 py-2 font-medium text-white hover:bg-green-500 disabled:opacity-50"
+          <form
+            onSubmit={handleJoinSubmit}
+            className="rounded-lg border border-slate-700 bg-slate-800 p-4"
           >
-            {joining ? '加入中...' : '加入'}
-          </button>
-        </form>
+            <p className="mb-2 text-sm font-medium text-slate-300">
+              用房號加入
+            </p>
+            <input
+              type="text"
+              value={joinCode}
+              onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
+              placeholder="輸入 6 碼房號"
+              maxLength={6}
+              className="mb-2 w-full rounded border border-slate-600 bg-slate-900 px-3 py-2 text-center text-lg tracking-widest uppercase"
+            />
+            <button
+              type="submit"
+              disabled={joining || joinCode.length !== 6}
+              className="w-full rounded-lg bg-green-600 px-4 py-3 font-medium text-white hover:bg-green-500 disabled:opacity-50"
+            >
+              {joining ? '加入中...' : '加入'}
+            </button>
+          </form>
         </div>
       </section>
 
-      {actionError && (
-        <div className="mb-4 rounded-lg border border-red-700 bg-red-900/30 p-3 text-sm text-red-300">
-          {actionError}
+      {pendingJoin && (
+        <div className="mb-4 rounded-lg border border-yellow-700 bg-yellow-900/20 p-4">
+          <p className="mb-2 text-sm text-yellow-300">
+            房間 <span className="font-mono font-bold">{pendingJoin.code}</span>{' '}
+            需要密碼
+          </p>
+          <form onSubmit={handleJoinWithPassword} className="flex gap-2">
+            <input
+              type="text"
+              inputMode="numeric"
+              pattern="\d{6}"
+              value={enterPassword}
+              onChange={(e) => {
+                const v = e.target.value.replace(/\D/g, '').slice(0, 6);
+                setEnterPassword(v);
+              }}
+              placeholder="輸入 6 位數字密碼"
+              maxLength={6}
+              autoFocus
+              className="flex-1 rounded border border-slate-600 bg-slate-900 px-3 py-2 text-center text-lg tracking-widest"
+            />
+            <button
+              type="submit"
+              disabled={joining || enterPassword.length !== 6}
+              className="rounded-lg bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-500 disabled:opacity-50"
+            >
+              {joining ? '驗證中...' : '確認'}
+            </button>
+            <button
+              type="button"
+              onClick={handleCancelPassword}
+              className="rounded-lg bg-slate-700 px-4 py-2 text-slate-300 hover:bg-slate-600"
+            >
+              取消
+            </button>
+          </form>
         </div>
       )}
 
@@ -168,11 +354,25 @@ export default function Lobby() {
                   className="w-full rounded-lg border border-slate-700 bg-slate-800 p-4 text-left hover:border-slate-500"
                 >
                   <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium">{GAME_LABELS[room.gameType] ?? room.gameType}</p>
-                      <p className="text-sm text-slate-400">
-                        房主：{room.hostName} · {room.playerCount}/{room.maxPlayers} 人
-                      </p>
+                    <div className="flex items-center gap-2">
+                      {room.hasPassword && (
+                        <span
+                          className="text-yellow-400"
+                          title="需要密碼"
+                          aria-label="需要密碼"
+                        >
+                          [鎖]
+                        </span>
+                      )}
+                      <div>
+                        <p className="font-medium">
+                          {GAME_LABELS[room.gameType] ?? room.gameType}
+                        </p>
+                        <p className="text-sm text-slate-400">
+                          房主：{room.hostName} · {room.playerCount}/
+                          {room.maxPlayers} 人
+                        </p>
+                      </div>
                     </div>
                     <span
                       className={`rounded px-2 py-1 text-xs ${
