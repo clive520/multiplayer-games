@@ -51,7 +51,18 @@
 - Build 成功（848 KB / 214 KB gzip）
 
 #### 狀態
-✓ 完成。準備提交並部署。
+✓ 完成。提交並部署。
+
+### ~00:30 — 修復 Firestore 規則語法問題，部署成功
+- **問題**：Firestore 規則的箭頭函數 `players.map(p => p.uid)` 不被規則 parser 支援，導致規則無法編譯
+- **解法**：
+  - 在 room 文件加 `playerUids: string[]` 獨立陣列
+  - 規則改用 `request.auth.uid in resource.data.playerUids`
+  - 加入/離開時同步維護此陣列
+- **順便修正**：`firebase.json` 規則路徑從 `firestore.rules` 改為 `firebase/firestore.rules`
+- **部署**：`firebase deploy --only firestore:rules` 成功（編譯通過、規則 release 到 cloud.firestore）
+- **狀態**：✓ 規則上線、密碼與清理功能可運作
+- **Vercel 自動部署**：31 秒前完成新 production deploy
 
 ### ~23:30 — 五子棋遊戲上線（驗證擴充性架構成功）
 
