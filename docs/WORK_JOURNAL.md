@@ -8,6 +8,29 @@
 
 ## 2026-06-12（Day 2）— 部署、文件整理
 
+### ~23:30 — 五子棋遊戲上線（驗證擴充性架構成功）
+- **commit**：`e13ae92` Merge branch 'feature/gomoku' ← `0330831` feat(gomoku)
+- **做了什麼**：
+  - 在 `src/games/gomoku/` 開新資料夾，實作 6 個檔案（types/engine/engine.test/sync/Gomoku/index）
+  - 修改 3 個檔案（GameType、registry、Lobby、GameRoom）
+  - 結果畫面從 tictactoe 提升為共用元件 `core/components/ResultScreen.tsx`
+- **擴充性架構驗證成功**：
+  - 新增遊戲零改動核心程式碼（只在 registry 加一行）
+  - Lobby 遊戲選擇器自動從 registry 讀取
+  - GameRoom 共用，自動根據 gameType 載入正確的遊戲元件
+- **測試結果**：
+  - 26 個單元測試全通過（12 井字 + 14 五子棋）
+  - TypeScript 0 errors
+  - Build 成功（833 KB / 211 KB gzip）
+  - Vercel 自動部署成功（HTTP 200）
+- **狀態**：✓ 五子棋上線
+
+### ~23:00 — Vercel 自動部署（push 後觸發）
+- 推送到 main 後 Vercel 自動觸發 production 部署
+- 部署耗時 14 秒
+- 新 URL：`githubtest-7ead5e8ry-clive520s-projects.vercel.app`（被保護，外部 401）
+- alias 自動指向最新版本：`githubtest-blond.vercel.app` HTTP 200 ✓
+
 ### ~22:45 — Production 部署完整測試通過
 - **里程碑**：第一個 production deployment 通過完整端到端測試
 - **做了什麼**：
@@ -191,8 +214,9 @@
 
 - [x] 完成 Firebase Authorized Domain 加入
 - [x] 部署後實際雙人測試（使用者確認成功）
-- [ ] 新增第二個遊戲（驗證擴充性架構）← 下一步
+- [x] 新增第二個遊戲（五子棋，擴充性架構驗證成功）✓
 - [ ] Vercel Project Name 改為 `multiplayer-games`（讓網址更美觀）
 - [ ] 房內聊天（之前跳過）
 - [ ] 程式碼分割減少 bundle size
 - [ ] 優化 Firebase 安全規則
+- [ ] 第三個遊戲？（黑白棋、UNO、你畫我猜）
