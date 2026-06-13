@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { Room } from '../../core/types/room';
+import type { Room } from '../types/room';
 
 interface ResultScreenProps {
   room: Room;

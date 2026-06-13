@@ -4,16 +4,18 @@ import { useAuth } from '../core/auth/useAuth';
 import { signOut } from '../core/auth/googleSignIn';
 import { useLobby } from '../core/hooks/useLobby';
 import { createRoom, joinRoomByCode } from '../core/services/roomService';
+import { gameRegistry } from '@/registry';
 import type { GameType, RoomSummary } from '../core/types/room';
 
-const GAME_LABELS: Record<GameType, string> = {
-  tictactoe: '井字遊戲',
-};
+const GAME_LABELS: Record<string, string> = Object.fromEntries(
+  gameRegistry.map((g) => [g.id, g.name])
+);
 
 export default function Lobby() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { rooms, loading, error: lobbyError } = useLobby();
+  const [selectedGame, setSelectedGame] = useState<GameType>('tictactoe');
   const [creating, setCreating] = useState(false);
   const [joining, setJoining] = useState(false);
   const [joinCode, setJoinCode] = useState('');
@@ -23,7 +25,7 @@ export default function Lobby() {
     setActionError(null);
     setCreating(true);
     try {
-      const roomId = await createRoom('tictactoe');
+      const roomId = await createRoom(selectedGame);
       navigate(`/rooms/${roomId}`);
     } catch (err) {
       setActionError(err instanceof Error ? err.message : '建立房間失敗');
@@ -82,14 +84,37 @@ export default function Lobby() {
         </div>
       </header>
 
-      <section className="mb-6 grid gap-3 sm:grid-cols-2">
-        <button
-          onClick={handleCreate}
-          disabled={creating}
-          className="rounded-lg bg-blue-600 px-6 py-4 font-medium text-white hover:bg-blue-500 disabled:opacity-50"
-        >
-          {creating ? '建立中...' : '建立新房間'}
-        </button>
+      <section className="mb-6 space-y-3">
+        <div className="rounded-lg border border-slate-700 bg-slate-800 p-4">
+          <p className="mb-2 text-sm text-slate-400">選擇遊戲</p>
+          <div className="flex flex-wrap gap-2">
+            {gameRegistry.map((g) => (
+              <button
+                key={g.id}
+                onClick={() => setSelectedGame(g.id as GameType)}
+                className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
+                  selectedGame === g.id
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                }`}
+              >
+                {g.name}
+                <span className="ml-1 text-xs opacity-70">
+                  ({g.minPlayers}-{g.maxPlayers} 人)
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          <button
+            onClick={handleCreate}
+            disabled={creating}
+            className="rounded-lg bg-blue-600 px-6 py-4 font-medium text-white hover:bg-blue-500 disabled:opacity-50"
+          >
+            {creating ? '建立中...' : `建立 ${GAME_LABELS[selectedGame]} 房間`}
+          </button>
 
         <form onSubmit={handleJoin} className="flex gap-2">
           <input
@@ -108,6 +133,7 @@ export default function Lobby() {
             {joining ? '加入中...' : '加入'}
           </button>
         </form>
+        </div>
       </section>
 
       {actionError && (
