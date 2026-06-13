@@ -8,6 +8,20 @@
 
 ## 2026-06-12（Day 2）— 部署、文件整理
 
+### ~22:40 — 修正 Firestore 規則兩處錯誤
+- **問題 1**：使用者點擊房間加入時出現「Missing or insufficient permissions」
+- **根因 1**：更新規則要求玩家「已加入」才能更新（`request.auth.uid in resource.data.playerUids`），
+  但「加入」這個動作本身就是要把自己加進去，雞生蛋問題
+- **修正 1**：更新規則新增第三個合法情境
+  ```javascript
+  // 加入房間：原本不在 playerUids，更新後在
+  (!request.auth.uid in resource.data.playerUids &&
+   request.auth.uid in request.resource.data.playerUids)
+  ```
+- **問題 2**：`isAbandonedRoom()` 用 `lastActivityAt.toMillis()`，但程式碼存的是 number
+- **修正 2**：直接用 number 比較，不呼叫 `.toMillis()`
+- **狀態**：✓ 規則已部署成功
+
 ### ~22:20 — 修正：Firestore 查詢複合索引需求
 - **問題**：使用者回報 `cleanupAbandonedRooms` 拋 `The query requires an index`，
   並反映「無法進入房間」
