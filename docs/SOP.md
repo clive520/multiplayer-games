@@ -195,9 +195,31 @@ npm run test:watch  # watch 模式
 | 頁面空白 | JS 錯誤 | Browser Console |
 | 登入失敗 | Authorized Domain | Firebase Console |
 | 查詢「載入中」永遠 | 複合索引 / 規則 | Firebase Console Indexes & Rules |
+| `The query requires an index` | 跨欄位 where+where 或 where+orderBy 需複合索引 | 改用 client 端過濾（見下方教學）|
 | 資料看不到 | 規則阻擋 | Firebase Console Rules 模擬器 |
 | RTDB 同步延遲 | 網路 / 規則 | RTDB Console Rules |
 | 即時同步失敗 | RTDB null 問題 | 檢查陣列是否含 null |
+
+### 5.5 避免 Firestore 複合索引的設計原則
+- **能單一 where 就單一 where**：單欄位索引是內建的，無需手動建
+- **跨欄位過濾改在 client 端**：撈「可能命中」的所有文件，client 端再 filter/sort
+- **範例**：
+  ```typescript
+  // ❌ 避免：where + where + orderBy
+  query(collection, 
+    where('status', 'in', ['a', 'b']),
+    orderBy('createdAt', 'desc'),
+    limit(20),
+  )
+  
+  // ✓ 改：單一 where + client 端過濾
+  query(collection, 
+    orderBy('createdAt', 'desc'),
+    limit(60),  // 多取一些
+  )
+  // 然後 client 端 filter status
+  ```
+- **時機**：小型應用（< 1000 文件）一律用 client 端過濾；大型應用才考慮建索引
 
 ### 5.3 修復流程
 1. **分支**：`fix/<bug-name>` 或直接在 main（hotfix）

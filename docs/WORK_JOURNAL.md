@@ -8,6 +8,23 @@
 
 ## 2026-06-12（Day 2）— 部署、文件整理
 
+### ~22:20 — 修正：Firestore 查詢複合索引需求
+- **問題**：使用者回報 `cleanupAbandonedRooms` 拋 `The query requires an index`，
+  並反映「無法進入房間」
+- **根因**：Firestore 規則已從測試模式換成正式模式，複合索引需手動建立
+  - `cleanupAbandonedRooms`: `where('status','in',...)` + `orderBy('lastActivityAt')` 需複合索引
+  - `joinRoomByCode` / `lookupRoomByCode`: `where('code','==')` + `where('status','in',...)` 也需複合索引
+  - 第二個會直接導致「點房間進不去」
+- **修正策略**（與 subscribeLobby 一致）：
+  - 只用單一 where 條件（單欄位索引已內建）
+  - 額外的狀態/排序過濾在 client 端做
+  - 三個函式都重寫：
+    - `cleanupAbandonedRooms`: 撈所有 active 房間，client 端 sort by lastActivityAt
+    - `joinRoomByCode`: 只查 code（多取幾筆防呆），client 端挑 active
+    - `lookupRoomByCode`: 同上
+- **狀態**：✓ 提交並推送
+- **好處**：未來 Firestore 規則更新或遷移專案時，不需要每次都建索引
+
 ### ~10:10 — 修正：點擊房間列表時未實際加入玩家
 - **問題**：使用者回報點選「開放式房間」（無密碼的房間）加入時，只看到建立者，自己不在房間內
 - **根因**：`handleEnterRoom` 只做了頁面跳轉（`navigate(...)`），沒有呼叫 `joinRoomByCode`，所以使用者從未進入 players 列表

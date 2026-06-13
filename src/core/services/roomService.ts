@@ -225,24 +225,33 @@ export async function joinRoomByCode(
     throw new Error('房號格式錯誤（6 碼英數字，不含 0/1/I/O）');
   }
 
+  // 只用 where('code', '==', X) 單一查詢（單欄位索引已內建）
+  // 避免 where + where 跨欄位的複合索引需求
   const q = query(
     collection(db, ROOMS_COLLECTION),
     where('code', '==', normalized),
-    where('status', 'in', ['waiting', 'playing']),
-    limit(1)
+    limit(5)
   );
   const snapshot = await getDocs(q);
   if (snapshot.empty) {
     throw new Error('找不到此房號的房間');
   }
 
-  const roomDoc = snapshot.docs[0];
-  const room = roomFromDoc(roomDoc.id, roomDoc.data());
+  // 挑選「等待中」或「進行中」的房間（房號理論上唯一，但防呆）
+  const activeDoc = snapshot.docs
+    .map((d) => ({ ref: d.ref, room: roomFromDoc(d.id, d.data()) }))
+    .find((r) => r.room.status === 'waiting' || r.room.status === 'playing');
+
+  if (!activeDoc) {
+    throw new Error('找不到此房號的房間');
+  }
+
+  const { ref: roomDocRef, room } = activeDoc;
   const def = getGameDefinition(room.gameType);
   if (!def) throw new Error('房間使用未知的遊戲類型');
 
   if (room.players.some((p) => p.uid === uid)) {
-    return roomDoc.id;
+    return roomDocRef.id;
   }
 
   if (room.hasPassword) {
@@ -253,7 +262,7 @@ export async function joinRoomByCode(
     if (!isValidPasswordFormat(normalizePassword(password))) {
       throw new Error(PASSWORD_ERROR_MESSAGES.invalidFormat);
     }
-    const storedHash = await getRoomPasswordHash(roomDoc.id);
+    const storedHash = await getRoomPasswordHash(roomDocRef.id);
     if (!storedHash) {
       throw new Error(PASSWORD_ERROR_MESSAGES.incorrect);
     }
@@ -271,12 +280,12 @@ export async function joinRoomByCode(
   const symbol = ['X', 'O', 'A', 'B'].find((s) => !usedSymbols.has(s)) ?? `P${room.players.length + 1}`;
   const newPlayer = buildPlayerEntry(uid, symbol, false);
 
-  await updateDoc(roomDoc.ref, {
+  await updateDoc(roomDocRef, {
     players: [...room.players, newPlayer],
     playerUids: [...room.playerUids, uid],
     lastActivityAt: Date.now(),
   });
-  return roomDoc.id;
+  return roomDocRef.id;
 }
 
 export async function leaveRoom(roomId: string): Promise<void> {
@@ -420,24 +429,28 @@ export async function lookupRoomByCode(code: string): Promise<RoomLookupResult |
   const normalized = normalizeRoomCode(code);
   if (!/^[A-Z2-9]{6}$/.test(normalized)) return null;
 
+  // 與 joinRoomByCode 一致：只查 code，狀態在 client 端過濾
   const q = query(
     collection(db, ROOMS_COLLECTION),
     where('code', '==', normalized),
-    where('status', 'in', ['waiting', 'playing']),
-    limit(1)
+    limit(5)
   );
   const snapshot = await getDocs(q);
   if (snapshot.empty) return null;
 
-  const room = roomFromDoc(snapshot.docs[0].id, snapshot.docs[0].data());
-  const def = getGameDefinition(room.gameType);
+  const activeRoom = snapshot.docs
+    .map((d) => roomFromDoc(d.id, d.data()))
+    .find((r) => r.status === 'waiting' || r.status === 'playing');
+  if (!activeRoom) return null;
+
+  const def = getGameDefinition(activeRoom.gameType);
   return {
-    roomId: room.id,
-    hasPassword: room.hasPassword,
-    gameType: room.gameType,
-    playerCount: room.players.length,
+    roomId: activeRoom.id,
+    hasPassword: activeRoom.hasPassword,
+    gameType: activeRoom.gameType,
+    playerCount: activeRoom.players.length,
     maxPlayers: def?.maxPlayers ?? 2,
-    status: room.status,
+    status: activeRoom.status,
   };
 }
 
@@ -447,37 +460,41 @@ export interface CleanupResult {
 }
 
 export async function cleanupAbandonedRooms(): Promise<CleanupResult> {
+  // 不加 where + orderBy 的複合查詢（避免需要複合索引）
+  // 先撈所有 waiting/playing 的房間，client 端再依 lastActivityAt 篩選
   const q = query(
     collection(db, ROOMS_COLLECTION),
     where('status', 'in', ['waiting', 'playing']),
-    orderBy('lastActivityAt', 'asc'),
     limit(50)
   );
   const snapshot = await getDocs(q);
   const now = Date.now();
   const result: CleanupResult = { deletedCount: 0, details: [] };
 
-  for (const docSnap of snapshot.docs) {
-    const room = roomFromDoc(docSnap.id, docSnap.data());
+  // 依 lastActivityAt 由舊到新排序（client 端）
+  const candidates = snapshot.docs
+    .map((d) => roomFromDoc(d.id, d.data()))
+    .sort((a, b) => a.lastActivityAt - b.lastActivityAt);
+
+  for (const room of candidates) {
     const isEmpty = room.players.length === 0;
     const isAbandoned = now - room.lastActivityAt > ABANDONED_ROOM_TIMEOUT_MS;
-
     if (!isEmpty && !isAbandoned) continue;
 
     try {
       if (room.hasPassword) {
-        const hash = await getRoomPasswordHash(docSnap.id);
+        const hash = await getRoomPasswordHash(room.id);
         if (hash) await releasePasswordIndex(hash);
-        await deleteRoomPassword(docSnap.id);
+        await deleteRoomPassword(room.id);
       }
-      await deleteDoc(docSnap.ref);
+      await deleteDoc(doc(db, ROOMS_COLLECTION, room.id));
       result.deletedCount++;
       result.details.push({
-        roomId: docSnap.id,
+        roomId: room.id,
         reason: isEmpty ? 'empty' : 'abandoned',
       });
     } catch (err) {
-      console.warn(`清理房間 ${docSnap.id} 失敗`, err);
+      console.warn(`清理房間 ${room.id} 失敗`, err);
     }
   }
 
