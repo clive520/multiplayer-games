@@ -53,6 +53,7 @@ function roomFromDoc(id: string, data: Record<string, unknown>): Room {
     hostId: data.hostId as string,
     status: data.status as RoomStatus,
     players: (data.players as RoomPlayer[]) ?? [],
+    playerUids: (data.playerUids as string[]) ?? [],
     hasPassword: (data.hasPassword as boolean) ?? false,
     createdAt: tsToMillis(data.createdAt),
     lastActivityAt: tsToMillis(data.lastActivityAt) || now,
@@ -190,6 +191,7 @@ export async function createRoom(
       hostId: uid,
       status: 'waiting' as RoomStatus,
       players: [player],
+      playerUids: [uid],
       hasPassword,
       createdAt: serverTimestamp(),
       lastActivityAt: now,
@@ -271,6 +273,7 @@ export async function joinRoomByCode(
 
   await updateDoc(roomDoc.ref, {
     players: [...room.players, newPlayer],
+    playerUids: [...room.playerUids, uid],
     lastActivityAt: Date.now(),
   });
   return roomDoc.id;
@@ -297,6 +300,7 @@ export async function leaveRoom(roomId: string): Promise<void> {
 
   const updates: Record<string, unknown> = {
     players: remaining,
+    playerUids: remaining.map((p) => p.uid),
     lastActivityAt: Date.now(),
   };
 

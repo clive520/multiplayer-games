@@ -10,8 +10,8 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == uid;
     }
 
-    function isPlayer(players) {
-      return isSignedIn() && request.auth.uid in players.map((p) => p.uid);
+    function isRoomPlayer() {
+      return isSignedIn() && request.auth.uid in resource.data.playerUids;
     }
 
     function isEmptyRoom() {
@@ -19,8 +19,7 @@ service cloud.firestore {
     }
 
     function isAbandonedRoom() {
-      return request.time.toMillis() - resource.data.lastActivityAt.toMillis()
-        > 30 * 60 * 1000;
+      return request.time.toMillis() - resource.data.lastActivityAt.toMillis() > 1800000;
     }
 
     // 使用者資料：所有人可讀，僅自己可寫
@@ -41,10 +40,10 @@ service cloud.firestore {
         request.resource.data.hostId == request.auth.uid &&
         request.resource.data.status == 'waiting';
 
-      // 更新：僅房間玩家，且只能改特定欄位
-      allow update: if isPlayer(resource.data.players) &&
+      // 更新：僅房間玩家（透過 playerUids 陣列檢查），且只能改特定欄位
+      allow update: if isRoomPlayer() &&
         request.resource.data.diff(resource.data).affectedKeys()
-          .hasOnly(['players', 'status', 'startedAt', 'endedAt', 'winnerId', 'isDraw', 'lastActivityAt']);
+          .hasOnly(['players', 'playerUids', 'status', 'startedAt', 'endedAt', 'winnerId', 'isDraw', 'lastActivityAt']);
 
       // 刪除：房主可刪，或房間已空，或超過 30 分鐘無活動
       allow delete: if isSignedIn() && (

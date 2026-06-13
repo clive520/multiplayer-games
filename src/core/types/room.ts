@@ -20,6 +20,7 @@ export interface Room {
   hostId: string;
   status: RoomStatus;
   players: RoomPlayer[];
+  playerUids: string[];
   hasPassword: boolean;
   createdAt: number;
   lastActivityAt: number;
