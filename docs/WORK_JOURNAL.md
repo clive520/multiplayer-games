@@ -8,12 +8,29 @@
 
 ## 2026-06-12（Day 2）— 部署、文件整理
 
+### ~22:30 — Firebase Authorized Domain 已加入，部署驗證
+- **做了什麼**：
+  - 使用者回報已將 `githubtest-blond.vercel.app` 加入 Firebase Authorized Domains
+  - 測試三個 Vercel 網址：
+    - `githubtest-blond.vercel.app` → HTTP 200（alias，對外網址）
+    - `githubtest-8cpb65xx6-clive520s-projects.vercel.app` → HTTP 401（Vercel 自動保護）
+    - `githubtest-wfutnqeg1-clive520s-projects.vercel.app` → HTTP 401（Vercel 自動保護）
+  - 確認只需要加 alias 一個網域就夠
+- **Vercel 行為確認**：
+  - 對外永遠是 alias 網址
+  - 自動產生的部署 URL 預設受 Vercel 保護（401）
+  - 唯一需要加 Firebase 的就是 alias
+- **PR Preview 部署注意事項**：
+  - 每次 PR 開新的 preview URL，需個別加 Firebase（不實際）
+  - 推薦用自訂網域解，Firebase 用 `*.yourdomain.com` 一次 cover
+- **狀態**：✓ Authorized Domain 設定完成，待使用者實際登入測試
+
 ### ~22:00 — Firebase Authorized Domain 問題排查
 - **問題**：在 Vercel 部署的網站上點 Google 登入出現 `auth/unauthorized-domain` 錯誤
 - **原因**：Firebase 預設只允許 `localhost` 與 `.firebaseapp.com` 網域登入，Vercel 網域需手動加白名單
 - **狀態**：等待手動加入 `githubtest-blond.vercel.app` 到 Firebase Console → Authentication → Settings → Authorized domains
 - **檢查項目**：
-  - [ ] Firebase Console Authorized domains 加入 `githubtest-blond.vercel.app`
+  - [x] Firebase Console Authorized domains 加入 `githubtest-blond.vercel.app`
   - [ ] 等 30 秒讓 Firebase 同步
   - [ ] 強制重整瀏覽器（Ctrl+Shift+R）後再試
 - **連結**：[DEPLOYMENT.md](DEPLOYMENT.md) 與 [RECORDS/firebase-setup.md](RECORDS/firebase-setup.md) 有完整步驟
