@@ -44,13 +44,15 @@ describe('GameDefinition metadata', () => {
 
   it('GameDefinition 型別有 expected 欄位（compile-time + runtime）', () => {
     // 這個測試確保 type 變更後 runtime 還認得這些欄位
+    // 用 cast 繞過 React.ComponentType<{...}> 的精確 props 比對
     const fakeDef = {
       id: 'fake',
       name: 'Fake',
       description: 'desc',
       minPlayers: 2,
       maxPlayers: 2,
-      loadComponent: async () => null as unknown as React.ComponentType,
+      loadComponent: (() =>
+        Promise.resolve(null)) as unknown as GameDefinition['loadComponent'],
       engine: {} as GameDefinition<unknown>['engine'],
       syncStrategy: 'firestore' as const,
       icon: () => null,
