@@ -29,6 +29,7 @@ export default function GameRoom() {
   const [actionPending, setActionPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
 
   // Forfeit（斷線 / 無動作）相關
   const [forfeitSecondsLeft, setForfeitSecondsLeft] = useState<number | null>(null);
@@ -216,6 +217,20 @@ export default function GameRoom() {
   };
 
   const handleLeave = async () => {
+    // 遊戲進行中：跳出確認對話框
+    if (room?.status === 'playing' && !forfeitTriggered) {
+      setShowLeaveConfirm(true);
+      return;
+    }
+    // 非進行中 / 已 forfeit：直接離開
+    await runAction(async () => {
+      await leaveRoom(roomId);
+      navigate('/lobby');
+    });
+  };
+
+  const confirmLeave = async () => {
+    setShowLeaveConfirm(false);
     await runAction(async () => {
       await leaveRoom(roomId);
       navigate('/lobby');
@@ -302,6 +317,38 @@ export default function GameRoom() {
       {error && (
         <div className="mb-4 rounded-lg border border-red-700 bg-red-900/30 p-3 text-sm text-red-300">
           {error}
+        </div>
+      )}
+
+      {/* 離開房間確認對話框（遊戲進行中） */}
+      {showLeaveConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+          <div className="w-full max-w-md rounded-lg border border-red-700 bg-slate-800 p-6 shadow-2xl">
+            <h3 className="mb-2 text-lg font-bold text-red-300">確定要離開房間？</h3>
+            <p className="mb-2 text-sm leading-relaxed text-slate-300">
+              遊戲正在進行中，主動離開將直接判定你方
+              <span className="mx-1 font-bold text-red-400">落敗</span>
+              ，對方獲勝。
+            </p>
+            <p className="mb-6 text-xs text-slate-500">
+              如果只是暫時離開，建議等對方回合逾時自動判定，或繼續完成這一局。
+            </p>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setShowLeaveConfirm(false)}
+                className="rounded-lg border border-slate-600 bg-slate-700 px-4 py-2 text-sm font-medium text-slate-200 hover:bg-slate-600"
+              >
+                取消
+              </button>
+              <button
+                onClick={confirmLeave}
+                disabled={actionPending}
+                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-500 disabled:opacity-50"
+              >
+                {actionPending ? '離開中...' : '確認離開（落敗）'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
