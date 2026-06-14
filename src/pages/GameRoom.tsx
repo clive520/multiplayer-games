@@ -16,7 +16,7 @@ import { ResultScreen } from '../core/components/ResultScreen';
 import { getGameDefinition } from '@/registry';
 import { useEffect, useState, useCallback } from 'react';
 
-const TURN_TIME_LIMIT_SEC = 30;
+const TURN_TIME_LIMIT_SEC_FALLBACK = 30;
 
 export default function GameRoom() {
   const { roomId } = useParams<{ roomId: string }>();
@@ -95,13 +95,13 @@ export default function GameRoom() {
     if (!currentPlayer) return;
 
     const elapsedSec = Math.floor((now - room.turnStartedAt) / 1000);
-    if (elapsedSec >= TURN_TIME_LIMIT_SEC) {
+    if (elapsedSec >= (room.turnTimeLimitSec ?? TURN_TIME_LIMIT_SEC_FALLBACK)) {
       // 自動判當前玩家落敗，另一位獲勝
       const winner = room.players.find((p) => p.uid !== currentPlayer.uid);
       if (!winner) return;
       setForfeitTriggered(true);
       console.log(
-        `[Forfeit] 當前玩家 ${currentPlayer.displayName}（${room.turnSymbol}）回合逾時，勝者：${winner.displayName}`
+        `[Forfeit] 當前玩家 ${currentPlayer.displayName}（${room.turnSymbol}）回合逾時 ${room.turnTimeLimitSec} 秒，勝者：${winner.displayName}`
       );
       finishGame(roomId!, winner.uid, false).catch((err) => {
         console.error('自動判斷回合逾時失敗', err);
@@ -109,12 +109,13 @@ export default function GameRoom() {
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [now, room?.turnStartedAt, room?.turnSymbol, room?.status, forfeitTriggered, isSpectator]);
+  }, [now, room?.turnStartedAt, room?.turnSymbol, room?.turnTimeLimitSec, room?.status, forfeitTriggered, isSpectator]);
 
   // 計算目前這回合剩餘秒數（給 UI 顯示）
+  const turnTimeLimitSec = room?.turnTimeLimitSec ?? TURN_TIME_LIMIT_SEC_FALLBACK;
   const turnSecondsLeft =
     room?.status === 'playing' && room.turnStartedAt && room.turnSymbol
-      ? Math.max(0, TURN_TIME_LIMIT_SEC - Math.floor((now - room.turnStartedAt) / 1000))
+      ? Math.max(0, turnTimeLimitSec - Math.floor((now - room.turnStartedAt) / 1000))
       : null;
 
   if (!roomId) return <Navigate to="/lobby" replace />;
@@ -464,6 +465,7 @@ export default function GameRoom() {
           isHost={isHost}
           isSpectator={isSpectator}
           turnSecondsLeft={turnSecondsLeft}
+          turnTimeLimitSec={turnTimeLimitSec}
           turnSymbol={room.turnSymbol}
           formatSymbol={gameDef.formatSymbol}
           onGameFinished={async (winnerId, isDraw) => {

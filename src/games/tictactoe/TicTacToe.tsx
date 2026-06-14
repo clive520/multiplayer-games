@@ -12,6 +12,7 @@ export default function TicTacToe({
   isHost,
   isSpectator = false,
   turnSecondsLeft,
+  turnTimeLimitSec,
   onGameFinished,
   onActivity,
 }: GameComponentProps) {
@@ -95,17 +96,17 @@ export default function TicTacToe({
           ) : isSpectator ? (
             <p className="text-lg text-slate-400">
               觀戰中（{state.nextSymbol} 下）
-              <TurnCountdown secondsLeft={turnSecondsLeft} />
+              <TurnCountdown secondsLeft={turnSecondsLeft} totalSec={turnTimeLimitSec} />
             </p>
           ) : isMyTurn ? (
             <p className="text-lg font-semibold text-green-400">
               輪到你（{mySymbol}）
-              <TurnCountdown secondsLeft={turnSecondsLeft} />
+              <TurnCountdown secondsLeft={turnSecondsLeft} totalSec={turnTimeLimitSec} />
             </p>
           ) : (
             <p className="text-lg text-slate-400">
               等待對方下棋（{state.nextSymbol}）
-              <TurnCountdown secondsLeft={turnSecondsLeft} />
+              <TurnCountdown secondsLeft={turnSecondsLeft} totalSec={turnTimeLimitSec} />
             </p>
           )}
         </div>

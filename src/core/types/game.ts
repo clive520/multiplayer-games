@@ -24,6 +24,7 @@ export interface GameComponentProps {
   isHost: boolean;
   isSpectator?: boolean;
   turnSecondsLeft?: number | null;
+  turnTimeLimitSec?: number;
   turnSymbol?: string | null;
   formatSymbol?: (symbol: string) => string;
   onGameFinished: (winnerId: string | null, isDraw: boolean) => Promise<void>;

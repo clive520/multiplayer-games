@@ -18,6 +18,7 @@ export default function Reversi({
   isHost,
   isSpectator = false,
   turnSecondsLeft,
+  turnTimeLimitSec,
   onGameFinished,
   onActivity,
 }: GameComponentProps) {
@@ -142,7 +143,7 @@ export default function Reversi({
                   （已連續 Pass {state.passCount} 次）
                 </span>
               )}
-              <TurnCountdown secondsLeft={turnSecondsLeft} />
+              <TurnCountdown secondsLeft={turnSecondsLeft} totalSec={turnTimeLimitSec} />
             </p>
           ) : isMyTurn ? (
             <p className="text-lg font-semibold text-green-400">
@@ -150,7 +151,7 @@ export default function Reversi({
               {!playerCanMove && (
                 <span className="ml-2 text-sm text-yellow-400">（無合法步，需 Pass）</span>
               )}
-              <TurnCountdown secondsLeft={turnSecondsLeft} />
+              <TurnCountdown secondsLeft={turnSecondsLeft} totalSec={turnTimeLimitSec} />
             </p>
           ) : (
             <p className="text-lg text-slate-400">
@@ -160,7 +161,7 @@ export default function Reversi({
                   （已連續 Pass {state.passCount} 次）
                 </span>
               )}
-              <TurnCountdown secondsLeft={turnSecondsLeft} />
+              <TurnCountdown secondsLeft={turnSecondsLeft} totalSec={turnTimeLimitSec} />
             </p>
           )}
         </div>

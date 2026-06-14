@@ -23,7 +23,8 @@ import { hashPassword, isValidPasswordFormat, normalizePassword } from '../utils
 import { getGameDefinition } from '@/registry';
 import { recordGameResult } from './statsService';
 import { recordGameHistory } from './historyService';
-import type { GameType, Room, RoomPlayer, RoomStatus, RoomSummary, Spectator } from '../types/room';
+import type { GameType, Room, RoomPlayer, RoomStatus, RoomSummary, Spectator, TurnTimeLimit } from '../types/room';
+import { DEFAULT_TURN_TIME_LIMIT, isValidTurnTimeLimit } from '../types/room';
 
 const ROOMS_COLLECTION = 'rooms';
 const PASSWORD_INDEX_COLLECTION = 'passwordIndex';
@@ -42,6 +43,10 @@ function tsToMillis(value: unknown): number {
   if (value instanceof Timestamp) return value.toMillis();
   if (typeof value === 'number') return value;
   return Date.now();
+}
+
+function parseTurnTimeLimit(value: unknown): TurnTimeLimit {
+  return isValidTurnTimeLimit(value) ? value : DEFAULT_TURN_TIME_LIMIT;
 }
 
 function roomFromDoc(id: string, data: Record<string, unknown>): Room {
@@ -65,6 +70,7 @@ function roomFromDoc(id: string, data: Record<string, unknown>): Room {
     isDraw: (data.isDraw as boolean) ?? false,
     turnStartedAt: (data.turnStartedAt as number) ?? null,
     turnSymbol: (data.turnSymbol as string) ?? null,
+    turnTimeLimitSec: parseTurnTimeLimit(data.turnTimeLimitSec),
   };
 }
 
@@ -84,6 +90,7 @@ function roomSummaryFromDoc(id: string, data: Record<string, unknown>): RoomSumm
     status: data.status as RoomStatus,
     hasPassword: (data.hasPassword as boolean) ?? false,
     createdAt: tsToMillis(data.createdAt),
+    turnTimeLimitSec: parseTurnTimeLimit(data.turnTimeLimitSec),
   };
 }
 
@@ -170,6 +177,7 @@ async function deleteRoomPassword(roomId: string): Promise<void> {
 export interface CreateRoomOptions {
   password?: string;
   nickname?: string;
+  turnTimeLimitSec?: TurnTimeLimit;
 }
 
 export async function createRoom(
@@ -197,6 +205,7 @@ export async function createRoom(
   const code = generateRoomCode();
   const player = buildPlayerEntry(uid, nickname, 'X', true);
   const now = Date.now();
+  const turnTimeLimitSec: TurnTimeLimit = options.turnTimeLimitSec ?? DEFAULT_TURN_TIME_LIMIT;
 
   if (hasPassword && passwordHash) {
     await reservePasswordIndex(passwordHash, roomRef.id);
@@ -222,6 +231,7 @@ export async function createRoom(
       isDraw: false,
       turnStartedAt: null,
       turnSymbol: null,
+      turnTimeLimitSec,
     });
   } catch (err) {
     if (hasPassword && passwordHash) {

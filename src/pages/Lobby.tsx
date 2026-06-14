@@ -10,7 +10,7 @@ import {
   cleanupAbandonedRooms,
 } from '../core/services/roomService';
 import { gameRegistry } from '@/registry';
-import type { GameType, RoomSummary } from '../core/types/room';
+import { TURN_TIME_LIMITS, type GameType, type RoomSummary, type TurnTimeLimit } from '../core/types/room';
 
 const GAME_LABELS: Record<string, string> = Object.fromEntries(
   gameRegistry.map((g) => [g.id, g.name])
@@ -31,6 +31,7 @@ export default function Lobby() {
   const [selectedGame, setSelectedGame] = useState<GameType>('tictactoe');
   const [createPassword, setCreatePassword] = useState('');
   const [usePassword, setUsePassword] = useState(false);
+  const [turnTimeLimitSec, setTurnTimeLimitSec] = useState<TurnTimeLimit>(30);
 
   const [creating, setCreating] = useState(false);
   const [joinCode, setJoinCode] = useState('');
@@ -76,7 +77,11 @@ export default function Lobby() {
 
     setCreating(true);
     try {
-      const roomId = await createRoom(selectedGame, { password, nickname });
+      const roomId = await createRoom(selectedGame, {
+        password,
+        nickname,
+        turnTimeLimitSec,
+      });
       navigate(`/rooms/${roomId}`);
     } catch (err) {
       setActionError(err instanceof Error ? err.message : '建立房間失敗');
@@ -260,6 +265,25 @@ export default function Lobby() {
             <p className="mb-2 text-sm font-medium text-slate-300">
               建立新房間
             </p>
+            <div className="mb-2">
+              <p className="mb-1 text-xs text-slate-400">每回合思考時間</p>
+              <div className="flex flex-wrap gap-1">
+                {TURN_TIME_LIMITS.map((sec) => (
+                  <button
+                    key={sec}
+                    type="button"
+                    onClick={() => setTurnTimeLimitSec(sec)}
+                    className={`flex-1 rounded px-2 py-1 text-xs font-medium transition ${
+                      turnTimeLimitSec === sec
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                    }`}
+                  >
+                    {sec} 秒
+                  </button>
+                ))}
+              </div>
+            </div>
             <label className="mb-3 flex cursor-pointer items-center gap-2 text-sm text-slate-300">
               <input
                 type="checkbox"
@@ -415,6 +439,9 @@ export default function Lobby() {
                           <p className="text-sm text-slate-400">
                             房主：{room.hostName} · {room.playerCount}/
                             {room.maxPlayers} 人
+                            <span className="ml-2 text-yellow-300">
+                              · 每回合 {room.turnTimeLimitSec} 秒
+                            </span>
                             {room.spectatorCount > 0 && (
                               <span className="ml-2 text-blue-300">
                                 · {room.spectatorCount} 觀戰

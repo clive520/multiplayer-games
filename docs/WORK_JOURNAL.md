@@ -104,6 +104,43 @@
 
 狀態：✓ 提交
 
+### ~15:20 — 房主可設定每回合思考時間
+
+需求：30 秒太短，房主建立房間時可從 30 / 60 / 120 / 150 秒中選擇。
+
+**新增**：
+- `TurnTimeLimit` 型別 = `30 | 60 | 120 | 150`
+- `TURN_TIME_LIMITS` 常數 = `[30, 60, 120, 150]`
+- `DEFAULT_TURN_TIME_LIMIT = 30`
+- `isValidTurnTimeLimit()` 守門函式
+- 4 個單元測試（`core/types/room.test.ts`）
+
+**`Room` / `RoomSummary` 改動**：
+- 加 `turnTimeLimitSec: TurnTimeLimit` 欄位
+- `roomFromDoc` / `roomSummaryFromDoc` 用 `parseTurnTimeLimit()` 解析，舊資料缺欄位時預設 30
+
+**`roomService` 改動**：
+- `CreateRoomOptions` 加 `turnTimeLimitSec?: TurnTimeLimit`
+- `createRoom` 寫入 `turnTimeLimitSec` 到 Firestore
+
+**`Lobby` 改動**：
+- 「建立新房間」區塊加「每回合思考時間」四顆按鈕選擇器（30 / 60 / 120 / 150 秒）
+- 房間列表每個房間加「每回合 X 秒」標籤（黃色）
+
+**`GameRoom` 改動**：
+- 移除寫死的 `TURN_TIME_LIMIT_SEC = 30`
+- 改用 `room.turnTimeLimitSec ?? 30` 計算 `turnSecondsLeft`
+- 自動 forfeit 條件跟著 `turnTimeLimitSec` 動
+- 將 `turnTimeLimitSec` 傳給遊戲元件
+
+**遊戲元件 / `TurnCountdown` 改動**：
+- `GameComponentProps` 加 `turnTimeLimitSec?: number`
+- `TurnCountdown` 接收 `totalSec`，顯示「剩餘 25/60 秒」（讓使用者一眼看出總時間）
+
+**驗證**：typecheck ✓、66 測試通過（新增 4 個 TurnTimeLimit 測試）、build ✓
+
+狀態：待提交
+
 ### ~15:00 — 回合倒數計時器（每回合 30 秒、自動 forfeit 當前玩家）
 
 需求：原本的 30 秒判斷機制對玩家不可見，常常莫名其妙被判定輸贏。改為：
@@ -147,7 +184,7 @@
 
 **驗證**：typecheck ✓、62 測試通過、build ✓、Firestore rules 部署 ✓
 
-狀態：待提交
+狀態：✓ 提交
 
 ### ~14:50 — 棋子符號顯示優化（X/O → 黑棋/白棋）
 
