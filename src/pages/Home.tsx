@@ -1,15 +1,17 @@
 import { useAuth } from '../core/auth/useAuth';
 import { signInWithGoogle, signOut } from '../core/auth/googleSignIn';
+import { useToast } from '../core/components/Toast';
 
 export default function Home() {
   const { user, loading } = useAuth();
+  const toast = useToast();
 
   const handleSignIn = async () => {
     try {
       await signInWithGoogle();
     } catch (err) {
       console.error('登入失敗', err);
-      alert('登入失敗，請稍後再試');
+      toast.error('登入失敗，請稍後再試');
     }
   };
 

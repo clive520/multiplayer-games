@@ -9,11 +9,11 @@
 ## 進度總覽
 
 - **總項目**：26
-- **✅ 已完成**：3
+- **✅ 已完成**：4
 - **⏳ 進行中**：0
-- **⬜ 待辦**：23
-- **已完成優先項目**：1, 2, 3
-- **剩餘優先項目**：4, 5, 6, 7, 8, 9, 10
+- **⬜ 待辦**：22
+- **已完成優先項目**：1, 2, 3, 4
+- **剩餘優先項目**：5, 6, 7, 8, 9, 10
 
 ---
 
@@ -112,13 +112,13 @@
 
 ---
 
-### 4. 統一錯誤處理 / Toast 通知 — ⬜ 待辦
+### 4. 統一錯誤處理 / Toast 通知 — ✅ 已完成
 
 **類別**：結構面
 
 **要做什麼**：
 - 建立 `<Toast>` 元件 + `useToast()` hook
-- 統一 success / error / info 三種樣式
+- 統一 success / error / info / warning 四種樣式
 - 把散落的 `alert()`、紅色區塊錯誤都改用 toast
 
 **為什麼值得做**：
@@ -127,7 +127,19 @@
 - 為未來更多功能（網路斷線、權限錯誤）提供一致的回饋
 
 **完成紀錄**：
-- ⬜
+- 2026-06-12 ✅
+  - 新增 `core/components/Toast.tsx`：
+    - `ToastProvider` context 包在 main.tsx 的 AuthProvider 內
+    - `useToast()` hook 提供 `show()` / `success()` / `error()` / `info()` / `warning()` 五個方法
+    - 自動 4 秒消失（可自訂 duration，傳 0 表示不自動消失）
+    - 右上角浮動 stack、可手動關閉
+    - 樣式：四種顏色 + 圖示（✓ ✕ ℹ ⚠）+ 背景模糊
+    - 鍵盤 / 螢幕閱讀器友好（aria-live, role, aria-label）
+  - 替換 `pages/Home.tsx` 的 `alert('登入失敗，請稍後再試')` 為 `toast.error(...)`
+  - 新增 1 個測試：驗證預設 duration 常數
+  - 既有 inline 紅色區塊錯誤（GameRoom、Lobby、遊戲元件）保留：那些是 contextual 的 UI，不適合用 toast（會被快速消失）
+  - 73 測試通過（原 72 + 新增 1）、typecheck ✓、build ✓
+  - **為未來鋪路**：所有新功能（網路錯誤、權限錯誤等）都該用 toast
 
 ---
 
@@ -559,3 +571,4 @@
 | 2026-06-12 | ✅ #1 程式碼分割完成：3 個遊戲拆成獨立 chunk，main 略縮 |
 | 2026-06-12 | ✅ #2 抽出共用元件完成：GameHeader / PlayerBadge / BoardCell，3 個遊戲都改用 |
 | 2026-06-12 | ✅ #3 GameDefinition 擴充：tutorialSteps / estimatedDurationMin / variants，3 個遊戲都填入 metadata，Lobby 顯示 description 和預計時間 |
+| 2026-06-12 | ✅ #4 Toast 通知系統：4 種樣式 + useToast hook，替換首個 alert |

@@ -104,6 +104,37 @@
 
 狀態：✓ 提交
 
+### ~18:15 — #4 統一錯誤處理 / Toast 通知（IMPROVEMENTS #4）
+
+需求：散落的 alert() 與各處 inline 紅色區塊錯誤不一致，需要統一。
+
+**新增**：
+- `core/components/Toast.tsx`：
+  - `ToastProvider` + `useToast()` hook
+  - 四種樣式：success / error / info / warning
+  - 自動 4 秒消失、可手動關閉
+  - 右上角浮動 stack
+  - 鍵盤 / 螢幕閱讀器友好（aria-live, role, aria-label）
+  - 背景模糊 + 4 種顏色區分（綠/紅/藍/黃）+ 圖示（✓ ✕ ℹ ⚠）
+- `core/components/Toast.test.ts`：1 個測試驗證預設 duration 常數
+
+**修改**：
+- `main.tsx`：在 AuthProvider 內加 ToastProvider
+- `pages/Home.tsx`：alert 改用 toast.error
+
+**為什麼不替換遊戲內的 inline 錯誤**：
+- GameRoom / Lobby / 遊戲元件的 inline 紅色區塊是 contextual 的 UI（例如「落子失敗」「遊戲狀態損壞」）
+- 這些錯誤需要持續可見直到使用者處理，不適合快速消失的 toast
+- 未來新功能（網路錯誤、權限錯誤）才用 toast
+
+**驗證**：
+- `npm run build` ✓
+- `npm test` 73/73 通過（原 72 + 新增 1）✓
+
+**IMPROVEMENTS.md 狀態**：#4 改為 ✅
+
+狀態：✓ 提交
+
 ### ~18:00 — #3 GameDefinition 結構擴充（IMPROVEMENTS #3）
 
 **目標**：為 #14 房間設定擴充和「怎麼玩」對話框鋪路；讓每個遊戲的 metadata 一次到位。
