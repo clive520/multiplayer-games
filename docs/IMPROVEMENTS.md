@@ -9,11 +9,11 @@
 ## 進度總覽
 
 - **總項目**：26
-- **✅ 已完成**：2
+- **✅ 已完成**：3
 - **⏳ 進行中**：0
-- **⬜ 待辦**：24
-- **已完成優先項目**：1, 2
-- **剩餘優先項目**：3, 4, 5, 6, 7, 8, 9, 10
+- **⬜ 待辦**：23
+- **已完成優先項目**：1, 2, 3
+- **剩餘優先項目**：4, 5, 6, 7, 8, 9, 10
 
 ---
 
@@ -81,7 +81,7 @@
 
 ---
 
-### 3. GameDefinition 結構擴充 — ⬜ 待辦
+### 3. GameDefinition 結構擴充 — ✅ 已完成
 
 **類別**：結構面
 
@@ -96,7 +96,19 @@
 - 新遊戲的 metadata 一次到位，不必日後回頭補
 
 **完成紀錄**：
-- ⬜
+- 2026-06-12 ✅
+  - `core/types/game.ts`：新增 `tutorialSteps?: string[]`、`estimatedDurationMin?: number`、`variants?: GameVariant[]` 三個可選欄位
+  - 新增 `GameVariant` 介面（id, name, description, config?）
+  - 三個遊戲都填入：
+    - tictactoe：3 步驟、3 分鐘
+    - gomoku：4 步驟、15 分鐘
+    - reversi：5 步驟、10 分鐘
+  - `pages/Lobby.tsx` 房間卡片加：
+    - 「預計 X 分鐘」標籤
+    - 遊戲 description 單行 line-clamp 顯示
+  - 新增 4 個 GameDefinition metadata 測試（確保必要欄位、型別正確）
+  - **為 #14 房間設定擴充和「怎麼玩」對話框鋪路**：metadata 已就緒
+  - 72 測試通過（原 68 + 新增 4）、typecheck ✓、build ✓
 
 ---
 
@@ -546,3 +558,4 @@
 | 2026-06-12 | 初版建立，列出 26 項改進建議 |
 | 2026-06-12 | ✅ #1 程式碼分割完成：3 個遊戲拆成獨立 chunk，main 略縮 |
 | 2026-06-12 | ✅ #2 抽出共用元件完成：GameHeader / PlayerBadge / BoardCell，3 個遊戲都改用 |
+| 2026-06-12 | ✅ #3 GameDefinition 擴充：tutorialSteps / estimatedDurationMin / variants，3 個遊戲都填入 metadata，Lobby 顯示 description 和預計時間 |

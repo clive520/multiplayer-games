@@ -15,6 +15,14 @@ export const reversiDefinition: GameDefinition<ReversiState> = {
   syncStrategy: 'hybrid',
   icon: ReversiIcon,
   formatSymbol: formatReversiSymbol,
+  estimatedDurationMin: 10,
+  tutorialSteps: [
+    '黑棋先手，雙方輪流在 8×8 棋盤上落子。',
+    '落子時必須能夾住（你的新子與既有子中間有連續對手子）至少一條線的對手棋子。',
+    '被夾住的對手棋子會翻面變成你的顏色。',
+    '若輪到你時沒有任何合法落子位置，必須按「Pass」讓對手下。',
+    '雙方都無法落子或棋盤下滿時，棋子多者獲勝。',
+  ],
 };
 
 export { default as ReversiIcon } from './Icon';

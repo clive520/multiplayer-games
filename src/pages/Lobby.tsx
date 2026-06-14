@@ -442,12 +442,22 @@ export default function Lobby() {
                             <span className="ml-2 text-yellow-300">
                               · 每回合 {room.turnTimeLimitSec} 秒
                             </span>
+                            {gameDef?.estimatedDurationMin !== undefined && (
+                              <span className="ml-2 text-slate-300">
+                                · 預計 {gameDef.estimatedDurationMin} 分鐘
+                              </span>
+                            )}
                             {room.spectatorCount > 0 && (
                               <span className="ml-2 text-blue-300">
                                 · {room.spectatorCount} 觀戰
                               </span>
                             )}
                           </p>
+                          {gameDef?.description && (
+                            <p className="mt-1 line-clamp-1 text-xs text-slate-500">
+                              {gameDef.description}
+                            </p>
+                          )}
                         </div>
                       </div>
                       <div className="flex flex-col items-end gap-1">

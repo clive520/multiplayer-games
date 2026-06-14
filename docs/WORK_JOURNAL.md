@@ -104,6 +104,34 @@
 
 狀態：✓ 提交
 
+### ~18:00 — #3 GameDefinition 結構擴充（IMPROVEMENTS #3）
+
+**目標**：為 #14 房間設定擴充和「怎麼玩」對話框鋪路；讓每個遊戲的 metadata 一次到位。
+
+**修改**：
+- `core/types/game.ts`：
+  - 加 `tutorialSteps?: string[]` 欄位
+  - 加 `estimatedDurationMin?: number` 欄位
+  - 加 `variants?: GameVariant[]` 欄位
+  - 新增 `GameVariant` 介面（id, name, description, config?）
+- 三個遊戲都填入：
+  - tictactoe：3 步驟、3 分鐘
+  - gomoku：4 步驟、15 分鐘
+  - reversi：5 步驟、10 分鐘
+- `pages/Lobby.tsx` 房間卡片加：
+  - 「預計 X 分鐘」標籤
+  - 遊戲 description 單行 line-clamp 顯示
+- 新增 `core/types/game.test.ts`：4 個 GameDefinition metadata 測試
+
+**驗證**：
+- `npm run typecheck` ✓
+- `npm test` 72/72 通過（原 68 + 新增 4）✓
+- `npm run build` ✓
+
+**IMPROVEMENTS.md 狀態**：#3 改為 ✅
+
+狀態：✓ 提交
+
 ### ~17:40 — #2 抽出共用元件（IMPROVEMENTS #2）
 
 需求：三個遊戲的 header / player badge / cell button 重複度高，未來加第四個遊戲會很痛。

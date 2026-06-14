@@ -15,6 +15,13 @@ export const gomokuDefinition: GameDefinition<GomokuState> = {
   syncStrategy: 'hybrid',
   icon: GomokuIcon,
   formatSymbol: formatGomokuSymbol,
+  estimatedDurationMin: 15,
+  tutorialSteps: [
+    '黑棋先手，雙方輪流在 15×15 棋盤上落子。',
+    '自己的棋子橫、直、或斜連成 5 個（或以上）即獲勝。',
+    '棋盤上沒有禁手限制，雙方自由落子。',
+    '棋盤下滿（225 子）仍無連 5 為平手。',
+  ],
 };
 
 export { default as GomokuIcon } from './Icon';
