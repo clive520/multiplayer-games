@@ -60,6 +60,10 @@ export default function TicTacToe({
     ? players.find((p) => p.symbol === winnerSymbol) ?? null
     : null;
 
+  // 偵測剛變動的格子（IMPROVEMENTS #5）— 必須在 early return 之前呼叫
+  // 規則：hook 每次渲染都必須按相同順序呼叫，不能放在條件式 return 後
+  const newlyChangedCells = useNewlyChangedCells(state?.board);
+
   const handleCellClick = async (row: number, col: number) => {
     if (!state || !currentPlayer || !isMyTurn) return;
     setError(null);
@@ -98,9 +102,6 @@ export default function TicTacToe({
   } else {
     headerStatus = { kind: 'opponentTurn', symbol: state.nextSymbol, verb: '下棋' };
   }
-
-  // 偵測剛變動的格子（IMPROVEMENTS #5）
-  const newlyChangedCells = useNewlyChangedCells(state.board);
 
   return (
     <div className="space-y-4">

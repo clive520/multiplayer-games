@@ -66,6 +66,9 @@ export default function Reversi({
     return hasValidMove(state, mySymbol);
   }, [state, mySymbol, isSpectator]);
 
+  // 偵測剛變動的格子（IMPROVEMENTS #5）— 必須在 early return 之前呼叫
+  const newlyChangedCells = useNewlyChangedCells(state?.board);
+
   const handleCellClick = async (row: number, col: number) => {
     if (!state || !currentPlayer || !isMyTurn) return;
     setError(null);
@@ -148,9 +151,6 @@ export default function Reversi({
   } else {
     headerStatus = { kind: 'opponentTurn', symbol: state.currentTurn, verb: '落子' };
   }
-
-  // 偵測剛變動的格子（IMPROVEMENTS #5）：新落子 + 翻面都算
-  const newlyChangedCells = useNewlyChangedCells(state.board);
 
   // 附加提示：觀戰者看到連續 Pass、輪到自己但無合法步
   const extraHint = (() => {

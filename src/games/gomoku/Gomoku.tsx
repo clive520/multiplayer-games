@@ -60,6 +60,9 @@ export default function Gomoku({
     ? players.find((p) => p.symbol === winnerSymbol) ?? null
     : null;
 
+  // 偵測剛變動的格子（IMPROVEMENTS #5）— 必須在 early return 之前呼叫
+  const newlyChangedCells = useNewlyChangedCells(state?.board);
+
   const handleCellClick = async (row: number, col: number) => {
     if (!state || !currentPlayer || !isMyTurn) return;
     setError(null);
@@ -106,9 +109,6 @@ export default function Gomoku({
   } else {
     headerStatus = { kind: 'opponentTurn', symbol: state.nextSymbol, verb: '落子' };
   }
-
-  // 偵測剛變動的格子（IMPROVEMENTS #5）
-  const newlyChangedCells = useNewlyChangedCells(state.board);
 
   return (
     <div className="space-y-4">
