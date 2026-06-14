@@ -8,7 +8,8 @@ import {
   subscribeGameState,
 } from './sync';
 import { formatReversiSymbol } from './symbols';
-import { TurnCountdown } from '../../core/components/TurnCountdown';
+import { GameHeader, type GameHeaderStatus } from '../../core/components/GameHeader';
+import { BoardCell } from '../../core/components/BoardCell';
 import { BOARD_SIZE, type ReversiState } from './types';
 
 export default function Reversi({
@@ -131,74 +132,83 @@ export default function Reversi({
   }
   const lastMoveKey = state.lastMove ? `${state.lastMove.row},${state.lastMove.col}` : null;
 
+  // 計算 header 狀態
+  let headerStatus: GameHeaderStatus;
+  const isFinished =
+    state.passCount >= 2 ||
+    state.board.filter((c) => c !== '').length >= BOARD_SIZE * BOARD_SIZE;
+  if (isFinished) {
+    // 簡化：因為 finished 時由 GameRoom 顯示 ResultScreen，這裡只處理未完狀態
+    headerStatus = { kind: 'spectating', symbol: state.currentTurn, verb: '落子' };
+  } else if (isSpectator) {
+    headerStatus = { kind: 'spectating', symbol: state.currentTurn, verb: '落子' };
+  } else if (isMyTurn && mySymbol) {
+    headerStatus = { kind: 'myTurn', symbol: mySymbol };
+  } else {
+    headerStatus = { kind: 'opponentTurn', symbol: state.currentTurn, verb: '落子' };
+  }
+
+  // 附加提示：觀戰者看到連續 Pass、輪到自己但無合法步
+  const extraHint = (() => {
+    if (state.passCount > 0 && isSpectator) {
+      return (
+        <span className="ml-2 text-sm text-yellow-400">
+          （已連續 Pass {state.passCount} 次）
+        </span>
+      );
+    }
+    if (isMyTurn && !playerCanMove) {
+      return (
+        <span className="ml-2 text-sm text-yellow-400">（無合法步，需 Pass）</span>
+      );
+    }
+    return null;
+  })();
+
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-700 bg-slate-800 p-4">
-        <div>
-          {isSpectator ? (
-            <p className="text-lg text-slate-400">
-              觀戰中（{formatReversiSymbol(state.currentTurn)} 下）
-              {state.passCount > 0 && (
-                <span className="ml-2 text-sm text-yellow-400">
-                  （已連續 Pass {state.passCount} 次）
-                </span>
+      <GameHeader
+        status={headerStatus}
+        formatSymbol={formatReversiSymbol}
+        turnSecondsLeft={turnSecondsLeft}
+        turnTimeLimitSec={turnTimeLimitSec}
+        extraHint={extraHint}
+        rightContent={
+          <>
+            <div className="flex items-center gap-1 rounded bg-slate-900/50 px-2 py-1">
+              <span className="h-3 w-3 rounded-full bg-black ring-1 ring-slate-600"></span>
+              <span className="text-slate-300">{xCount}</span>
+            </div>
+            <span className="text-slate-500">vs</span>
+            <div className="flex items-center gap-1 rounded bg-slate-900/50 px-2 py-1">
+              <span className="h-3 w-3 rounded-full bg-white ring-1 ring-slate-600"></span>
+              <span className="text-slate-300">{oCount}</span>
+            </div>
+            <div className="flex gap-2">
+              {isMyTurn && (
+                <button
+                  onClick={() => setHintMode((h) => !h)}
+                  className={`rounded px-3 py-1 text-xs ${
+                    hintMode
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                  }`}
+                >
+                  {hintMode ? '隱藏提示' : '顯示提示'}
+                </button>
               )}
-              <TurnCountdown secondsLeft={turnSecondsLeft} totalSec={turnTimeLimitSec} />
-            </p>
-          ) : isMyTurn ? (
-            <p className="text-lg font-semibold text-green-400">
-              輪到你（{formatReversiSymbol(mySymbol ?? '')}）
-              {!playerCanMove && (
-                <span className="ml-2 text-sm text-yellow-400">（無合法步，需 Pass）</span>
+              {isMyTurn && !playerCanMove && (
+                <button
+                  onClick={handlePass}
+                  className="rounded bg-yellow-600 px-3 py-1 text-xs font-medium text-white hover:bg-yellow-500"
+                >
+                  Pass（讓對方下）
+                </button>
               )}
-              <TurnCountdown secondsLeft={turnSecondsLeft} totalSec={turnTimeLimitSec} />
-            </p>
-          ) : (
-            <p className="text-lg text-slate-400">
-              等待對方（{formatReversiSymbol(state.currentTurn)}）落子
-              {state.passCount > 0 && (
-                <span className="ml-2 text-sm text-yellow-400">
-                  （已連續 Pass {state.passCount} 次）
-                </span>
-              )}
-              <TurnCountdown secondsLeft={turnSecondsLeft} totalSec={turnTimeLimitSec} />
-            </p>
-          )}
-        </div>
-
-        <div className="flex items-center gap-3 text-sm">
-          <div className="flex items-center gap-1 rounded bg-slate-900/50 px-2 py-1">
-            <span className="h-3 w-3 rounded-full bg-black ring-1 ring-slate-600"></span>
-            <span className="text-slate-300">{xCount}</span>
-          </div>
-          <span className="text-slate-500">vs</span>
-          <div className="flex items-center gap-1 rounded bg-slate-900/50 px-2 py-1">
-            <span className="h-3 w-3 rounded-full bg-white ring-1 ring-slate-600"></span>
-            <span className="text-slate-300">{oCount}</span>
-          </div>
-        </div>
-
-        <div className="flex gap-2">
-          {isMyTurn && (
-            <button
-              onClick={() => setHintMode((h) => !h)}
-              className={`rounded px-3 py-1 text-xs ${
-                hintMode ? 'bg-blue-600 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-              }`}
-            >
-              {hintMode ? '隱藏提示' : '顯示提示'}
-            </button>
-          )}
-          {isMyTurn && !playerCanMove && (
-            <button
-              onClick={handlePass}
-              className="rounded bg-yellow-600 px-3 py-1 text-xs font-medium text-white hover:bg-yellow-500"
-            >
-              Pass（讓對方下）
-            </button>
-          )}
-        </div>
-      </div>
+            </div>
+          </>
+        }
+      />
 
       {error && (
         <div className="rounded border border-red-700 bg-red-900/30 p-2 text-sm text-red-300">
@@ -206,7 +216,7 @@ export default function Reversi({
         </div>
       )}
 
-      <div className="rounded-lg border border-slate-700 bg-emerald-900/30 p-4">
+      <div className="rounded-lg border border-emerald-900/40 bg-emerald-900/30 p-4">
         <div
           className="grid w-full"
           style={{
@@ -224,13 +234,17 @@ export default function Reversi({
             const isHovered = hoveredCell?.row === row && hoveredCell?.col === col;
             const showPreview = isHovered && canClick && mySymbol;
             return (
-              <button
+              <BoardCell
                 key={idx}
                 onClick={() => handleCellClick(row, col)}
                 onMouseEnter={() => setHoveredCell({ row, col })}
-                onMouseLeave={() => setHoveredCell((h) => (h?.row === row && h?.col === col ? null : h))}
+                onMouseLeave={() =>
+                  setHoveredCell((h) => (h?.row === row && h?.col === col ? null : h))
+                }
                 disabled={!canClick}
-                className={`relative border border-emerald-900/40 ${
+                isLastMove={isLastMove}
+                lastMovePosition="outer"
+                className={`border border-emerald-900/40 ${
                   canClick
                     ? 'cursor-pointer hover:bg-emerald-800/30'
                     : 'cursor-not-allowed'
@@ -252,10 +266,7 @@ export default function Reversi({
                 {showHint && cell === '' && (
                   <span className="pointer-events-none absolute inset-3 rounded-full border-2 border-dashed border-green-400 opacity-60" />
                 )}
-                {isLastMove && (
-                  <span className="pointer-events-none absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-red-500" />
-                )}
-              </button>
+              </BoardCell>
             );
           })}
         </div>

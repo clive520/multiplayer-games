@@ -3,7 +3,8 @@ import type { GameComponentProps } from '../../core/types/game';
 import { gomokuEngine } from './engine';
 import { ensureGameState, submitMove, subscribeGameState } from './sync';
 import { formatGomokuSymbol } from './symbols';
-import { TurnCountdown } from '../../core/components/TurnCountdown';
+import { GameHeader, type GameHeaderStatus } from '../../core/components/GameHeader';
+import { BoardCell } from '../../core/components/BoardCell';
 import { BOARD_SIZE, type GomokuState } from './types';
 
 export default function Gomoku({
@@ -91,48 +92,30 @@ export default function Gomoku({
     }
   }
 
+  // 計算 header 狀態
+  let headerStatus: GameHeaderStatus;
+  if (winnerPlayer) {
+    headerStatus = { kind: 'won', winnerName: winnerPlayer.displayName };
+  } else if (state.moveCount >= BOARD_SIZE * BOARD_SIZE) {
+    headerStatus = { kind: 'draw' };
+  } else if (isSpectator) {
+    headerStatus = { kind: 'spectating', symbol: state.nextSymbol, verb: '落子' };
+  } else if (isMyTurn && mySymbol) {
+    headerStatus = { kind: 'myTurn', symbol: mySymbol };
+  } else {
+    headerStatus = { kind: 'opponentTurn', symbol: state.nextSymbol, verb: '落子' };
+  }
+
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between rounded-lg border border-slate-700 bg-slate-800 p-4">
-        <div>
-          {winnerPlayer ? (
-            <p className="text-lg font-semibold text-yellow-400">
-              {winnerPlayer.displayName} 獲勝！
-            </p>
-          ) : state.moveCount >= BOARD_SIZE * BOARD_SIZE ? (
-            <p className="text-lg font-semibold text-slate-300">平手！</p>
-          ) : isSpectator ? (
-            <p className="text-lg text-slate-400">
-              觀戰中（{formatGomokuSymbol(state.nextSymbol)} 下）
-              <TurnCountdown secondsLeft={turnSecondsLeft} totalSec={turnTimeLimitSec} />
-            </p>
-          ) : isMyTurn ? (
-            <p className="text-lg font-semibold text-green-400">
-              輪到你（{formatGomokuSymbol(mySymbol ?? '')}）
-              <TurnCountdown secondsLeft={turnSecondsLeft} totalSec={turnTimeLimitSec} />
-            </p>
-          ) : (
-            <p className="text-lg text-slate-400">
-              等待對方落子（{formatGomokuSymbol(state.nextSymbol)}）
-              <TurnCountdown secondsLeft={turnSecondsLeft} totalSec={turnTimeLimitSec} />
-            </p>
-          )}
-        </div>
-        <div className="flex gap-3 text-sm">
-          {players.map((p) => (
-            <div
-              key={p.uid}
-              className={`rounded px-2 py-1 ${
-                p.uid === currentUserId
-                  ? 'bg-blue-900/50 text-blue-300'
-                  : 'bg-slate-700 text-slate-300'
-              }`}
-            >
-              {p.symbol}: {p.displayName}
-            </div>
-          ))}
-        </div>
-      </div>
+      <GameHeader
+        status={headerStatus}
+        formatSymbol={formatGomokuSymbol}
+        turnSecondsLeft={turnSecondsLeft}
+        turnTimeLimitSec={turnTimeLimitSec}
+        players={players}
+        currentUserId={currentUserId}
+      />
 
       {error && (
         <div className="rounded border border-red-700 bg-red-900/30 p-2 text-sm text-red-300">
@@ -140,7 +123,7 @@ export default function Gomoku({
         </div>
       )}
 
-      <div className="rounded-lg border border-slate-700 bg-amber-50 p-4">
+      <div className="rounded-lg border border-amber-900/30 bg-amber-50 p-4">
         <div
           className="grid w-full"
           style={{
@@ -151,16 +134,17 @@ export default function Gomoku({
           {state.board.map((cell, idx) => {
             const row = Math.floor(idx / BOARD_SIZE);
             const col = idx % BOARD_SIZE;
-            const isLastMove =
+            const isLastMove = !!(
               state.lastMove &&
               state.lastMove.row === row &&
-              state.lastMove.col === col;
+              state.lastMove.col === col
+            );
             const isInWinLine = winnerLineSet.has(`${row},${col}`);
             const isEmpty = cell === '';
             const isHovered = hoveredCell?.row === row && hoveredCell?.col === col;
             const showPreview = isHovered && isMyTurn && isEmpty && mySymbol;
             return (
-              <button
+              <BoardCell
                 key={idx}
                 onClick={() => handleCellClick(row, col)}
                 onMouseEnter={() => setHoveredCell({ row, col })}
@@ -168,7 +152,9 @@ export default function Gomoku({
                   setHoveredCell((h) => (h?.row === row && h?.col === col ? null : h))
                 }
                 disabled={!isMyTurn || !isEmpty}
-                className={`relative border border-amber-900/30 ${
+                isLastMove={isLastMove}
+                lastMovePosition="outer"
+                className={`border border-amber-900/30 ${
                   isInWinLine ? 'bg-yellow-300' : 'hover:bg-amber-100'
                 } ${!isMyTurn || !isEmpty ? 'cursor-not-allowed' : 'cursor-pointer'}`}
               >
@@ -185,10 +171,7 @@ export default function Gomoku({
                 {showPreview && mySymbol === 'O' && (
                   <span className="pointer-events-none absolute inset-1 rounded-full bg-white opacity-40 ring-1 ring-black" />
                 )}
-                {isLastMove && (
-                  <span className="pointer-events-none absolute right-0 top-0 h-2 w-2 rounded-full bg-red-500" />
-                )}
-              </button>
+              </BoardCell>
             );
           })}
         </div>

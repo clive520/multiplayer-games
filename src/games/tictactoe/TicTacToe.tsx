@@ -2,7 +2,8 @@ import { useEffect, useState, useRef } from 'react';
 import type { GameComponentProps } from '../../core/types/game';
 import { tictactoeEngine } from './engine';
 import { ensureGameState, submitMove, subscribeGameState } from './sync';
-import { TurnCountdown } from '../../core/components/TurnCountdown';
+import { GameHeader, type GameHeaderStatus } from '../../core/components/GameHeader';
+import { BoardCell } from '../../core/components/BoardCell';
 import { BOARD_SIZE, type TicTacToeState } from './types';
 
 export default function TicTacToe({
@@ -83,48 +84,29 @@ export default function TicTacToe({
     );
   }
 
+  // 計算 header 狀態
+  let headerStatus: GameHeaderStatus;
+  if (winnerPlayer) {
+    headerStatus = { kind: 'won', winnerName: winnerPlayer.displayName };
+  } else if (state.moveCount >= BOARD_SIZE * BOARD_SIZE) {
+    headerStatus = { kind: 'draw' };
+  } else if (isSpectator) {
+    headerStatus = { kind: 'spectating', symbol: state.nextSymbol, verb: '下棋' };
+  } else if (isMyTurn && mySymbol) {
+    headerStatus = { kind: 'myTurn', symbol: mySymbol };
+  } else {
+    headerStatus = { kind: 'opponentTurn', symbol: state.nextSymbol, verb: '下棋' };
+  }
+
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between rounded-lg border border-slate-700 bg-slate-800 p-4">
-        <div>
-          {winnerPlayer ? (
-            <p className="text-lg font-semibold text-yellow-400">
-              {winnerPlayer.displayName} 獲勝！
-            </p>
-          ) : state.moveCount >= BOARD_SIZE * BOARD_SIZE ? (
-            <p className="text-lg font-semibold text-slate-300">平手！</p>
-          ) : isSpectator ? (
-            <p className="text-lg text-slate-400">
-              觀戰中（{state.nextSymbol} 下）
-              <TurnCountdown secondsLeft={turnSecondsLeft} totalSec={turnTimeLimitSec} />
-            </p>
-          ) : isMyTurn ? (
-            <p className="text-lg font-semibold text-green-400">
-              輪到你（{mySymbol}）
-              <TurnCountdown secondsLeft={turnSecondsLeft} totalSec={turnTimeLimitSec} />
-            </p>
-          ) : (
-            <p className="text-lg text-slate-400">
-              等待對方下棋（{state.nextSymbol}）
-              <TurnCountdown secondsLeft={turnSecondsLeft} totalSec={turnTimeLimitSec} />
-            </p>
-          )}
-        </div>
-        <div className="flex gap-3 text-sm">
-          {players.map((p) => (
-            <div
-              key={p.uid}
-              className={`rounded px-2 py-1 ${
-                p.uid === currentUserId
-                  ? 'bg-blue-900/50 text-blue-300'
-                  : 'bg-slate-700 text-slate-300'
-              }`}
-            >
-              {p.symbol}: {p.displayName}
-            </div>
-          ))}
-        </div>
-      </div>
+      <GameHeader
+        status={headerStatus}
+        turnSecondsLeft={turnSecondsLeft}
+        turnTimeLimitSec={turnTimeLimitSec}
+        players={players}
+        currentUserId={currentUserId}
+      />
 
       {error && (
         <div className="rounded border border-red-700 bg-red-900/30 p-2 text-sm text-red-300">
@@ -136,15 +118,16 @@ export default function TicTacToe({
         {state.board.map((cell, idx) => {
           const row = Math.floor(idx / BOARD_SIZE);
           const col = idx % BOARD_SIZE;
-          const isLastMove =
+          const isLastMove = !!(
             state.lastMove &&
             state.lastMove.row === row &&
-            state.lastMove.col === col;
+            state.lastMove.col === col
+          );
           const isEmpty = cell === '';
           const isHovered = hoveredCell?.row === row && hoveredCell?.col === col;
           const showPreview = isHovered && isMyTurn && isEmpty && mySymbol;
           return (
-            <button
+            <BoardCell
               key={idx}
               onClick={() => handleCellClick(row, col)}
               onMouseEnter={() => setHoveredCell({ row, col })}
@@ -152,7 +135,8 @@ export default function TicTacToe({
                 setHoveredCell((h) => (h?.row === row && h?.col === col ? null : h))
               }
               disabled={!isMyTurn || !isEmpty}
-              className={`relative aspect-square rounded-lg transition ${
+              isLastMove={isLastMove && cell !== ''}
+              className={`rounded-lg ${
                 isLastMove
                   ? 'bg-yellow-900/40 ring-2 ring-yellow-500'
                   : 'bg-slate-900'
@@ -175,11 +159,7 @@ export default function TicTacToe({
               {showPreview && mySymbol === 'O' && (
                 <span className="pointer-events-none absolute inset-0 flex items-center justify-center text-6xl font-bold leading-none text-red-400 opacity-40">○</span>
               )}
-              {/* 最後落子標記 */}
-              {isLastMove && cell !== '' && (
-                <span className="pointer-events-none absolute right-1 top-1 h-2 w-2 rounded-full bg-red-500" />
-              )}
-            </button>
+            </BoardCell>
           );
         })}
       </div>

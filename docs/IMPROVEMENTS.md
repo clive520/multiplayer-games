@@ -9,11 +9,11 @@
 ## 進度總覽
 
 - **總項目**：26
-- **✅ 已完成**：1
+- **✅ 已完成**：2
 - **⏳ 進行中**：0
-- **⬜ 待辦**：25
-- **已完成優先項目**：1
-- **剩餘優先項目**：2, 3, 4, 5, 6, 7, 8, 9, 10
+- **⬜ 待辦**：24
+- **已完成優先項目**：1, 2
+- **剩餘優先項目**：3, 4, 5, 6, 7, 8, 9, 10
 
 ---
 
@@ -47,7 +47,7 @@
 
 ---
 
-### 2. 抽出共用的「棋盤 / 玩家資訊 / 操作列」元件 — ⬜ 待辦
+### 2. 抽出共用的「棋盤 / 玩家資訊 / 操作列」元件 — ✅ 已完成
 
 **類別**：結構面
 
@@ -62,7 +62,22 @@
 - 加新遊戲時樣式一致、改 UI 不必三個地方一起改
 
 **完成紀錄**：
-- ⬜
+- 2026-06-12 ✅
+  - 新增 3 個共用元件：
+    - `core/components/GameHeader.tsx`：統一 header 版面，接收 `GameHeaderStatus` discriminated union 自動切換訊息、整合 TurnCountdown、支援玩家徽章和右側額外內容（reversi 用）
+    - `core/components/PlayerBadge.tsx`：統一的「(符號): 暱稱」小徽章，自動套用 formatSymbol
+    - `core/components/BoardCell.tsx`：棋盤格按鈕，memo 化、固定處理 onClick/onMouseEnter/onMouseLeave/disabled/最後落子紅點；視覺樣式透過 className 由各遊戲自訂
+  - 三個遊戲元件（TicTacToe / Gomoku / Reversi）全部改用上述元件
+  - 每個遊戲不再重複 header JSX 和 button JSX
+  - 修了一個 type 問題：`isLastMove` 從 `state.lastMove && ...` 改成 `!!(...)` 確保 boolean
+  - **Bundle 變化**（驗證）：
+    - TicTacToe 4.33kB → 3.58kB
+    - Gomoku 4.06kB → 3.35kB
+    - Reversi 5.46kB → 5.05kB
+    - BoardCell 2.47kB（自動 split，3 個遊戲共用）
+    - main 略縮 0.03kB
+  - 68 測試通過、typecheck ✓
+  - **為 #5 移動動畫鋪路**：BoardCell 已內建 `transition`，遊戲只要在 className 加 `animate-fade-in` 即可
 
 ---
 
@@ -530,3 +545,4 @@
 |------|------|
 | 2026-06-12 | 初版建立，列出 26 項改進建議 |
 | 2026-06-12 | ✅ #1 程式碼分割完成：3 個遊戲拆成獨立 chunk，main 略縮 |
+| 2026-06-12 | ✅ #2 抽出共用元件完成：GameHeader / PlayerBadge / BoardCell，3 個遊戲都改用 |

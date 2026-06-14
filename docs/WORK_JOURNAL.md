@@ -104,6 +104,39 @@
 
 狀態：✓ 提交
 
+### ~17:40 — #2 抽出共用元件（IMPROVEMENTS #2）
+
+需求：三個遊戲的 header / player badge / cell button 重複度高，未來加第四個遊戲會很痛。
+
+**新增 3 個共用元件**：
+- `core/components/GameHeader.tsx`：統一 header（狀態訊息 + TurnCountdown + 玩家徽章 + 右側額外內容）
+  - 用 discriminated union 接收 status（won / draw / myTurn / opponentTurn / spectating）
+  - 自動套用 formatSymbol、依 verb 顯示「下棋」或「落子」
+- `core/components/PlayerBadge.tsx`：統一的「(符號): 暱稱」小徽章
+- `core/components/BoardCell.tsx`：棋盤格按鈕（memo 化，固定處理 onClick/hover/disabled/最後落子紅點；視覺樣式由 className 傳入）
+  - 支援 inner/outer 兩種紅點位置
+
+**重構 3 個遊戲元件**：
+- `TicTacToe.tsx`：移除 ~40 行 header JSX 和 cell button JSX，改用 GameHeader + BoardCell
+- `Gomoku.tsx`：同上
+- `Reversi.tsx`：同上，X/O 計數和 Pass/提示按鈕透過 `rightContent` 傳入 GameHeader
+
+**修了一個 type 問題**：`isLastMove` 從 `state.lastMove && ...` 改成 `!!(...)` 確保 boolean（TypeScript 抱怨 `boolean | null`）
+
+**驗證**：
+- `npm run typecheck` ✓
+- `npm test` 68/68 通過 ✓
+- `npm run build` ✓ 拆分改善：
+  - TicTacToe 4.33 → 3.58 kB
+  - Gomoku 4.06 → 3.35 kB
+  - Reversi 5.46 → 5.05 kB
+  - BoardCell 2.47 kB（共用，自動 split）
+  - main 略縮
+
+**IMPROVEMENTS.md 狀態**：#2 改為 ✅
+
+狀態：✓ 提交
+
 ### ~16:30 — Bug 修復：黑白棋棋盤滿了卻不結束
 
 **問題**：使用者回報黑白棋在全部 64 格下完時，遊戲不會自動結束，要等雙方都按 Pass 才結束。
