@@ -104,6 +104,38 @@
 
 狀態：✓ 提交
 
+### ~18:45 — #6 棋譜 / 移動歷史面板（IMPROVEMENTS #6）
+
+需求：觀戰者要能回顧「這場下了哪些步、每步是誰」。
+
+**新增**：
+- `core/types/game.ts`：`MoveRecord` 型別
+- `core/components/MoveHistory.tsx`：棋譜面板元件
+  - 顯示：序號 / 玩家名 / 棋子（formatSymbol）/ 座標 / 時間
+  - 自己步驟藍色高亮、最後一步綠色指示條
+  - 行動版可摺疊
+
+**修改**：
+- 三個遊戲的 state 型別加 `moves?: MoveRecord[]`（optional，engine 不關心）
+- 三個遊戲的 `createInitialState` 不設 moves（讓 sync 層管理）
+- 三個遊戲的 `submitMove` 多收 `displayName` 參數，在 transaction 內 append MoveRecord
+- Reversi 多記錄 `flipped` 欄位（為日後棋譜重播做準備）
+- `pages/GameRoom.tsx`：
+  - 訂閱 RTDB 的 `state/moves` 陣列
+  - 改成 grid 佈局：lg+ 螢幕遊戲 2/3、棋譜 1/3；行動版堆疊
+  - 棋譜在 isPlaying 和 isFinished 兩種狀態都顯示
+  - max-w-3xl → max-w-6xl
+
+**驗證**：
+- `npm run build` ✓
+- `npm test` 78/78 通過 ✓
+
+**MVP 沒做**：點任一步靜態重播（replay 雛形），留給日後
+
+**IMPROVEMENTS.md 狀態**：#6 改為 ✅
+
+狀態：✓ 提交
+
 ### ~18:30 — #5 移動動畫（IMPROVEMENTS #5）
 
 需求：每步棋落下應該有視覺提示，讓人馬上看出「剛才是誰下」。

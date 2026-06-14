@@ -1,3 +1,5 @@
+import type { MoveRecord } from '../../core/types/game';
+
 export type Cell = 'X' | 'O' | '';
 export type Board = Cell[];
 
@@ -8,6 +10,8 @@ export interface ReversiState {
   passCount: number; // 連續 pass 次數：0=正常、1=一方 pass、2=雙方都 pass → 結束
   lastMove: { row: number; col: number } | null;
   lastFlips: Array<{ row: number; col: number }>; // 上一步翻的棋子（高亮用）
+  /** 棋譜歷史：sync 層在每次成功落子後 append；engine 不關心此欄位 */
+  moves?: MoveRecord[];
 }
 
 export const BOARD_SIZE = 8;
@@ -39,6 +43,7 @@ export function createInitialState(): ReversiState {
     passCount: 0,
     lastMove: null,
     lastFlips: [],
+    moves: [],
   };
 }
 

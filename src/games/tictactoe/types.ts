@@ -1,3 +1,5 @@
+import type { MoveRecord } from '../../core/types/game';
+
 export type Cell = 'X' | 'O' | '';
 export type Board = Cell[]; // 9 個格子，索引 = row*3 + col
 
@@ -6,6 +8,8 @@ export interface TicTacToeState {
   nextSymbol: 'X' | 'O';
   moveCount: number;
   lastMove: { row: number; col: number; symbol: 'X' | 'O' } | null;
+  /** 棋譜歷史：sync 層在每次成功落子後 append；engine 不關心此欄位 */
+  moves?: MoveRecord[];
 }
 
 export interface TicTacToeMove {
@@ -28,6 +32,7 @@ export function createInitialState(): TicTacToeState {
     nextSymbol: 'X',
     moveCount: 0,
     lastMove: null,
+    moves: [],
   };
 }
 

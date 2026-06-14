@@ -1,3 +1,5 @@
+import type { MoveRecord } from '../../core/types/game';
+
 export type Cell = 'X' | 'O' | '';
 export type Board = Cell[]; // 225 個格子，索引 = row*15 + col
 
@@ -12,6 +14,8 @@ export interface GomokuState {
   moveCount: number;
   lastMove: { row: number; col: number; symbol: 'X' | 'O' } | null;
   winnerLine: Position[] | null; // 5 連珠的格子（5 個）
+  /** 棋譜歷史：sync 層在每次成功落子後 append；engine 不關心此欄位 */
+  moves?: MoveRecord[];
 }
 
 export const BOARD_SIZE = 15;
@@ -26,6 +30,7 @@ export function createInitialState(): GomokuState {
     moveCount: 0,
     lastMove: null,
     winnerLine: null,
+    moves: [],
   };
 }
 

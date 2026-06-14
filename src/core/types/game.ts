@@ -6,6 +6,27 @@ export interface GameMove {
   timestamp: number;
 }
 
+/**
+ * 棋譜中的一步紀錄：存於 game state 的 `moves` 陣列中
+ * 供 GameRoom 的「棋譜面板」顯示
+ *
+ * 欄位：
+ * - row, col：落子座標
+ * - symbol：棋子符號（'X' | 'O'，由遊戲自訂）
+ * - uid, displayName：下棋者（snapshot，避免日後改名影響棋譜）
+ * - timestamp：時間戳
+ * - flipped（選填，reversi 用）：這步翻的棋子座標列表
+ */
+export interface MoveRecord {
+  row: number;
+  col: number;
+  symbol: string;
+  uid: string;
+  displayName: string;
+  timestamp: number;
+  flipped?: ReadonlyArray<{ row: number; col: number }>;
+}
+
 export interface GameResult {
   finished: boolean;
   winnerId?: string;

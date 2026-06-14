@@ -13,8 +13,11 @@ import { resetGameState as resetTictactoeState } from '@/games/tictactoe/sync';
 import { resetGameState as resetGomokuState } from '@/games/gomoku/sync';
 import { resetGameState as resetReversiState } from '@/games/reversi/sync';
 import { ResultScreen } from '../core/components/ResultScreen';
+import { MoveHistory } from '../core/components/MoveHistory';
 import { getGameDefinition } from '@/registry';
-import type { GameComponentProps } from '../core/types/game';
+import type { GameComponentProps, MoveRecord } from '../core/types/game';
+import { rtdb } from '../core/firebase/rtdb';
+import { ref, onValue, off } from 'firebase/database';
 import { useEffect, useState, useCallback, type ComponentType } from 'react';
 
 const TURN_TIME_LIMIT_SEC_FALLBACK = 30;
@@ -33,6 +36,19 @@ export default function GameRoom() {
   const [actionPending, setActionPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+
+  // 棋譜歷史（IMPROVEMENTS #6）：訂閱 RTDB 的 moves 陣列
+  const [moves, setMoves] = useState<ReadonlyArray<MoveRecord>>([]);
+  useEffect(() => {
+    if (!roomId) return;
+    const movesRef = ref(rtdb, `rooms-live/${roomId}/state/moves`);
+    const handler = onValue(movesRef, (snap) => {
+      setMoves((snap.val() as MoveRecord[] | null) ?? []);
+    });
+    return () => {
+      off(movesRef, 'value', handler);
+    };
+  }, [roomId]);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
 
   // 自動 forfeit（回合倒數）相關
@@ -260,7 +276,7 @@ export default function GameRoom() {
   };
 
   return (
-    <div className="mx-auto min-h-screen max-w-3xl p-6">
+    <div className="mx-auto min-h-screen max-w-6xl p-6">
       <header className="mb-6 flex items-center justify-between">
         <div className="flex items-center gap-3">
           {gameDef?.icon && (
@@ -486,26 +502,37 @@ export default function GameRoom() {
       )}
 
       {isPlaying && gameDef && (currentPlayer || isSpectator) && GameComp && (
-        <GameComp
-          roomId={roomId}
-          currentUserId={user!.uid}
-          players={room.players.map((p) => ({
-            uid: p.uid,
-            symbol: p.symbol,
-            displayName: p.displayName,
-            photoURL: p.photoURL,
-          }))}
-          isHost={isHost}
-          isSpectator={isSpectator}
-          turnSecondsLeft={turnSecondsLeft}
-          turnTimeLimitSec={turnTimeLimitSec}
-          turnSymbol={room.turnSymbol}
-          formatSymbol={gameDef.formatSymbol}
-          onGameFinished={async (winnerId, isDraw) => {
-            await finishGame(roomId, winnerId, isDraw);
-          }}
-          onActivity={handleGameActivity}
-        />
+        <div className="grid gap-4 lg:grid-cols-3">
+          <div className="lg:col-span-2">
+            <GameComp
+              roomId={roomId}
+              currentUserId={user!.uid}
+              players={room.players.map((p) => ({
+                uid: p.uid,
+                symbol: p.symbol,
+                displayName: p.displayName,
+                photoURL: p.photoURL,
+              }))}
+              isHost={isHost}
+              isSpectator={isSpectator}
+              turnSecondsLeft={turnSecondsLeft}
+              turnTimeLimitSec={turnTimeLimitSec}
+              turnSymbol={room.turnSymbol}
+              formatSymbol={gameDef.formatSymbol}
+              onGameFinished={async (winnerId, isDraw) => {
+                await finishGame(roomId, winnerId, isDraw);
+              }}
+              onActivity={handleGameActivity}
+            />
+          </div>
+          <aside className="lg:col-span-1">
+            <MoveHistory
+              moves={moves}
+              currentUserId={user!.uid}
+              formatSymbol={gameDef.formatSymbol}
+            />
+          </aside>
+        </div>
       )}
 
       {isPlaying && gameDef && (currentPlayer || isSpectator) && !GameComp && (
@@ -517,16 +544,28 @@ export default function GameRoom() {
       )}
 
       {isFinished && (
-        <ResultScreen
-          room={room}
-          currentUserId={user!.uid}
-          isHost={isHost}
-          leaving={actionPending}
-          onLeave={handleLeave}
-          onPlayAgain={handleReset}
-          autoLeaveSeconds={20}
-        />
+        <div className="grid gap-4 lg:grid-cols-3">
+          <div className="lg:col-span-2">
+            <ResultScreen
+              room={room}
+              currentUserId={user!.uid}
+              isHost={isHost}
+              leaving={actionPending}
+              onLeave={handleLeave}
+              onPlayAgain={handleReset}
+              autoLeaveSeconds={20}
+            />
+          </div>
+          <aside className="lg:col-span-1">
+            <MoveHistory
+              moves={moves}
+              currentUserId={user!.uid}
+              formatSymbol={gameDef?.formatSymbol}
+            />
+          </aside>
+        </div>
       )}
+
     </div>
   );
 }

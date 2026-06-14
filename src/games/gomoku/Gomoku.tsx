@@ -66,7 +66,13 @@ export default function Gomoku({
   const handleCellClick = async (row: number, col: number) => {
     if (!state || !currentPlayer || !isMyTurn) return;
     setError(null);
-    const res = await submitMove(roomId, currentUserId, currentPlayer.symbol, { row, col });
+    const res = await submitMove(
+      roomId,
+      currentUserId,
+      currentPlayer.symbol,
+      currentPlayer.displayName,
+      { row, col }
+    );
     if (!res.applied) {
       setError(res.reason ?? '移動失敗');
     }

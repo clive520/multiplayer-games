@@ -9,11 +9,11 @@
 ## 進度總覽
 
 - **總項目**：26
-- **✅ 已完成**：5
+- **✅ 已完成**：6
 - **⏳ 進行中**：0
-- **⬜ 待辦**：21
-- **已完成優先項目**：1, 2, 3, 4, 5
-- **剩餘優先項目**：6, 7, 8, 9, 10
+- **⬜ 待辦**：20
+- **已完成優先項目**：1, 2, 3, 4, 5, 6
+- **剩餘優先項目**：7, 8, 9, 10
 
 ---
 
@@ -178,7 +178,7 @@
 
 ---
 
-### 6. 棋譜 / 移動歷史面板 — ⬜ 待辦
+### 6. 棋譜 / 移動歷史面板 — ✅ 已完成
 
 **類別**：觀戰體驗
 
@@ -194,7 +194,21 @@
 - 之後做 #22「棋譜分享」基礎
 
 **完成紀錄**：
-- ⬜
+- 2026-06-12 ✅
+  - 新增 `MoveRecord` 型別於 `core/types/game.ts`（row, col, symbol, uid, displayName, timestamp, flipped?）
+  - 三個遊戲的 state 型別加 `moves?: MoveRecord[]`（用 optional，engine 不關心此欄位）
+  - 三個遊戲的 `submitMove` 加 `displayName` 參數，sync 層在 transaction 內 append MoveRecord
+  - Reversi 的 `flipped` 欄位也記錄到 MoveRecord（為日後棋譜重播做準備）
+  - 新增 `core/components/MoveHistory.tsx`：
+    - 顯示序號 / 玩家名 / 棋子（用 formatSymbol）/ 座標 / 時間
+    - 自己的步驟用藍色背景高亮
+    - 最後一步有左側綠色指示條
+    - 行動版可摺疊（手機友善）
+    - max-h-60vh 內部滾動
+  - `pages/GameRoom.tsx` 訂閱 RTDB 的 `state/moves` 陣列
+  - 改成 grid 佈局：lg+ 螢幕遊戲佔 2/3、棋譜 1/3；行動版堆疊
+  - **MVP 沒做**：點任一步可靜態查看（replay 雛形），留給日後做
+  - 78 測試通過、typecheck ✓、build ✓
 
 ---
 
@@ -588,3 +602,4 @@
 | 2026-06-12 | ✅ #3 GameDefinition 擴充：tutorialSteps / estimatedDurationMin / variants，3 個遊戲都填入 metadata，Lobby 顯示 description 和預計時間 |
 | 2026-06-12 | ✅ #4 Toast 通知系統：4 種樣式 + useToast hook，替換首個 alert |
 | 2026-06-12 | ✅ #5 移動動畫：cell-appear / pulse-ring CSS keyframes + useNewlyChangedCells hook + BoardCell 兩個新 props |
+| 2026-06-12 | ✅ #6 棋譜面板：MoveRecord 型別 + 3 個遊戲 sync 記錄 + MoveHistory 元件 + GameRoom grid 佈局 |

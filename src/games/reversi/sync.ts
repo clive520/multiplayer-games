@@ -7,7 +7,7 @@ import {
   type ReversiState,
 } from './types';
 import { updateTurn } from '../../core/services/roomService';
-import type { GameMove } from '../../core/types/game';
+import type { GameMove, MoveRecord } from '../../core/types/game';
 
 const statePath = (roomId: string) => `rooms-live/${roomId}/state`;
 
@@ -23,6 +23,7 @@ export async function submitMove(
   roomId: string,
   playerId: string,
   playerSymbol: string,
+  displayName: string,
   payload: { row: number; col: number }
 ): Promise<{ applied: boolean; reason?: string }> {
   const stateRef = ref(rtdb, statePath(roomId));
@@ -55,8 +56,18 @@ export async function submitMove(
     }
 
     const newState = reversiEngine.applyMove(state, move);
+    const timestamp = Date.now();
+    const moveRecord: MoveRecord = {
+      row: payload.row,
+      col: payload.col,
+      symbol: playerSymbol,
+      uid: playerId,
+      displayName,
+      timestamp,
+      flipped: newState.lastFlips,
+    };
     result = { applied: true };
-    return newState;
+    return { ...newState, moves: [...(state.moves ?? []), moveRecord] };
   });
 
   if (result.applied) {
