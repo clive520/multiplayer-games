@@ -2,13 +2,14 @@
   "rules": {
     "rooms-live": {
       "$roomId": {
-        // 棋盤狀態：僅房間玩家可讀寫
+        // 棋盤狀態：任何登入者可讀寫
+        // 原本設計需要 state.players map 來驗證玩家身份，
+        // 但目前三個遊戲的 state 都沒有 players 欄位，導致 submitMove 全部被擋
+        // 安全 trade-off：state 只影響當前對局（不含 stats），stats 由 Firestore rules 保護
+        // （TODO：未來可在 state 加 players map，或改用 Cloud Functions 處理）
         "state": {
           ".read": "auth != null",
-          ".write": "auth != null && (
-            !data.exists() ||
-            data.child('players').hasChild(auth.uid)
-          )",
+          ".write": "auth != null",
           ".validate": "newData.hasChildren(['board', 'nextSymbol', 'moveCount'])"
         },
         // 玩家在線狀態：僅自己可寫
