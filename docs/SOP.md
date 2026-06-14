@@ -135,6 +135,11 @@ git push origin main
 # 3. 到 https://vercel.com/clive520s-projects/github_test 看狀態
 ```
 
+> ⚠️ **常見陷阱**：`git commit` 只在本機，**必須** `git push origin main` 才會觸發 Vercel 部署。  
+> 如果使用者反映「網站沒更新」，先確認 `git log origin/main` 是否有最新的 commit。  
+> 確認方式：到 Vercel Dashboard 對照「最新部署的 commit SHA」是否等於本機 `git rev-parse HEAD`。  
+> 備用解法：若 webhook 沒觸發，用 Vercel API 手動建立 deployment（POST `/v13/deployments`，body 帶 `gitSource` 指向 main branch）。
+
 ### 3.4 部署後驗證清單
 - [ ] 網站可開啟（HTTP 200）
 - [ ] Google 登入按鈕可運作（已加 Authorized Domain）
