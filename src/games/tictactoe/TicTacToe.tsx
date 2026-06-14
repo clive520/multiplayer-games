@@ -10,6 +10,7 @@ export default function TicTacToe({
   players,
   isHost,
   onGameFinished,
+  onActivity,
 }: GameComponentProps) {
   const [state, setState] = useState<TicTacToeState | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -26,6 +27,12 @@ export default function TicTacToe({
     const unsubscribe = subscribeGameState(roomId, setState);
     return unsubscribe;
   }, [roomId]);
+
+  useEffect(() => {
+    if (!state || !Array.isArray(state.board)) return;
+    // 每次狀態變化（moveCount 增加）通知 GameRoom 有活動
+    onActivity?.();
+  }, [state?.moveCount, onActivity]);
 
   useEffect(() => {
     if (!state || !Array.isArray(state.board) || finishedReportedRef.current) return;

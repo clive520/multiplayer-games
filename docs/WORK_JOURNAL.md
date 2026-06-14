@@ -8,6 +8,50 @@
 
 ## 2026-06-12（Day 2）— 部署、文件整理
 
+### ~11:20 — 斷線 / 無動作 / 主動離開 處理
+
+#### 需求
+- 對方真的斷線 → 30 秒內回來自動恢復；30 秒後直接判斷勝負
+- 使用者主動離開房間 → 直接判斷勝負
+- 對方在線但 30 秒內沒動作 → 提示倒數 30 秒；30 秒後判斷勝負
+
+#### 實作
+
+**1. leaveRoom 加 forfeit 邏輯**（主動離開立即判勝負）
+- 檢查房間狀態是否為 'playing'
+- 若是：更新房間為 'finished'，winnerId = 剩餘玩家（房主已轉移的話就是新房主）
+- 同時呼叫 recordGameResult + recordGameHistory 寫入統計與歷史
+- 規則：因 leaver 仍在舊 playerUids 裡，isRoomPlayer() 通過，affectedKeys 仍合法
+
+**2. GameRoom 加斷線/無動作偵測**
+- 引入 useState/useRef 追蹤 forfeit 狀態
+- handleGameActivity callback：每次遊戲狀態變化（moveCount + 1）重置計時器
+- 偵測規則：
+  - 房間狀態為 'playing'
+  - 對手存在
+  - 對手離線 → 30 秒倒數
+  - 對手在線但 30 秒沒動 → 30 秒倒數
+  - 任何活動都取消 forfeit
+- 倒數歸 0 → 呼叫 finishGame，winnerId = 自己（被 forfeit 的是對手）
+
+**3. GameComponentProps 加 onActivity 選填 prop**
+- 三個遊戲元件（TicTacToe、Gomoku、Reversi）在 useEffect 偵測 moveCount 變化時呼叫
+- GameRoom 傳入 handleGameActivity 重置計時器
+- 架構影響：每個遊戲加 5-6 行
+
+**4. UI 提示橫幅**
+- 橘色邊框 + 動畫點
+- 文字：對方已斷線/無動作，將於 X 秒後判斷我方勝出
+- 副標題：若 30 秒內回來/落子，倒數會取消
+
+#### 驗證
+- TypeScript: ✓ 0 errors
+- Tests: ✓ 53 passed
+- Build: ✓ success
+
+#### 狀態
+✓ 提交並推送，Vercel 自動部署中
+
 ### ~11:00 — 黑白棋：滑鼠 hover 預覽棋子
 
 使用者回饋：「黑白棋中，使用者沒有提示他是黑棋還是白棋，容易造成混亂。
