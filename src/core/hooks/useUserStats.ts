@@ -14,9 +14,12 @@ export function subscribeUserStats(uid: string, callback: (stats: UserStats | nu
         return;
       }
       const data = snap.data();
+      // 向後相容：優先讀 nickname（玩家自設），fallback 到 displayName（舊資料 = Google 名）
+      const nickname = (data.nickname as string) ?? (data.displayName as string) ?? '';
       callback({
         uid,
-        displayName: (data.displayName as string) ?? '',
+        nickname,
+        displayName: nickname,
         photoURL: (data.photoURL as string | null) ?? null,
         overall: data.overall ?? DEFAULT_GAME_STATS,
         byGame: data.byGame ?? {

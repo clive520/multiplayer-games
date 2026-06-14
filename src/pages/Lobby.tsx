@@ -24,8 +24,9 @@ interface PendingJoin {
 
 export default function Lobby() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { profile, profileLoading } = useAuth();
   const { rooms, loading, error: lobbyError } = useLobby();
+  const nickname = profile?.nickname ?? null;
 
   const [selectedGame, setSelectedGame] = useState<GameType>('tictactoe');
   const [createPassword, setCreatePassword] = useState('');
@@ -58,6 +59,10 @@ export default function Lobby() {
 
   const handleCreate = async () => {
     setActionError(null);
+    if (!nickname) {
+      setActionError('暱稱尚未載入，請稍候');
+      return;
+    }
 
     let password: string | undefined;
     if (usePassword) {
@@ -71,7 +76,7 @@ export default function Lobby() {
 
     setCreating(true);
     try {
-      const roomId = await createRoom(selectedGame, { password });
+      const roomId = await createRoom(selectedGame, { password, nickname });
       navigate(`/rooms/${roomId}`);
     } catch (err) {
       setActionError(err instanceof Error ? err.message : '建立房間失敗');
@@ -85,6 +90,10 @@ export default function Lobby() {
     setActionError(null);
     if (!/^[A-Z2-9]{6}$/.test(joinCode)) {
       setActionError('房號格式錯誤');
+      return;
+    }
+    if (!nickname) {
+      setActionError('暱稱尚未載入，請稍候');
       return;
     }
 
@@ -104,7 +113,7 @@ export default function Lobby() {
         setEnterPassword('');
         return;
       }
-      const roomId = await joinRoomByCode(joinCode);
+      const roomId = await joinRoomByCode(joinCode, { nickname });
       navigate(`/rooms/${roomId}`);
     } catch (err) {
       setActionError(err instanceof Error ? err.message : '加入房間失敗');
@@ -121,10 +130,15 @@ export default function Lobby() {
       setActionError('密碼必須是 6 位數字');
       return;
     }
+    if (!nickname) {
+      setActionError('暱稱尚未載入，請稍候');
+      return;
+    }
     setJoining(true);
     try {
       const roomId = await joinRoomByCode(pendingJoin.code, {
         password: enterPassword,
+        nickname,
       });
       navigate(`/rooms/${roomId}`);
     } catch (err) {
@@ -141,6 +155,10 @@ export default function Lobby() {
   };
 
   const handleEnterRoom = async (room: RoomSummary) => {
+    if (!nickname) {
+      setActionError('暱稱尚未載入，請稍候');
+      return;
+    }
     if (room.hasPassword) {
       setPendingJoin({
         roomId: room.id,
@@ -154,7 +172,7 @@ export default function Lobby() {
     setActionError(null);
     setJoining(true);
     try {
-      const roomId = await joinRoomByCode(room.code);
+      const roomId = await joinRoomByCode(room.code, { nickname });
       navigate(`/rooms/${roomId}`);
     } catch (err) {
       setActionError(err instanceof Error ? err.message : '加入房間失敗');
@@ -169,21 +187,21 @@ export default function Lobby() {
         <div>
           <h1 className="text-2xl font-bold">遊戲大廳</h1>
           <p className="text-sm text-slate-400">
-            歡迎，{user?.displayName ?? '訪客'}
+            歡迎，{profileLoading ? '載入中...' : (nickname ?? '訪客')}
           </p>
         </div>
         <div className="flex gap-2">
+          <button
+            onClick={() => navigate('/profile')}
+            className="rounded bg-slate-700 px-3 py-1.5 text-sm hover:bg-slate-600"
+          >
+            編輯暱稱
+          </button>
           <button
             onClick={() => navigate('/leaderboard')}
             className="rounded bg-slate-700 px-3 py-1.5 text-sm hover:bg-slate-600"
           >
             排行榜
-          </button>
-          <button
-            onClick={() => navigate('/profile')}
-            className="rounded bg-slate-700 px-3 py-1.5 text-sm hover:bg-slate-600"
-          >
-            我的檔案
           </button>
           <button
             onClick={() => signOut()}
@@ -263,12 +281,14 @@ export default function Lobby() {
             )}
             <button
               onClick={handleCreate}
-              disabled={creating}
+              disabled={creating || !nickname}
               className="w-full rounded-lg bg-blue-600 px-4 py-3 font-medium text-white hover:bg-blue-500 disabled:opacity-50"
             >
               {creating
                 ? '建立中...'
-                : `建立 ${usePassword ? '密碼' : ''}房間`}
+                : !nickname
+                  ? '暱稱載入中...'
+                  : `建立 ${usePassword ? '密碼' : ''}房間`}
             </button>
           </div>
 
@@ -289,10 +309,10 @@ export default function Lobby() {
             />
             <button
               type="submit"
-              disabled={joining || joinCode.length !== 6}
+              disabled={joining || joinCode.length !== 6 || !nickname}
               className="w-full rounded-lg bg-green-600 px-4 py-3 font-medium text-white hover:bg-green-500 disabled:opacity-50"
             >
-              {joining ? '加入中...' : '加入'}
+              {joining ? '加入中...' : !nickname ? '暱稱載入中...' : '加入'}
             </button>
           </form>
         </div>

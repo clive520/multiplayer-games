@@ -87,11 +87,16 @@ function ensureAuth(): string {
   return user.uid;
 }
 
-function buildPlayerEntry(uid: string, symbol: string, isHost: boolean): RoomPlayer {
+function buildPlayerEntry(
+  uid: string,
+  nickname: string,
+  symbol: string,
+  isHost: boolean
+): RoomPlayer {
   const user = auth.currentUser!;
   return {
     uid,
-    displayName: user.displayName ?? '匿名玩家',
+    displayName: nickname,
     photoURL: user.photoURL ?? null,
     symbol,
     ready: isHost,
@@ -148,6 +153,7 @@ async function deleteRoomPassword(roomId: string): Promise<void> {
 
 export interface CreateRoomOptions {
   password?: string;
+  nickname?: string;
 }
 
 export async function createRoom(
@@ -155,6 +161,8 @@ export async function createRoom(
   options: CreateRoomOptions = {}
 ): Promise<string> {
   const uid = ensureAuth();
+  const nickname = options.nickname?.trim();
+  if (!nickname) throw new Error('暱稱尚未載入，請稍候再試');
   const def = getGameDefinition(gameType);
   if (!def) throw new Error(`未註冊的遊戲類型：${gameType}`);
 
@@ -171,7 +179,7 @@ export async function createRoom(
 
   const roomRef = doc(collection(db, ROOMS_COLLECTION));
   const code = generateRoomCode();
-  const player = buildPlayerEntry(uid, 'X', true);
+  const player = buildPlayerEntry(uid, nickname, 'X', true);
   const now = Date.now();
 
   if (hasPassword && passwordHash) {
@@ -222,6 +230,7 @@ export async function createRoom(
 
 export interface JoinRoomOptions {
   password?: string;
+  nickname?: string;
 }
 
 export async function joinRoomByCode(
@@ -229,6 +238,8 @@ export async function joinRoomByCode(
   options: JoinRoomOptions = {}
 ): Promise<string> {
   const uid = ensureAuth();
+  const nickname = options.nickname?.trim();
+  if (!nickname) throw new Error('暱稱尚未載入，請稍候再試');
   const normalized = normalizeRoomCode(code);
   if (!/^[A-Z2-9]{6}$/.test(normalized)) {
     throw new Error('房號格式錯誤（6 碼英數字，不含 0/1/I/O）');
@@ -287,7 +298,7 @@ export async function joinRoomByCode(
 
   const usedSymbols = new Set(room.players.map((p) => p.symbol));
   const symbol = ['X', 'O', 'A', 'B'].find((s) => !usedSymbols.has(s)) ?? `P${room.players.length + 1}`;
-  const newPlayer = buildPlayerEntry(uid, symbol, false);
+  const newPlayer = buildPlayerEntry(uid, nickname, symbol, false);
 
   await updateDoc(roomDocRef, {
     players: [...room.players, newPlayer],
@@ -354,7 +365,7 @@ export async function leaveRoom(roomId: string): Promise<void> {
   if (winnerUidAfterForfeit) {
     const playersForStats = room.players.map((p) => ({
       uid: p.uid,
-      displayName: p.displayName,
+      nickname: p.displayName,
       photoURL: p.photoURL,
     }));
     await Promise.all([
@@ -373,6 +384,7 @@ export async function leaveRoom(roomId: string): Promise<void> {
         isDraw: false,
         players: room.players.map((p) => ({
           uid: p.uid,
+          nickname: p.displayName,
           displayName: p.displayName,
           photoURL: p.photoURL,
           symbol: p.symbol,
@@ -434,7 +446,7 @@ export async function finishGame(
 
   const playersForStats = room.players.map((p) => ({
     uid: p.uid,
-    displayName: p.displayName,
+    nickname: p.displayName,
     photoURL: p.photoURL,
   }));
   await Promise.all([
@@ -453,6 +465,7 @@ export async function finishGame(
       isDraw,
       players: room.players.map((p) => ({
         uid: p.uid,
+        nickname: p.displayName,
         displayName: p.displayName,
         photoURL: p.photoURL,
         symbol: p.symbol,

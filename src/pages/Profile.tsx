@@ -1,9 +1,12 @@
+import { useEffect, useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../core/auth/useAuth';
 import { useUserHistory } from '../core/hooks/useUserHistory';
 import { useUserStats } from '../core/hooks/useUserStats';
 import { signOut } from '../core/auth/googleSignIn';
 import { calculateWinRate, getGameStats } from '../core/services/statsService';
+import { updateNickname, validateNickname } from '../core/services/profileService';
+import { isDefaultNicknameFormat } from '../core/types/user';
 import type { GameHistoryEntry } from '../core/services/historyService';
 import type { GameType } from '../core/types/room';
 
@@ -37,14 +40,22 @@ function describeResult(entry: GameHistoryEntry, uid: string): { text: string; c
 }
 
 export default function Profile() {
-  const { user } = useAuth();
+  const { user, profile, profileLoading, setProfile } = useAuth();
   const navigate = useNavigate();
   const { entries, loading: historyLoading } = useUserHistory(user?.uid ?? null, 50);
   const { stats, loading: statsLoading } = useUserStats(user?.uid ?? null);
 
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState('');
+  const [editError, setEditError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (profile?.nickname) setDraft(profile.nickname);
+  }, [profile?.nickname]);
+
   if (!user) return null;
 
-  // 顯示的 stats：以 Firestore 的累計為主，否則 fallback 到最近 50 場計算
   const showStats = stats ?? null;
   const overallStats = showStats?.overall ?? {
     wins: entries.filter((e) => e.winnerId === user.uid).length,
@@ -54,17 +65,50 @@ export default function Profile() {
   };
   const overallWinRate = calculateWinRate(overallStats);
 
+  const handleStartEdit = () => {
+    setDraft(profile?.nickname ?? '');
+    setEditError(null);
+    setEditing(true);
+  };
+
+  const handleCancelEdit = () => {
+    setEditing(false);
+    setEditError(null);
+  };
+
+  const handleSaveNickname = async (e: FormEvent) => {
+    e.preventDefault();
+    setEditError(null);
+    const v = validateNickname(draft);
+    if (!v.ok) {
+      setEditError(v.error ?? '暱稱無效');
+      return;
+    }
+    if (v.trimmed === profile?.nickname) {
+      setEditing(false);
+      return;
+    }
+    setSaving(true);
+    try {
+      const updated = await updateNickname(user.uid, draft);
+      setProfile(updated);
+      setEditing(false);
+    } catch (err) {
+      setEditError(err instanceof Error ? err.message : '更新暱稱失敗');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const photoURL = profile?.photoURL ?? user.photoURL;
+  const nickname = profile?.nickname ?? '載入中...';
+  const isDefault = profile ? isDefaultNicknameFormat(profile.nickname) : false;
+
   return (
     <div className="mx-auto min-h-screen max-w-3xl p-6">
       <header className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-bold">我的檔案</h1>
         <div className="flex gap-2">
-          <button
-            onClick={() => navigate('/leaderboard')}
-            className="rounded bg-slate-700 px-3 py-1.5 text-sm hover:bg-slate-600"
-          >
-            排行榜
-          </button>
           <button
             onClick={() => navigate('/lobby')}
             className="rounded bg-slate-700 px-3 py-1.5 text-sm hover:bg-slate-600"
@@ -81,16 +125,70 @@ export default function Profile() {
       </header>
 
       <section className="mb-6 flex items-center gap-4 rounded-lg border border-slate-700 bg-slate-800 p-6">
-        {user.photoURL && (
+        {photoURL && (
           <img
-            src={user.photoURL}
-            alt={user.displayName ?? 'avatar'}
+            src={photoURL}
+            alt={nickname}
             className="h-20 w-20 rounded-full"
           />
         )}
         <div className="flex-1">
-          <h2 className="text-xl font-bold">{user.displayName}</h2>
-          <p className="text-sm text-slate-400">{user.email}</p>
+          {editing ? (
+            <form onSubmit={handleSaveNickname} className="space-y-2">
+              <input
+                type="text"
+                value={draft}
+                onChange={(e) => setDraft(e.target.value)}
+                maxLength={12}
+                autoFocus
+                disabled={saving}
+                className="w-full rounded border border-slate-600 bg-slate-900 px-3 py-2 text-lg font-bold focus:border-blue-500 focus:outline-none"
+              />
+              {editError && (
+                <p className="text-xs text-red-400">{editError}</p>
+              )}
+              <div className="flex gap-2">
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="rounded bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-500 disabled:opacity-50"
+                >
+                  {saving ? '儲存中...' : '儲存'}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCancelEdit}
+                  disabled={saving}
+                  className="rounded bg-slate-700 px-3 py-1.5 text-sm text-slate-200 hover:bg-slate-600 disabled:opacity-50"
+                >
+                  取消
+                </button>
+              </div>
+            </form>
+          ) : (
+            <>
+              <div className="flex items-center gap-2">
+                <h2 className="text-xl font-bold">{nickname}</h2>
+                {isDefault && (
+                  <span className="rounded bg-yellow-900/50 px-1.5 py-0.5 text-xs text-yellow-300">
+                    預設
+                  </span>
+                )}
+                <button
+                  onClick={handleStartEdit}
+                  disabled={profileLoading}
+                  className="rounded text-xs text-blue-400 hover:text-blue-300"
+                >
+                  編輯
+                </button>
+              </div>
+              <p className="text-xs text-slate-500">
+                {profile?.googleDisplayName
+                  ? `Google 帳號：${user.email}`
+                  : user.email ?? ''}
+              </p>
+            </>
+          )}
         </div>
         <div className="text-right">
           <p className="text-xs text-slate-500">總勝場</p>
@@ -99,6 +197,12 @@ export default function Profile() {
           </p>
         </div>
       </section>
+
+      {isDefault && !editing && (
+        <section className="mb-6 rounded-lg border border-blue-700 bg-blue-900/20 p-3 text-sm text-blue-200">
+          目前使用預設暱稱（流水號），點上方「編輯」改成你喜歡的名稱。
+        </section>
+      )}
 
       <section className="mb-6">
         <h2 className="mb-3 text-sm font-semibold text-slate-300">綜合戰績</h2>

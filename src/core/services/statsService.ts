@@ -18,6 +18,7 @@ export const DEFAULT_GAME_STATS: GameStats = {
 
 export interface UserStats {
   uid: string;
+  nickname: string;
   displayName: string;
   photoURL: string | null;
   overall: GameStats;
@@ -59,7 +60,7 @@ export async function recordGameResult(args: {
   gameType: GameType;
   winnerId: string | null;
   isDraw: boolean;
-  players: Array<{ uid: string; displayName: string; photoURL: string | null }>;
+  players: Array<{ uid: string; nickname: string; photoURL: string | null }>;
 }): Promise<void> {
   const { gameType, winnerId, isDraw, players } = args;
   const now = Date.now();
@@ -82,7 +83,8 @@ export async function recordGameResult(args: {
       [`byGame.${gameType}.losses`]: increment(delta.losses),
       [`byGame.${gameType}.draws`]: increment(delta.draws),
       [`byGame.${gameType}.totalGames`]: increment(delta.totalGames),
-      displayName: p.displayName,
+      nickname: p.nickname,
+      displayName: p.nickname,
       photoURL: p.photoURL,
       updatedAt: now,
     }).catch(async (err) => {
@@ -90,8 +92,10 @@ export async function recordGameResult(args: {
         // 第一次玩此遊戲，建立使用者文件（含完整初始結構）
         const initial: any = {
           uid: p.uid,
-          displayName: p.displayName,
+          nickname: p.nickname,
+          displayName: p.nickname,
           photoURL: p.photoURL,
+          isCustomNickname: false,
           overall: { ...DEFAULT_GAME_STATS },
           byGame: emptyByGame(),
           createdAt: serverTimestamp(),

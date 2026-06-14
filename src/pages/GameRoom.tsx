@@ -23,7 +23,7 @@ type ForfeitReason = 'offline' | 'idle';
 export default function GameRoom() {
   const { roomId } = useParams<{ roomId: string }>();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const { room, loading, error: roomError } = useRoom(roomId ?? null);
   const presence = usePresence(roomId ?? null);
   const [actionPending, setActionPending] = useState(false);
@@ -146,7 +146,7 @@ export default function GameRoom() {
     if (!loser) return;
 
     console.log(
-      `[Forfeit] 原因：${reason}，勝者：${user.displayName}（我），敗者：${loser.displayName}`
+      `[Forfeit] 原因：${reason}，勝者：${profile?.nickname ?? user.displayName}（我），敗者：${loser.displayName}`
     );
 
     try {

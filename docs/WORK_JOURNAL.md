@@ -47,7 +47,49 @@
 
 教訓：不要為了「視覺一致」硬把不同語意的遊戲風格統一。井字=符號、五子棋/黑白棋=實心圓，語意本就不同。
 
+狀態：✓ 提交
+
+### ~12:30 — 玩家暱稱系統（不顯示 Google 名稱）
+
+需求：登入後不使用 Google 帳號名稱，改用自訂暱稱。首次登入自動給流水號（如「玩家001」），使用者可自行編輯。
+
+架構：
+
+**新檔案**：
+- `src/core/types/user.ts` — `UserProfile` 型別 + `formatDefaultNickname` + `isDefaultNicknameFormat`
+- `src/core/services/profileService.ts` — `ensureProfile`（transaction 取流水號 + 建 profile）、`subscribeProfile`、`updateNickname`、`validateNickname`
+- `src/core/types/user.test.ts` — 9 個單元測試（純函式）
+
+**修改**：
+- `AuthProvider` — 登入時自動 `ensureProfile`（取流水號、建文件），訂閱 `users/{uid}` 暴露 `profile` context
+- `useAuth` — 加 `profile` / `profileLoading` / `setProfile`
+- `roomService.buildPlayerEntry` — 接收 `nickname` 參數（從 caller 傳入）
+- `roomService.createRoom/joinRoomByCode` — `options.nickname` 必填
+- `presenceService.setOnline/setOffline` — 接收 nickname
+- `usePresence` hook — 從 `useAuth` 讀 nickname 後傳給 service
+- `App.tsx` / `Home.tsx` / `Lobby.tsx` / `GameRoom.tsx` / `Profile.tsx` / `Leaderboard.tsx` — 改用 `profile.nickname`
+- `Lobby` 的建立/加入按鈕 — `profileLoading` 時 disabled，提示「暱稱載入中...」
+- `Profile.tsx` — 新增 inline 編輯暱稱 UI、預設暱稱黃色「預設」徽章、提示橫幅
+- `statsService.recordGameResult` / `historyService.recordGameHistory` — 接收並寫入 `nickname` 欄位
+- `useUserStats` — 向後相容：優先讀 `nickname`，fallback `displayName`
+- `historyService.fromDoc` — 補上 `nickname` 欄位（讀舊資料時從 `displayName` 補）
+
+**Firestore Rules**：
+- 新增 `match /meta/{docId}` 規則 — 允許已登入者讀/建立/更新 userCounter
+
+**Firestore 部署**：
+- ✓ `firebase deploy --only firestore:rules` 完成
+
+**驗證**：
+- `npm run typecheck` ✓
+- `npm test` 62/62 通過（新增 9 個 nickname 測試）✓
+- `npm run build` ✓
+
 狀態：待提交
+
+### ~12:00 — 修正：井字遊戲改回 ×/○ 文字（續）
+
+狀態：✓ 提交
 
 ### ~11:45 — 井字/五子棋加 hover 預覽棋子
 

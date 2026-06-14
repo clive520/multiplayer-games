@@ -32,6 +32,18 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // 全域 meta 資料：使用者流水號計數器
+    // 只有 AuthProvider 在 transaction 中讀寫 userCounter 欄位
+    match /meta/{docId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() &&
+        request.resource.data.keys().hasOnly(['userCounter', 'createdAt', 'updatedAt']);
+      allow update: if isSignedIn() &&
+        request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['userCounter', 'updatedAt']);
+      allow delete: if false;
+    }
+
     // 房間：所有人可讀，房間玩家可寫
     match /rooms/{roomId} {
       allow read: if isSignedIn();

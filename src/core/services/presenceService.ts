@@ -12,25 +12,32 @@ import { auth } from '../auth/firebaseInstances';
 const presencePath = (roomId: string, uid: string) =>
   `rooms-live/${roomId}/presence/${uid}`;
 
-export async function setOnline(roomId: string): Promise<void> {
+export interface PresencePayload {
+  online: boolean;
+  lastSeen: unknown;
+  displayName: string;
+  photoURL: string | null;
+}
+
+function buildPayload(nickname: string, online: boolean): PresencePayload {
+  const user = auth.currentUser;
+  return {
+    online,
+    lastSeen: serverTimestamp(),
+    displayName: nickname,
+    photoURL: user?.photoURL ?? null,
+  };
+}
+
+export async function setOnline(roomId: string, nickname: string): Promise<void> {
   const user = auth.currentUser;
   if (!user) return;
   const myRef = ref(rtdb, presencePath(roomId, user.uid));
-  await set(myRef, {
-    online: true,
-    lastSeen: serverTimestamp(),
-    displayName: user.displayName ?? '匿名玩家',
-    photoURL: user.photoURL ?? null,
-  });
-  await onDisconnect(myRef).set({
-    online: false,
-    lastSeen: serverTimestamp(),
-    displayName: user.displayName ?? '匿名玩家',
-    photoURL: user.photoURL ?? null,
-  });
+  await set(myRef, buildPayload(nickname, true));
+  await onDisconnect(myRef).set(buildPayload(nickname, false));
 }
 
-export async function setOffline(roomId: string): Promise<void> {
+export async function setOffline(roomId: string, nickname: string): Promise<void> {
   const user = auth.currentUser;
   if (!user) return;
   const myRef = ref(rtdb, presencePath(roomId, user.uid));
@@ -39,12 +46,7 @@ export async function setOffline(roomId: string): Promise<void> {
   } catch {
     // ignore
   }
-  await set(myRef, {
-    online: false,
-    lastSeen: serverTimestamp(),
-    displayName: user.displayName ?? '匿名玩家',
-    photoURL: user.photoURL ?? null,
-  });
+  await set(myRef, buildPayload(nickname, false));
 }
 
 export function subscribePresence(

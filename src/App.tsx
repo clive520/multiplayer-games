@@ -8,10 +8,10 @@ import { RequireAuth } from './core/components/RequireAuth';
 import { useAuth } from './core/auth/useAuth';
 
 function HomePage() {
-  const { user, loading } = useAuth();
+  const { user, profile, profileLoading, loading } = useAuth();
   const navigate = useNavigate();
 
-  if (loading) {
+  if (loading || (user && profileLoading)) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <p className="text-slate-400">載入中...</p>
@@ -20,18 +20,20 @@ function HomePage() {
   }
 
   if (user) {
+    const displayName = profile?.nickname ?? '載入中...';
+    const photoURL = profile?.photoURL ?? user.photoURL;
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-6 p-6">
         <h1 className="text-4xl font-bold">Multiplayer Games</h1>
         <div className="flex items-center gap-3">
-          {user.photoURL && (
+          {photoURL && (
             <img
-              src={user.photoURL}
-              alt={user.displayName ?? 'avatar'}
+              src={photoURL}
+              alt={displayName}
               className="h-10 w-10 rounded-full"
             />
           )}
-          <p className="text-slate-300">{user.displayName}</p>
+          <p className="text-slate-300">{displayName}</p>
         </div>
         <div className="flex flex-col gap-2 sm:flex-row">
           <button

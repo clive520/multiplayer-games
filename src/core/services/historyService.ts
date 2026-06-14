@@ -18,7 +18,7 @@ export interface GameHistoryEntry {
   roomId: string;
   winnerId: string | null;
   isDraw: boolean;
-  players: Array<{ uid: string; displayName: string; photoURL: string | null; symbol: string }>;
+  players: Array<{ uid: string; nickname: string; displayName: string; photoURL: string | null; symbol: string }>;
   endedAt: number;
   createdAt?: number;
 }
@@ -30,13 +30,19 @@ function tsToMillis(v: unknown): number {
 }
 
 function fromDoc(id: string, data: Record<string, unknown>): GameHistoryEntry {
+  const rawPlayers = (data.players as GameHistoryEntry['players']) ?? [];
+  // 向後相容：舊資料沒有 nickname 欄位時，用 displayName 補
+  const players = rawPlayers.map((p) => ({
+    ...p,
+    nickname: p.nickname ?? p.displayName,
+  }));
   return {
     id,
     gameType: (data.gameType as string) ?? 'unknown',
     roomId: (data.roomId as string) ?? '',
     winnerId: (data.winnerId as string) ?? null,
     isDraw: (data.isDraw as boolean) ?? false,
-    players: (data.players as GameHistoryEntry['players']) ?? [],
+    players,
     endedAt: tsToMillis(data.endedAt),
     createdAt: data.createdAt ? tsToMillis(data.createdAt) : undefined,
   };
@@ -47,7 +53,7 @@ export async function recordGameHistory(args: {
   gameType: string;
   winnerId: string | null;
   isDraw: boolean;
-  players: Array<{ uid: string; displayName: string; photoURL: string | null; symbol: string }>;
+  players: Array<{ uid: string; nickname: string; displayName: string; photoURL: string | null; symbol: string }>;
 }): Promise<void> {
   const endedAt = Date.now();
   const playerUids = args.players.map((p) => p.uid);

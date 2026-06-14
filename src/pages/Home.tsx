@@ -45,7 +45,7 @@ export default function Home() {
               />
             )}
             <div className="text-center">
-              <p className="font-semibold">{user.displayName}</p>
+              <p className="text-xs text-slate-500">已使用 Google 帳號登入</p>
               <p className="text-sm text-slate-400">{user.email}</p>
             </div>
             <button

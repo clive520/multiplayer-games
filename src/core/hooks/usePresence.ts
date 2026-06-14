@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { setOnline, setOffline, subscribePresence } from '../services/presenceService';
+import { useAuth } from '../auth/useAuth';
 
 export interface PresenceMap {
   [uid: string]: {
@@ -11,14 +12,16 @@ export interface PresenceMap {
 }
 
 export function usePresence(roomId: string | null): PresenceMap {
+  const { profile } = useAuth();
   const [presence, setPresence] = useState<PresenceMap>({});
 
   useEffect(() => {
-    if (!roomId) {
+    if (!roomId || !profile?.nickname) {
       setPresence({});
       return;
     }
-    setOnline(roomId).catch((err) => {
+    const nickname = profile.nickname;
+    setOnline(roomId, nickname).catch((err) => {
       console.error('設定在線狀態失敗', err);
     });
     const unsubscribe = subscribePresence(roomId, (p) => {
@@ -26,11 +29,11 @@ export function usePresence(roomId: string | null): PresenceMap {
     });
     return () => {
       unsubscribe();
-      setOffline(roomId).catch(() => {
+      setOffline(roomId, nickname).catch(() => {
         // ignore
       });
     };
-  }, [roomId]);
+  }, [roomId, profile?.nickname]);
 
   return presence;
 }
