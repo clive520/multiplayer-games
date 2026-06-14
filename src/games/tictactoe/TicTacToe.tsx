@@ -152,17 +152,17 @@ export default function TicTacToe({
               }`}
             >
               {cell === 'X' && (
-                <span className="pointer-events-none absolute inset-2 rounded-full bg-zinc-900 shadow-md ring-1 ring-zinc-500" />
+                <span className="pointer-events-none absolute inset-0 flex items-center justify-center text-6xl font-bold leading-none text-blue-400">×</span>
               )}
               {cell === 'O' && (
-                <span className="pointer-events-none absolute inset-2 rounded-full bg-white shadow-md ring-1 ring-zinc-500" />
+                <span className="pointer-events-none absolute inset-0 flex items-center justify-center text-6xl font-bold leading-none text-red-400">○</span>
               )}
-              {/* 滑鼠 hover 預覽（半透明，與五子棋/黑白棋一致）*/}
+              {/* 滑鼠 hover 預覽（半透明）*/}
               {showPreview && mySymbol === 'X' && (
-                <span className="pointer-events-none absolute inset-2 rounded-full bg-zinc-900 opacity-40 ring-1 ring-zinc-500" />
+                <span className="pointer-events-none absolute inset-0 flex items-center justify-center text-6xl font-bold leading-none text-blue-400 opacity-40">×</span>
               )}
               {showPreview && mySymbol === 'O' && (
-                <span className="pointer-events-none absolute inset-2 rounded-full bg-white opacity-40 ring-1 ring-zinc-500" />
+                <span className="pointer-events-none absolute inset-0 flex items-center justify-center text-6xl font-bold leading-none text-red-400 opacity-40">○</span>
               )}
               {/* 最後落子標記 */}
               {isLastMove && cell !== '' && (
