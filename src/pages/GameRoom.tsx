@@ -14,7 +14,11 @@ import { resetGameState as resetGomokuState } from '@/games/gomoku/sync';
 import { resetGameState as resetReversiState } from '@/games/reversi/sync';
 import { ResultScreen } from '../core/components/ResultScreen';
 import { getGameDefinition } from '@/registry';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
+
+const FORFEIT_GRACE_SECONDS = 30;
+
+type ForfeitReason = 'offline' | 'idle';
 
 export default function GameRoom() {
   const { roomId } = useParams<{ roomId: string }>();
@@ -25,6 +29,13 @@ export default function GameRoom() {
   const [actionPending, setActionPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+
+  // Forfeit（斷線 / 無動作）相關
+  const [forfeitSecondsLeft, setForfeitSecondsLeft] = useState<number | null>(null);
+  const [forfeitReason, setForfeitReason] = useState<ForfeitReason | null>(null);
+  const [forfeitTriggered, setForfeitTriggered] = useState(false);
+  // 記錄當前玩家的回合開始時間（每次 currentTurn / moveCount / status 變動時重置）
+  const turnStartedAtRef = useRef<number | null>(null);
 
   const resetGameStateFor = async (gameType: string, id: string): Promise<void> => {
     if (gameType === 'tictactoe') return resetTictactoeState(id);
@@ -51,6 +62,96 @@ export default function GameRoom() {
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [roomId, user]);
+
+  // 每次遊戲狀態變化（onActivity 觸發）時重置「對方回合開始時間」
+  const handleGameActivity = useCallback(() => {
+    if (!room || room.status !== 'playing') return;
+    turnStartedAtRef.current = Date.now();
+    // 任何活動都取消 forfeit
+    setForfeitSecondsLeft(null);
+    setForfeitReason(null);
+    setForfeitTriggered(false);
+  }, [room?.status]);
+
+  // 當 status 變為 playing 時，初始化計時器
+  useEffect(() => {
+    if (room?.status === 'playing') {
+      turnStartedAtRef.current = Date.now();
+    } else {
+      turnStartedAtRef.current = null;
+      setForfeitSecondsLeft(null);
+      setForfeitReason(null);
+    }
+  }, [room?.status]);
+
+  // 偵測斷線或無動作 → 啟動 30 秒倒數
+  useEffect(() => {
+    if (!room || !user || room.status !== 'playing') return;
+    if (forfeitTriggered) return;
+
+    // 找出「不是自己」的玩家
+    const opponent = room.players.find((p) => p.uid !== user.uid);
+    if (!opponent) return;
+
+    // 判斷當前輪到誰（透過子元件訂閱的 game state 已知 currentTurn）
+    // 但 GameRoom 沒有直接訂閱 game state，所以用「房間的最後活動時間」當參考
+    // 對方在線狀態（presence 沒記錄視為在線，避免剛進房間就誤判）
+    const isOpponentOnline = presence[opponent.uid]?.online !== false;
+
+    const startedAt = turnStartedAtRef.current;
+    if (!startedAt) return;
+    const elapsedMs = Date.now() - startedAt;
+    const elapsedSec = Math.floor(elapsedMs / 1000);
+    const secondsLeft = Math.max(0, FORFEIT_GRACE_SECONDS - elapsedSec);
+
+    if (secondsLeft === 0) {
+      handleForfeit(isOpponentOnline ? 'idle' : 'offline');
+      return;
+    }
+
+    if (!isOpponentOnline || elapsedSec >= FORFEIT_GRACE_SECONDS) {
+      setForfeitSecondsLeft(secondsLeft);
+      setForfeitReason(isOpponentOnline ? 'idle' : 'offline');
+    } else {
+      setForfeitSecondsLeft(null);
+      setForfeitReason(null);
+    }
+  }, [room, presence, user, forfeitTriggered]);
+
+  // 倒數計時器：每秒 -1，歸 0 時執行 forfeit
+  useEffect(() => {
+    if (forfeitSecondsLeft === null || forfeitSecondsLeft <= 0) return;
+    const timer = setTimeout(() => {
+      setForfeitSecondsLeft((prev) => {
+        if (prev === null) return null;
+        if (prev <= 1) {
+          handleForfeit(forfeitReason ?? 'idle');
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [forfeitSecondsLeft]);
+
+  const handleForfeit = async (reason: ForfeitReason) => {
+    if (!room || !user || forfeitTriggered) return;
+    setForfeitTriggered(true);
+
+    // 找出「不是自己」的玩家（為勝者）
+    const winner = room.players.find((p) => p.uid !== user.uid);
+    if (!winner) return;
+
+    console.log(`[Forfeit] 原因：${reason}，勝者：${winner.displayName}`);
+
+    try {
+      await finishGame(roomId!, winner.uid, false);
+    } catch (err) {
+      console.error('自動判斷勝負失敗', err);
+      setForfeitTriggered(false);
+    }
+  };
 
   if (!roomId) return <Navigate to="/lobby" replace />;
   if (loading) {
@@ -157,6 +258,26 @@ export default function GameRoom() {
           離開房間
         </button>
       </header>
+
+      {/* 斷線 / 無動作 forfeit 提示 */}
+      {isPlaying && forfeitSecondsLeft !== null && forfeitSecondsLeft > 0 && (
+        <section className="mb-4 rounded-lg border border-orange-700 bg-orange-900/30 p-4">
+          <div className="mb-1 flex items-center gap-2">
+            <span className="h-3 w-3 animate-pulse rounded-full bg-orange-400" />
+            <p className="text-sm font-semibold text-orange-200">
+              {forfeitReason === 'offline'
+                ? '對方已斷線'
+                : '對方無動作'}
+              ，將於 {forfeitSecondsLeft} 秒後判斷你方勝出
+            </p>
+          </div>
+          <p className="text-xs text-orange-300">
+            {forfeitReason === 'offline'
+              ? '若對方在 30 秒內重新連線，倒數會自動取消。'
+              : '若對方在 30 秒內落子，倒數會自動取消。'}
+          </p>
+        </section>
+      )}
 
       {room.status === 'waiting' && (
         <section className="mb-6 rounded-lg border border-yellow-700 bg-yellow-900/20 p-4">
@@ -277,6 +398,7 @@ export default function GameRoom() {
           onGameFinished={async (winnerId, isDraw) => {
             await finishGame(roomId, winnerId, isDraw);
           }}
+          onActivity={handleGameActivity}
         />
       )}
 

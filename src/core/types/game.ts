@@ -23,6 +23,7 @@ export interface GameComponentProps {
   }>;
   isHost: boolean;
   onGameFinished: (winnerId: string | null, isDraw: boolean) => Promise<void>;
+  onActivity?: () => void;
 }
 
 export interface GameEngine<TState = unknown> {

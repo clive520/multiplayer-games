@@ -15,6 +15,7 @@ export default function Reversi({
   players,
   isHost,
   onGameFinished,
+  onActivity,
 }: GameComponentProps) {
   const [state, setState] = useState<ReversiState | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -35,7 +36,12 @@ export default function Reversi({
   }, [roomId]);
 
   useEffect(() => {
-    if (!state || finishedReportedRef.current) return;
+    if (!state || !Array.isArray(state.board)) return;
+    onActivity?.();
+  }, [state?.moveCount, onActivity]);
+
+  useEffect(() => {
+    if (!state || !Array.isArray(state.board) || finishedReportedRef.current) return;
     const result = reversiEngine.checkResult(state, players);
     if (result.finished) {
       finishedReportedRef.current = true;

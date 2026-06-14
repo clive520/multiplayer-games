@@ -326,6 +326,7 @@ export async function leaveRoom(roomId: string): Promise<void> {
 
   // 房主轉移邏輯：如果離開的是房主，自動把主持權轉給下一位
   // （陣列中第一個剩餘玩家 = 最早加入的非房主玩家）
+  let winnerUidAfterForfeit: string | null = null;
   if (room.hostId === uid) {
     const newHost = remaining[0];
     const transferredPlayer: RoomPlayer = {
@@ -338,7 +339,49 @@ export async function leaveRoom(roomId: string): Promise<void> {
     updates.hostId = transferredPlayer.uid;
   }
 
+  // 主動離開 → 若遊戲進行中，直接 forfeit（離開者敗）
+  if (room.status === 'playing') {
+    winnerUidAfterForfeit = remaining[0].uid; // 第一個剩餘玩家 = 勝者
+    updates.status = 'finished' as RoomStatus;
+    updates.endedAt = serverTimestamp();
+    updates.winnerId = winnerUidAfterForfeit;
+    updates.isDraw = false;
+  }
+
   await updateDoc(ref, updates);
+
+  // 如果是 forfeit，補上 stats 與歷史記錄
+  if (winnerUidAfterForfeit) {
+    const playersForStats = room.players.map((p) => ({
+      uid: p.uid,
+      displayName: p.displayName,
+      photoURL: p.photoURL,
+    }));
+    await Promise.all([
+      recordGameResult({
+        gameType: room.gameType,
+        winnerId: winnerUidAfterForfeit,
+        isDraw: false,
+        players: playersForStats,
+      }).catch((err) => {
+        console.error('更新使用者 stats 失敗', err);
+      }),
+      recordGameHistory({
+        roomId,
+        gameType: room.gameType,
+        winnerId: winnerUidAfterForfeit,
+        isDraw: false,
+        players: room.players.map((p) => ({
+          uid: p.uid,
+          displayName: p.displayName,
+          photoURL: p.photoURL,
+          symbol: p.symbol,
+        })),
+      }).catch((err) => {
+        console.error('寫入對戰歷史失敗', err);
+      }),
+    ]);
+  }
 }
 
 export async function setPlayerReady(roomId: string, ready: boolean): Promise<void> {

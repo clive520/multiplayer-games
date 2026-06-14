@@ -10,6 +10,7 @@ export default function Gomoku({
   players,
   isHost,
   onGameFinished,
+  onActivity,
 }: GameComponentProps) {
   const [state, setState] = useState<GomokuState | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -37,6 +38,11 @@ export default function Gomoku({
       });
     }
   }, [state, players, onGameFinished]);
+
+  useEffect(() => {
+    if (!state || !Array.isArray(state.board)) return;
+    onActivity?.();
+  }, [state?.moveCount, onActivity]);
 
   const currentPlayer = players.find((p) => p.uid === currentUserId) ?? null;
   const mySymbol = currentPlayer?.symbol;
