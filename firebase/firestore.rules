@@ -34,12 +34,19 @@ service cloud.firestore {
       return request.time.toMillis() - resource.data.lastActivityAt > 1800000;
     }
 
-    // 使用者資料：所有人可讀，僅自己可寫
-    // （含 stats 欄位，因為 recordGameResult 需在使用者端更新 stats）
+    // 使用者資料：所有人可讀
+    // 自己可寫（個人資料、暱稱、大頭貼等）
+    // 其他玩家也可更新戰績欄位（overall.*、byGame.*、displayName、photoURL、updatedAt）
+    // 因為 recordGameResult 在對戰結束時，需由任一玩家把戰果寫進所有參與者的 user doc
+    // （MVP 暫時信任 client；之後可改用 Cloud Functions server-side 計算）
     match /users/{uid} {
       allow read: if isSignedIn();
-      allow create: if isSelf(uid);
-      allow update: if isSelf(uid);
+      allow create: if isSignedIn();
+      allow update: if isSelf(uid) || (
+        isSignedIn() &&
+        request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['overall', 'byGame', 'displayName', 'photoURL', 'updatedAt'])
+      );
       allow delete: if false;
     }
 
