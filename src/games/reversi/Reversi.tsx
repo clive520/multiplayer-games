@@ -10,6 +10,7 @@ import {
 import { formatReversiSymbol } from './symbols';
 import { GameHeader, type GameHeaderStatus } from '../../core/components/GameHeader';
 import { BoardCell } from '../../core/components/BoardCell';
+import { useNewlyChangedCells } from '../../core/hooks/useNewlyChangedCells';
 import { BOARD_SIZE, type ReversiState } from './types';
 
 export default function Reversi({
@@ -148,6 +149,9 @@ export default function Reversi({
     headerStatus = { kind: 'opponentTurn', symbol: state.currentTurn, verb: '落子' };
   }
 
+  // 偵測剛變動的格子（IMPROVEMENTS #5）：新落子 + 翻面都算
+  const newlyChangedCells = useNewlyChangedCells(state.board);
+
   // 附加提示：觀戰者看到連續 Pass、輪到自己但無合法步
   const extraHint = (() => {
     if (state.passCount > 0 && isSpectator) {
@@ -243,7 +247,9 @@ export default function Reversi({
                 }
                 disabled={!canClick}
                 isLastMove={isLastMove}
+                lastMovePulse={isLastMove}
                 lastMovePosition="outer"
+                isNewlyPlaced={newlyChangedCells.has(idx)}
                 className={`border border-emerald-900/40 ${
                   canClick
                     ? 'cursor-pointer hover:bg-emerald-800/30'

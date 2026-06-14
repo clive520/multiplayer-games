@@ -5,6 +5,7 @@ import { ensureGameState, submitMove, subscribeGameState } from './sync';
 import { formatGomokuSymbol } from './symbols';
 import { GameHeader, type GameHeaderStatus } from '../../core/components/GameHeader';
 import { BoardCell } from '../../core/components/BoardCell';
+import { useNewlyChangedCells } from '../../core/hooks/useNewlyChangedCells';
 import { BOARD_SIZE, type GomokuState } from './types';
 
 export default function Gomoku({
@@ -106,6 +107,9 @@ export default function Gomoku({
     headerStatus = { kind: 'opponentTurn', symbol: state.nextSymbol, verb: '落子' };
   }
 
+  // 偵測剛變動的格子（IMPROVEMENTS #5）
+  const newlyChangedCells = useNewlyChangedCells(state.board);
+
   return (
     <div className="space-y-4">
       <GameHeader
@@ -153,7 +157,9 @@ export default function Gomoku({
                 }
                 disabled={!isMyTurn || !isEmpty}
                 isLastMove={isLastMove}
+                lastMovePulse={isLastMove}
                 lastMovePosition="outer"
+                isNewlyPlaced={newlyChangedCells.has(idx)}
                 className={`border border-amber-900/30 ${
                   isInWinLine ? 'bg-yellow-300' : 'hover:bg-amber-100'
                 } ${!isMyTurn || !isEmpty ? 'cursor-not-allowed' : 'cursor-pointer'}`}

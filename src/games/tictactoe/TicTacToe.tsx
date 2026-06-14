@@ -4,6 +4,7 @@ import { tictactoeEngine } from './engine';
 import { ensureGameState, submitMove, subscribeGameState } from './sync';
 import { GameHeader, type GameHeaderStatus } from '../../core/components/GameHeader';
 import { BoardCell } from '../../core/components/BoardCell';
+import { useNewlyChangedCells } from '../../core/hooks/useNewlyChangedCells';
 import { BOARD_SIZE, type TicTacToeState } from './types';
 
 export default function TicTacToe({
@@ -98,6 +99,9 @@ export default function TicTacToe({
     headerStatus = { kind: 'opponentTurn', symbol: state.nextSymbol, verb: '下棋' };
   }
 
+  // 偵測剛變動的格子（IMPROVEMENTS #5）
+  const newlyChangedCells = useNewlyChangedCells(state.board);
+
   return (
     <div className="space-y-4">
       <GameHeader
@@ -136,6 +140,8 @@ export default function TicTacToe({
               }
               disabled={!isMyTurn || !isEmpty}
               isLastMove={isLastMove && cell !== ''}
+              lastMovePulse={isLastMove && cell !== ''}
+              isNewlyPlaced={newlyChangedCells.has(idx)}
               className={`rounded-lg ${
                 isLastMove
                   ? 'bg-yellow-900/40 ring-2 ring-yellow-500'

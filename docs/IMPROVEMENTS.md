@@ -9,11 +9,11 @@
 ## 進度總覽
 
 - **總項目**：26
-- **✅ 已完成**：4
+- **✅ 已完成**：5
 - **⏳ 進行中**：0
-- **⬜ 待辦**：22
-- **已完成優先項目**：1, 2, 3, 4
-- **剩餘優先項目**：5, 6, 7, 8, 9, 10
+- **⬜ 待辦**：21
+- **已完成優先項目**：1, 2, 3, 4, 5
+- **剩餘優先項目**：6, 7, 8, 9, 10
 
 ---
 
@@ -143,7 +143,7 @@
 
 ---
 
-### 5. 移動動畫 — ⬜ 待辦
+### 5. 移動動畫 — ✅ 已完成
 
 **類別**：觀戰體驗
 
@@ -159,7 +159,22 @@
 - 工程量小（純 CSS 動畫）
 
 **完成紀錄**：
-- ⬜
+- 2026-06-12 ✅
+  - 新增 CSS 動畫（`index.css`）：
+    - `@keyframes cell-appear`：新棋子淡入 + 放大回彈（280ms ease-out）
+    - `@keyframes pulse-ring`：最後落子格黃色光環脈動（1.6s 循環）
+    - `prefers-reduced-motion` 適配（無障礙）
+  - 新增 `core/hooks/useNewlyChangedCells.ts`：比對 board 變動，回傳剛變動的格子索引
+  - 擴充 `BoardCell` 元件：
+    - 新增 `isNewlyPlaced?: boolean` 開關 → 加 `animate-cell-appear`
+    - 新增 `lastMovePulse?: boolean` 開關 → 加 `animate-pulse-ring`
+  - 三個遊戲都改用：
+    - TicTacToe：fade-in + 黃色 ring 脈動
+    - Gomoku：fade-in + 紅點光環脈動（位置 outer）
+    - Reversi：fade-in + 紅點光環脈動（包含翻面動畫：因為 useNewlyChangedCells 也偵測 X↔O 變化）
+  - 新增 4 個 useNewlyChangedCells 測試（初始、變動、翻面、自動清除）
+  - 77 測試通過（原 73 + 新增 4）、typecheck ✓、build ✓
+  - **觀戰者立刻能看出**：每步棋落下都有淡入 + 放大回彈；最後落子格持續脈動黃色光環
 
 ---
 
@@ -572,3 +587,4 @@
 | 2026-06-12 | ✅ #2 抽出共用元件完成：GameHeader / PlayerBadge / BoardCell，3 個遊戲都改用 |
 | 2026-06-12 | ✅ #3 GameDefinition 擴充：tutorialSteps / estimatedDurationMin / variants，3 個遊戲都填入 metadata，Lobby 顯示 description 和預計時間 |
 | 2026-06-12 | ✅ #4 Toast 通知系統：4 種樣式 + useToast hook，替換首個 alert |
+| 2026-06-12 | ✅ #5 移動動畫：cell-appear / pulse-ring CSS keyframes + useNewlyChangedCells hook + BoardCell 兩個新 props |

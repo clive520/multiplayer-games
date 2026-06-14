@@ -104,6 +104,40 @@
 
 狀態：✓ 提交
 
+### ~18:30 — #5 移動動畫（IMPROVEMENTS #5）
+
+需求：每步棋落下應該有視覺提示，讓人馬上看出「剛才是誰下」。
+
+**新增**：
+- `index.css` CSS 動畫：
+  - `@keyframes cell-appear`：新棋子淡入 + 放大回彈（280ms ease-out）
+  - `@keyframes pulse-ring`：最後落子格黃色光環脈動（1.6s 循環）
+  - `prefers-reduced-motion` 適配（無障礙）
+- `core/hooks/useNewlyChangedCells.ts`：比對 board 變動，回傳剛變動的格子索引 Set
+- 4 個 hook 測試
+
+**修改**：
+- `core/components/BoardCell.tsx`：
+  - 新增 `isNewlyPlaced?: boolean` 開關
+  - 新增 `lastMovePulse?: boolean` 開關
+- 三個遊戲都改用：
+  - TicTacToe：fade-in + 黃色 ring 脈動
+  - Gomoku：fade-in + 紅點光環脈動
+  - Reversi：fade-in + 紅點光環脈動（**包含翻面動畫** — useNewlyChangedCells 偵測 X↔O 變化）
+
+**效果**：
+- 每步棋落下：淡入 + 放大回彈
+- 最後落子格：持續脈動黃色光環
+- Reversi 翻棋：同樣的 fade-in 動畫（看起來就像棋子被翻面）
+
+**驗證**：
+- `npm run build` ✓
+- `npm test` 77/77 通過（原 73 + 新增 4）✓
+
+**IMPROVEMENTS.md 狀態**：#5 改為 ✅
+
+狀態：✓ 提交
+
 ### ~18:15 — #4 統一錯誤處理 / Toast 通知（IMPROVEMENTS #4）
 
 需求：散落的 alert() 與各處 inline 紅色區塊錯誤不一致，需要統一。
