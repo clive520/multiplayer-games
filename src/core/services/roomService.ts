@@ -378,9 +378,10 @@ export async function leaveRoom(roomId: string): Promise<void> {
   }
 
   const remaining = room.players.filter((p) => p.uid !== uid);
-
-  // 房間空了（玩家 + 觀戰者都沒了）：刪除房間與相關資源（密碼索引、secret）
   const remainingSpectators = room.spectatorUids.filter((id) => id !== uid);
+
+  // 房間真的空了（玩家 + 觀戰者都沒了）：刪除房間與相關資源
+  // （IMPROVEMENTS #8 之後：觀戰者可繼續看結果，所以房間在「僅有觀戰者」狀態下保留）
   if (remaining.length === 0 && remainingSpectators.length === 0) {
     await deleteDoc(ref);
     if (room.hasPassword) {
@@ -391,7 +392,7 @@ export async function leaveRoom(roomId: string): Promise<void> {
     return;
   }
 
-  // 還有其他玩家：更新房間狀態
+  // 還有其他玩家或觀戰者：更新房間狀態
   const updates: Record<string, unknown> = {
     players: remaining,
     playerUids: remaining.map((p) => p.uid),
@@ -399,29 +400,49 @@ export async function leaveRoom(roomId: string): Promise<void> {
   };
 
   // 房主轉移邏輯：如果離開的是房主，自動把主持權轉給下一位
-  // （陣列中第一個剩餘玩家 = 最早加入的非房主玩家）
+  // - 還有其他玩家：轉給第一位剩餘玩家
+  // - 沒有其他玩家但有觀戰者：轉給第一位觀戰者（避免 hostId 指向已離開的人）
+  // - 都沒有（理論上不會到這因為前面已 return）：保險設 null
   let winnerUidAfterForfeit: string | null = null;
   if (room.hostId === uid) {
-    const newHost = remaining[0];
-    const transferredPlayer: RoomPlayer = {
-      ...newHost,
-      isHost: true,
-      ready: true, // 新房主預設為「準備」狀態
-    };
-    remaining[0] = transferredPlayer;
-    updates.players = remaining;
-    updates.hostId = transferredPlayer.uid;
+    if (remaining.length > 0) {
+      const newHost = remaining[0];
+      const transferredPlayer: RoomPlayer = {
+        ...newHost,
+        isHost: true,
+        ready: true, // 新房主預設為「準備」狀態
+      };
+      remaining[0] = transferredPlayer;
+      updates.players = remaining;
+      updates.hostId = transferredPlayer.uid;
+    } else if (remainingSpectators.length > 0) {
+      // 觀戰者升格為房主（第一位）
+      updates.hostId = remainingSpectators[0];
+    } else {
+      updates.hostId = null;
+    }
   }
 
-  // 主動離開 → 若遊戲進行中，直接 forfeit（離開者敗）
+  // 主動離開 → 若遊戲進行中，處理 forfeit
+  // - 還有其他玩家：離開者敗，第一位剩餘玩家勝
+  // - 沒有其他玩家（但有觀戰者）：直接結束遊戲為平手（無人可勝）
   if (room.status === 'playing') {
-    winnerUidAfterForfeit = remaining[0].uid; // 第一個剩餘玩家 = 勝者
-    updates.status = 'finished' as RoomStatus;
-    updates.endedAt = serverTimestamp();
-    updates.winnerId = winnerUidAfterForfeit;
-    updates.isDraw = false;
-    updates.turnStartedAt = null;
-    updates.turnSymbol = null;
+    if (remaining.length > 0) {
+      winnerUidAfterForfeit = remaining[0].uid;
+      updates.status = 'finished' as RoomStatus;
+      updates.endedAt = serverTimestamp();
+      updates.winnerId = winnerUidAfterForfeit;
+      updates.isDraw = false;
+      updates.turnStartedAt = null;
+      updates.turnSymbol = null;
+    } else {
+      updates.status = 'finished' as RoomStatus;
+      updates.endedAt = serverTimestamp();
+      updates.winnerId = null;
+      updates.isDraw = true; // 沒有玩家可勝，視為平手
+      updates.turnStartedAt = null;
+      updates.turnSymbol = null;
+    }
   }
 
   await updateDoc(ref, updates);
