@@ -10,11 +10,13 @@ import type { GameType } from '../core/types/room';
 const GAME_LABELS: Record<GameType, string> = {
   tictactoe: '井字遊戲',
   gomoku: '五子棋',
+  reversi: '黑白棋',
 };
 
 const GAME_ICONS: Record<GameType, string> = {
   tictactoe: '[井]',
   gomoku: '[五]',
+  reversi: '[黑]',
 };
 
 function formatTime(ms: number): string {

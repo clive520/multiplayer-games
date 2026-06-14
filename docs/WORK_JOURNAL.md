@@ -8,6 +8,49 @@
 
 ## 2026-06-12（Day 2）— 部署、文件整理
 
+### ~10:50 — 黑白棋遊戲上線
+
+#### 動機
+- 用戶選擇：架構驗證度下一個遊戲
+- 選項分析：黑白棋（有翻子邏輯）/ UNO（多人+隱私）/ 象棋（棋子複雜）/ 你畫我猜（即時繪圖）
+- 選了黑白棋：翻子機制是新的引擎驗證，工作量適中
+
+#### 實作（`src/games/reversi/`）
+- **types.ts**：8x8 棋盤、Cell = 'X' | 'O' | ''、standard 開局 4 個中央棋子
+- **engine.ts**：
+  - `findFlipsInDirection`：8 方向掃描找可翻的對手棋子
+  - `findAllFlips`：8 方向總集
+  - `validateMove`：檢查落子位置至少能翻一個方向
+  - `applyMove`：落子 + 翻子 + 切換 currentTurn + 重置 passCount
+  - `checkResult`：棋盤滿或 passCount >= 2 才結束，計算 X/O 數量決定勝負
+  - `hasValidMove`：輔助函式判斷某玩家有無合法步
+- **engine.test.ts**：14 個測試（初始狀態、合法步位置、validate/apply 翻轉、checkResult、hasValidMove）
+- **sync.ts**：
+  - `ensureGameState`、`submitMove`、`subscribeGameState`、`resetGameState`
+  - 新增 `passTurn`：當玩家無合法步時呼叫，currentTurn 切換、passCount + 1
+- **Reversi.tsx**：
+  - 8x8 棋盤 UI（X=黑、O=白）
+  - 棋子計數器（X vs O 即時顯示）
+  - 翻轉高亮（剛被翻的棋子黃色背景）
+  - 提示模式（綠色虛線圓顯示所有合法步位置）
+  - 自動偵測無合法步：顯示「需 Pass」按鈕
+  - Pass 計數顯示與遊戲結束判斷
+
+#### 整合
+- GameType 加 'reversi'
+- registry.ts 註冊 reversi
+- GameRoom.tsx 加入 reversi 的 resetGameState 處理
+- statsService、Leaderboard、Profile 自動支援（透過 registry 與 Record<GameType>）
+- Lobby 自動顯示「黑白棋」按鈕
+
+#### 測試結果
+- 53 個單元測試全過（12 井字 + 14 五子棋 + 14 黑白棋 + 13 密碼）
+- TypeScript 0 errors
+- Build 成功
+
+#### 狀態
+✓ 提交並推送，Vercel 自動部署中
+
 ### ~00:00（Day 3）— 分遊戲排行榜與綜合排行榜
 
 需求：排行榜依不同遊戲類型分別計算，再加一個綜合排行榜統計全部。

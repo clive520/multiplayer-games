@@ -11,12 +11,14 @@ const TABS: Array<{ value: LeaderboardScope; label: string }> = [
   { value: 'overall', label: '綜合' },
   { value: 'tictactoe', label: '井字遊戲' },
   { value: 'gomoku', label: '五子棋' },
+  { value: 'reversi', label: '黑白棋' },
 ];
 
 const SCOPE_LABEL: Record<LeaderboardScope, string> = {
   overall: '綜合',
   tictactoe: '井字遊戲',
   gomoku: '五子棋',
+  reversi: '黑白棋',
 };
 
 export default function Leaderboard() {
