@@ -11,6 +11,7 @@ import {
 } from '../core/services/roomService';
 import { resetGameState as resetTictactoeState } from '@/games/tictactoe/sync';
 import { resetGameState as resetGomokuState } from '@/games/gomoku/sync';
+import { resetGameState as resetReversiState } from '@/games/reversi/sync';
 import { ResultScreen } from '../core/components/ResultScreen';
 import { getGameDefinition } from '@/registry';
 import { useEffect, useState } from 'react';
@@ -28,6 +29,7 @@ export default function GameRoom() {
   const resetGameStateFor = async (gameType: string, id: string): Promise<void> => {
     if (gameType === 'tictactoe') return resetTictactoeState(id);
     if (gameType === 'gomoku') return resetGomokuState(id);
+    if (gameType === 'reversi') return resetReversiState(id);
   };
 
   const handleCopyCode = async () => {
