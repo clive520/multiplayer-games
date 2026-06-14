@@ -8,6 +8,7 @@ import {
   subscribeGameState,
 } from './sync';
 import { formatReversiSymbol } from './symbols';
+import { TurnCountdown } from '../../core/components/TurnCountdown';
 import { BOARD_SIZE, type ReversiState } from './types';
 
 export default function Reversi({
@@ -16,6 +17,7 @@ export default function Reversi({
   players,
   isHost,
   isSpectator = false,
+  turnSecondsLeft,
   onGameFinished,
   onActivity,
 }: GameComponentProps) {
@@ -140,6 +142,7 @@ export default function Reversi({
                   （已連續 Pass {state.passCount} 次）
                 </span>
               )}
+              <TurnCountdown secondsLeft={turnSecondsLeft} />
             </p>
           ) : isMyTurn ? (
             <p className="text-lg font-semibold text-green-400">
@@ -147,6 +150,7 @@ export default function Reversi({
               {!playerCanMove && (
                 <span className="ml-2 text-sm text-yellow-400">（無合法步，需 Pass）</span>
               )}
+              <TurnCountdown secondsLeft={turnSecondsLeft} />
             </p>
           ) : (
             <p className="text-lg text-slate-400">
@@ -156,6 +160,7 @@ export default function Reversi({
                   （已連續 Pass {state.passCount} 次）
                 </span>
               )}
+              <TurnCountdown secondsLeft={turnSecondsLeft} />
             </p>
           )}
         </div>

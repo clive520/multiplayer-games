@@ -104,6 +104,51 @@
 
 狀態：✓ 提交
 
+### ~15:00 — 回合倒數計時器（每回合 30 秒、自動 forfeit 當前玩家）
+
+需求：原本的 30 秒判斷機制對玩家不可見，常常莫名其妙被判定輸贏。改為：
+- 每個回合都有一個公開的倒數計時
+- 玩家和觀戰者都能清楚看到剩餘時間
+- 超時自動判當前玩家（turnSymbol）落敗
+
+**資料模型**：
+- `Room` 加 `turnStartedAt: number | null` 與 `turnSymbol: string | null`
+- `GameComponentProps` 加 `turnSecondsLeft?: number | null`
+
+**Firestore Rules**（已部署到 multiplayer-games-73a8f）：
+- update 白名單加 `turnStartedAt` / `turnSymbol`
+- 加合法性檢查：`turnStartedAt <= request.time.toMillis() + 5000`（防作弊）
+
+**roomService 改動**：
+- `createRoom` 初始化為 null
+- `startGame` 設為 `{turnStartedAt: now, turnSymbol: 'X'}`
+- `finishGame` / `resetRoom` / `leaveRoom`(forfeit) 清空
+- 新增 `updateTurn(roomId, nextSymbol)`：每個玩家下棋後呼叫
+
+**遊戲 sync 改動**：
+- `tictactoe/gomoku/reversi/sync.ts` 的 `submitMove` 成功後呼叫 `updateTurn(roomId, nextSymbol)`
+- `reversi/sync.ts` 的 `passTurn` 也呼叫 `updateTurn`
+
+**新元件** `core/components/TurnCountdown.tsx`：
+- 接收 `secondsLeft: number | null | undefined`
+- 顯示 `⏱ 剩餘 X 秒`
+- 變色：>10 灰色、5-10 黃色、<=5 紅色 + animate-pulse
+
+**GameRoom 改動**：
+- 每秒 tick `now` state 觸發重算 `turnSecondsLeft`
+- useEffect 監聽 `now` + `turnStartedAt` + `turnSymbol`：當 `now - turnStartedAt >= 30_000` 時，自動 `finishGame(winnerId = 另一方, isDraw = false)`
+- `forfeitTriggered` 旗標保證冪等
+- 移除舊的 `forfeitSecondsLeft` / `forfeitReason` / 橙色 forfeit banner（已被新倒數取代）
+- 將 `turnSecondsLeft` 傳給遊戲元件
+
+**遊戲元件改動**（tictactoe/gomoku/reversi）：
+- 接收 `turnSecondsLeft` prop
+- 在「輪到你（黑棋）」「等待對方下棋」「觀戰中」訊息旁加 `<TurnCountdown>` 元件
+
+**驗證**：typecheck ✓、62 測試通過、build ✓、Firestore rules 部署 ✓
+
+狀態：待提交
+
 ### ~14:50 — 棋子符號顯示優化（X/O → 黑棋/白棋）
 
 需求：五子棋和黑白棋的「符號：X」會讓觀戰者搞不清楚隊伍（X 是黑棋還是白棋？）。
@@ -124,7 +169,7 @@
 
 **驗證**：typecheck ✓、62 測試通過、build ✓
 
-狀態：待提交
+狀態：✓ 提交
 
 ### ~14:30 — 為每個遊戲加 SVG 圖示
 

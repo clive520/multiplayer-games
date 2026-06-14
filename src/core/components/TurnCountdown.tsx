@@ -1,0 +1,30 @@
+import type { ReactNode } from 'react';
+
+interface TurnCountdownProps {
+  secondsLeft: number | null | undefined;
+  className?: string;
+}
+
+/**
+ * 回合倒數顯示器：剩餘秒數 > 10 綠色、5-10 黃色、< 5 紅色 + 動畫
+ */
+export function TurnCountdown({ secondsLeft, className = '' }: TurnCountdownProps): ReactNode {
+  if (secondsLeft == null) return null;
+  let colorClass = 'text-slate-400';
+  if (secondsLeft <= 5) {
+    colorClass = 'text-red-400 animate-pulse font-bold';
+  } else if (secondsLeft <= 10) {
+    colorClass = 'text-yellow-400';
+  } else {
+    colorClass = 'text-slate-300';
+  }
+  return (
+    <span
+      className={`ml-2 inline-flex items-center gap-1 rounded bg-slate-900/60 px-2 py-0.5 text-sm ${colorClass} ${className}`}
+      title="每回合 30 秒，超時自動判當前玩家落敗"
+    >
+      <span aria-hidden>⏱</span>
+      剩餘 {secondsLeft} 秒
+    </span>
+  );
+}

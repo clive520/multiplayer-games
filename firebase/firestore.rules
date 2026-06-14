@@ -64,14 +64,15 @@ service cloud.firestore {
         request.resource.data.status == 'waiting';
 
       // 更新規則：四種合法情境
-      // 1. 已加入房間的玩家（改 ready、開始遊戲、結束遊戲等）
+      // 1. 已加入房間的玩家（改 ready、開始遊戲、結束遊戲、回合計時器等）
       // 2. 房主（重置房間、轉移房主給下一位）
       // 3. 還未加入但正要加入（把自己加進 playerUids 與 players）
       // 4. 觀戰者加入或離開（把自己加進 / 移出 spectatorUids 與 spectators）
-      // 允許的欄位含 hostId（房主離開時轉移給下一位）、spectators/spectatorUids（觀戰者）
+      // 允許的欄位含 hostId（房主離開時轉移給下一位）、spectators/spectatorUids（觀戰者）、
+      // turnStartedAt / turnSymbol（每回合計時器，由當前玩家下棋後更新）
       allow update: if isSignedIn() &&
         request.resource.data.diff(resource.data).affectedKeys()
-          .hasOnly(['players', 'playerUids', 'hostId', 'status', 'startedAt', 'endedAt', 'winnerId', 'isDraw', 'lastActivityAt', 'spectators', 'spectatorUids']) &&
+          .hasOnly(['players', 'playerUids', 'hostId', 'status', 'startedAt', 'endedAt', 'winnerId', 'isDraw', 'lastActivityAt', 'spectators', 'spectatorUids', 'turnStartedAt', 'turnSymbol']) &&
         (
           isRoomPlayer() ||
           resource.data.hostId == request.auth.uid ||
@@ -82,7 +83,12 @@ service cloud.firestore {
           // 加入/離開觀戰
           isAddingSelfToSpectators() ||
           isRemovingSelfFromSpectators()
-        );
+        ) &&
+        // 回合計時器時間合法性檢查：turnStartedAt 不能超過 server time + 5s（防止作弊）
+        // （舊資料沒有 turnStartedAt 時跳過檢查）
+        (!('turnStartedAt' in request.resource.data) ||
+         request.resource.data.turnStartedAt == null ||
+         request.resource.data.turnStartedAt <= request.time.toMillis() + 5000);
 
       // 刪除：房主可刪，或房間已空，或超過 30 分鐘無活動
       allow delete: if isSignedIn() && (

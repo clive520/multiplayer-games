@@ -63,6 +63,8 @@ function roomFromDoc(id: string, data: Record<string, unknown>): Room {
     endedAt: data.endedAt ? tsToMillis(data.endedAt) : null,
     winnerId: (data.winnerId as string) ?? null,
     isDraw: (data.isDraw as boolean) ?? false,
+    turnStartedAt: (data.turnStartedAt as number) ?? null,
+    turnSymbol: (data.turnSymbol as string) ?? null,
   };
 }
 
@@ -218,6 +220,8 @@ export async function createRoom(
       endedAt: null,
       winnerId: null,
       isDraw: false,
+      turnStartedAt: null,
+      turnSymbol: null,
     });
   } catch (err) {
     if (hasPassword && passwordHash) {
@@ -406,6 +410,8 @@ export async function leaveRoom(roomId: string): Promise<void> {
     updates.endedAt = serverTimestamp();
     updates.winnerId = winnerUidAfterForfeit;
     updates.isDraw = false;
+    updates.turnStartedAt = null;
+    updates.turnSymbol = null;
   }
 
   await updateDoc(ref, updates);
@@ -471,6 +477,8 @@ export async function startGame(roomId: string): Promise<void> {
     status: 'playing' as RoomStatus,
     startedAt: serverTimestamp(),
     lastActivityAt: Date.now(),
+    turnStartedAt: Date.now(),
+    turnSymbol: 'X',
   });
 }
 
@@ -491,6 +499,8 @@ export async function finishGame(
     winnerId,
     isDraw,
     lastActivityAt: Date.now(),
+    turnStartedAt: null,
+    turnSymbol: null,
   });
 
   const playersForStats = room.players.map((p) => ({
@@ -542,7 +552,26 @@ export async function resetRoom(roomId: string): Promise<void> {
     winnerId: null,
     isDraw: false,
     lastActivityAt: Date.now(),
+    turnStartedAt: null,
+    turnSymbol: null,
   });
+}
+
+/**
+ * 更新當前回合資訊：玩家下棋後呼叫，重置計時器並指定下一位該下的人
+ * 失敗時靜默處理（已通過遊戲本身的 RTDB 規則更新，計時器只是輔助 UI）
+ */
+export async function updateTurn(roomId: string, nextSymbol: string): Promise<void> {
+  try {
+    const ref = doc(db, ROOMS_COLLECTION, roomId);
+    await updateDoc(ref, {
+      turnStartedAt: Date.now(),
+      turnSymbol: nextSymbol,
+      lastActivityAt: Date.now(),
+    });
+  } catch (err) {
+    console.warn('updateTurn 寫入失敗（不影響遊戲本體）', err);
+  }
 }
 
 export interface RoomLookupResult {

@@ -3,6 +3,7 @@ import type { GameComponentProps } from '../../core/types/game';
 import { gomokuEngine } from './engine';
 import { ensureGameState, submitMove, subscribeGameState } from './sync';
 import { formatGomokuSymbol } from './symbols';
+import { TurnCountdown } from '../../core/components/TurnCountdown';
 import { BOARD_SIZE, type GomokuState } from './types';
 
 export default function Gomoku({
@@ -11,6 +12,7 @@ export default function Gomoku({
   players,
   isHost,
   isSpectator = false,
+  turnSecondsLeft,
   onGameFinished,
   onActivity,
 }: GameComponentProps) {
@@ -101,14 +103,17 @@ export default function Gomoku({
           ) : isSpectator ? (
             <p className="text-lg text-slate-400">
               觀戰中（{formatGomokuSymbol(state.nextSymbol)} 下）
+              <TurnCountdown secondsLeft={turnSecondsLeft} />
             </p>
           ) : isMyTurn ? (
             <p className="text-lg font-semibold text-green-400">
               輪到你（{formatGomokuSymbol(mySymbol ?? '')}）
+              <TurnCountdown secondsLeft={turnSecondsLeft} />
             </p>
           ) : (
             <p className="text-lg text-slate-400">
               等待對方落子（{formatGomokuSymbol(state.nextSymbol)}）
+              <TurnCountdown secondsLeft={turnSecondsLeft} />
             </p>
           )}
         </div>

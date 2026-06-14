@@ -37,6 +37,8 @@ export interface Room {
   endedAt: number | null;
   winnerId: string | null;
   isDraw: boolean;
+  turnStartedAt: number | null;
+  turnSymbol: string | null;
 }
 
 export interface RoomSummary {

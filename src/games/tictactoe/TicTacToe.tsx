@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import type { GameComponentProps } from '../../core/types/game';
 import { tictactoeEngine } from './engine';
 import { ensureGameState, submitMove, subscribeGameState } from './sync';
+import { TurnCountdown } from '../../core/components/TurnCountdown';
 import { BOARD_SIZE, type TicTacToeState } from './types';
 
 export default function TicTacToe({
@@ -10,6 +11,7 @@ export default function TicTacToe({
   players,
   isHost,
   isSpectator = false,
+  turnSecondsLeft,
   onGameFinished,
   onActivity,
 }: GameComponentProps) {
@@ -93,14 +95,17 @@ export default function TicTacToe({
           ) : isSpectator ? (
             <p className="text-lg text-slate-400">
               觀戰中（{state.nextSymbol} 下）
+              <TurnCountdown secondsLeft={turnSecondsLeft} />
             </p>
           ) : isMyTurn ? (
             <p className="text-lg font-semibold text-green-400">
               輪到你（{mySymbol}）
+              <TurnCountdown secondsLeft={turnSecondsLeft} />
             </p>
           ) : (
             <p className="text-lg text-slate-400">
               等待對方下棋（{state.nextSymbol}）
+              <TurnCountdown secondsLeft={turnSecondsLeft} />
             </p>
           )}
         </div>

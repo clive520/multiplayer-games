@@ -2,6 +2,7 @@ import { ref, onValue, runTransaction, type Unsubscribe } from 'firebase/databas
 import { rtdb } from '../../core/firebase/rtdb';
 import { gomokuEngine } from './engine';
 import { createInitialState, isValidState, type GomokuState } from './types';
+import { updateTurn } from '../../core/services/roomService';
 import type { GameMove } from '../../core/types/game';
 
 const statePath = (roomId: string) => `rooms-live/${roomId}/state`;
@@ -53,6 +54,11 @@ export async function submitMove(
     result = { applied: true };
     return newState;
   });
+
+  if (result.applied) {
+    const nextSymbol = playerSymbol === 'X' ? 'O' : 'X';
+    await updateTurn(roomId, nextSymbol);
+  }
 
   return result;
 }
