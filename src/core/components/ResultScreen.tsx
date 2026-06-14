@@ -1,27 +1,28 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import type { Room } from '../types/room';
+import { sendReaction, subscribeReactions, type RoomReaction } from '../services/reactionsService';
 
 interface ResultScreenProps {
   room: Room;
   currentUserId: string;
+  /** 當前使用者的暱稱（用於反應訊息附名） */
+  currentUserDisplayName: string;
   isHost: boolean;
   leaving: boolean;
   onLeave: () => void;
   onPlayAgain: () => void;
-  autoLeaveSeconds?: number;
-  /** 觀戰者設為 true：不自動離開、可選擇「返回大廳」手動離開（IMPROVEMENTS #8） */
-  disableAutoLeave?: boolean;
-  /** 觀戰者身份（影響訊息文案） */
+  /** 觀戰者身份（影響訊息文案與外框顏色） */
   isSpectator?: boolean;
 }
 
-type Outcome = 'win' | 'lose' | 'draw';
+type Outcome = 'win' | 'lose' | 'draw' | 'observer';
 
-interface Reaction {
-  id: string;
-  emoji: string;
-  /** 水平位置（百分比），避免 emoji 全部擠在中間 */
-  xPct: number;
+interface ReactionStyle {
+  border: string;
+  bg: string;
+  title: string;
+  subtitle: string;
+  accent: string;
 }
 
 const REACTION_OPTIONS: ReadonlyArray<{ emoji: string; label: string }> = [
@@ -32,16 +33,14 @@ const REACTION_OPTIONS: ReadonlyArray<{ emoji: string; label: string }> = [
   { emoji: '💪', label: '鼓勵' },
 ];
 
-function getOutcome(room: Room, currentUserId: string): Outcome {
+function getOutcome(room: Room, currentUserId: string, isSpectator: boolean): Outcome {
+  if (isSpectator) return 'observer';
   if (room.isDraw) return 'draw';
   if (room.winnerId && room.winnerId === currentUserId) return 'win';
   return 'lose';
 }
 
-const OUTCOME_STYLE: Record<
-  Outcome,
-  { border: string; bg: string; title: string; subtitle: string; accent: string }
-> = {
+const OUTCOME_STYLE: Record<Outcome, ReactionStyle> = {
   win: {
     border: 'border-yellow-500',
     bg: 'bg-gradient-to-b from-yellow-900/30 to-slate-800',
@@ -63,56 +62,44 @@ const OUTCOME_STYLE: Record<
     subtitle: 'text-slate-300',
     accent: 'text-slate-300',
   },
+  observer: {
+    border: 'border-blue-700',
+    bg: 'bg-gradient-to-b from-blue-900/20 to-slate-800',
+    title: '對戰結束',
+    subtitle: 'text-blue-300',
+    accent: 'text-blue-400',
+  },
 };
 
 export function ResultScreen({
   room,
   currentUserId,
+  currentUserDisplayName,
   isHost,
   leaving,
   onLeave,
   onPlayAgain,
-  autoLeaveSeconds = 20,
-  disableAutoLeave = false,
   isSpectator = false,
 }: ResultScreenProps) {
-  const [countdown, setCountdown] = useState(autoLeaveSeconds);
-  // 觀戰者預設不啟用倒數（disableAutoLeave 或 isSpectator）
-  const [countdownActive, setCountdownActive] = useState(!disableAutoLeave && !isSpectator);
-  const [hasAutoLeft, setHasAutoLeft] = useState(false);
-
-  // 觀戰者反應（IMPROVEMENTS #8）：點擊表情按鈕，emoji 飄起來
-  const [reactions, setReactions] = useState<Reaction[]>([]);
-  const reactionIdRef = useRef(0);
-
+  // 廣播反應（IMPROVEMENTS #8 延伸）：點擊表情，RTDB 同步給所有玩家 + 觀戰者
+  const [reactions, setReactions] = useState<RoomReaction[]>([]);
   useEffect(() => {
-    if (!countdownActive) return;
-    if (countdown <= 0) {
-      if (!hasAutoLeft) {
-        setHasAutoLeft(true);
-        onLeave();
-      }
-      return;
-    }
-    const timer = setTimeout(() => setCountdown((s) => s - 1), 1000);
-    return () => clearTimeout(timer);
-  }, [countdown, countdownActive, hasAutoLeft, onLeave]);
+    if (!room.id) return;
+    return subscribeReactions(room.id, setReactions);
+  }, [room.id]);
 
-  const sendReaction = (emoji: string) => {
-    const id = `reaction-${++reactionIdRef.current}`;
-    // 隨機水平位置（10% ~ 90%）讓 emoji 不會全部擠在中間
-    const xPct = 10 + Math.random() * 80;
-    setReactions((prev) => [...prev, { id, emoji, xPct }]);
-    // 3 秒後自動移除（與動畫時間一致）
-    window.setTimeout(() => {
-      setReactions((prev) => prev.filter((r) => r.id !== id));
-    }, 3000);
+  const handleSendReaction = (emoji: string) => {
+    if (leaving) return;
+    sendReaction(room.id, {
+      emoji,
+      uid: currentUserId,
+      displayName: currentUserDisplayName,
+    });
   };
 
-  const outcome = getOutcome(room, currentUserId);
+  const outcome = getOutcome(room, currentUserId, isSpectator);
   const style = OUTCOME_STYLE[outcome];
   const winner = room.players.find((p) => p.uid === room.winnerId) ?? null;
-  const progressPct = Math.max(0, Math.min(100, (countdown / autoLeaveSeconds) * 100));
 
   return (
     <section
@@ -120,20 +107,24 @@ export function ResultScreen({
       data-outcome={outcome}
       className={`relative rounded-xl border-2 ${style.border} ${style.bg} p-8 shadow-xl`}
     >
-      {/* 觀戰者反應浮動層 */}
+      {/* 廣播反應浮動層（觀戰者 + 玩家共用，RTDB 同步給所有人） */}
       {reactions.length > 0 && (
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0 overflow-hidden"
         >
           {reactions.map((r) => (
-            <span
+            <div
               key={r.id}
-              className="animate-reaction-float absolute bottom-12 text-3xl"
-              style={{ left: `${r.xPct}%` }}
+              data-testid="reaction-bubble"
+              className="animate-reaction-float absolute bottom-12 text-center"
+              style={{ left: `${r.xPct}%`, transform: 'translateX(-50%)' }}
             >
-              {r.emoji}
-            </span>
+              <div className="text-3xl drop-shadow-lg">{r.emoji}</div>
+              <div className="mt-1 whitespace-nowrap rounded-full bg-slate-900/70 px-2 py-0.5 text-xs font-medium text-white">
+                {r.displayName}
+              </div>
+            </div>
           ))}
         </div>
       )}
@@ -155,23 +146,21 @@ export function ResultScreen({
         {room.isDraw && (
           <p className="mt-3 text-slate-400">雙方勢均力敵，棋逢敵手</p>
         )}
-
-        {isSpectator && (
-          <p className="mt-2 text-xs text-blue-300">（你正在觀戰這場比賽）</p>
-        )}
       </div>
 
       <div className="mt-6 grid grid-cols-2 gap-3">
         {room.players.map((p) => {
-          const isMe = p.uid === currentUserId;
+          const isMe = !isSpectator && p.uid === currentUserId;
           const isWinner = p.uid === room.winnerId;
+          const isDraw = room.isDraw;
+          const isLoser = !isDraw && !isWinner;
           return (
             <div
               key={p.uid}
               className={`rounded-lg border p-3 ${
                 isWinner
                   ? 'border-yellow-500 bg-yellow-900/20'
-                  : outcome === 'lose' && isMe
+                  : isLoser && isMe
                     ? 'border-red-700 bg-red-900/20'
                     : 'border-slate-700 bg-slate-900/50'
               }`}
@@ -202,28 +191,22 @@ export function ResultScreen({
                 </span>
               </div>
               <p className={`mt-2 text-center text-xs font-semibold ${
-                isWinner ? 'text-yellow-400' : 'text-slate-500'
+                isDraw ? 'text-slate-300' : isWinner ? 'text-yellow-400' : 'text-slate-500'
               }`}>
-                {room.isDraw
-                  ? '平手'
-                  : isWinner
-                    ? '獲勝'
-                    : outcome === 'lose' && isMe
-                      ? '落敗'
-                      : '落敗'}
+                {isDraw ? '平手' : isWinner ? '獲勝' : '落敗'}
               </p>
             </div>
           );
         })}
       </div>
 
-      {/* 觀戰者反應按鈕列（IMPROVEMENTS #8） */}
+      {/* 反應按鈕列：所有在房間的人（玩家 + 觀戰者）都可按，廣播給所有人 */}
       <div className="mt-6 flex flex-wrap justify-center gap-2">
         {REACTION_OPTIONS.map((r) => (
           <button
             key={r.emoji}
             type="button"
-            onClick={() => sendReaction(r.emoji)}
+            onClick={() => handleSendReaction(r.emoji)}
             disabled={leaving}
             className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-600 bg-slate-800 text-xl hover:scale-110 hover:bg-slate-700 disabled:opacity-50"
             title={r.label}
@@ -234,86 +217,26 @@ export function ResultScreen({
         ))}
       </div>
 
-      <div className="mt-6">
-        {countdownActive ? (
-          <>
-            <div className="h-2 overflow-hidden rounded-full bg-slate-700">
-              <div
-                className="h-full bg-blue-500 transition-all duration-1000 ease-linear"
-                style={{ width: `${progressPct}%` }}
-              />
-            </div>
-            <p className="mt-2 text-center text-sm text-slate-400">
-              {countdown} 秒後自動離開房間
-            </p>
-          </>
-        ) : (
-          <p className="text-center text-sm text-slate-400">
-            {disableAutoLeave || isSpectator
-              ? '觀戰者可自由留下，無自動離開'
-              : '自動離開已暫停'}
-          </p>
-        )}
-      </div>
-
       <div className="mt-6 flex flex-wrap justify-center gap-2">
-        {/* 觀戰者用：可重新啟動自動離開 */}
-        {isSpectator && !countdownActive && (
-          <button
-            onClick={() => {
-              setCountdown(autoLeaveSeconds);
-              setCountdownActive(true);
-            }}
-            disabled={leaving}
-            className="rounded-lg border border-slate-600 bg-slate-800 px-4 py-2 text-sm text-slate-200 hover:bg-slate-700 disabled:opacity-50"
-          >
-            恢復自動離開
-          </button>
-        )}
-
-        {/* 玩家用：可暫停自動離開 */}
-        {!isSpectator && !disableAutoLeave && countdownActive && (
-          <button
-            onClick={() => setCountdownActive(false)}
-            disabled={leaving}
-            className="rounded-lg border border-slate-600 bg-slate-800 px-4 py-2 text-sm text-slate-200 hover:bg-slate-700 disabled:opacity-50"
-          >
-            留在此頁
-          </button>
-        )}
-
-        {/* 觀戰者用：手動返回大廳（明顯 CTA） */}
-        {isSpectator && (
-          <button
-            onClick={onLeave}
-            disabled={leaving}
-            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500 disabled:opacity-50"
-          >
-            {leaving ? '離開中...' : '返回大廳'}
-          </button>
-        )}
-
-        {/* 玩家用：再來一局（僅房主） */}
+        {/* 房主：再來一局 */}
         {isHost && !isSpectator && (
           <button
             onClick={onPlayAgain}
             disabled={leaving}
             className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-500 disabled:opacity-50"
           >
-            再來一局
+            {leaving ? '處理中...' : '再來一局'}
           </button>
         )}
 
-        {/* 玩家用：立即離開 */}
-        {!isSpectator && (
-          <button
-            onClick={onLeave}
-            disabled={leaving}
-            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500 disabled:opacity-50"
-          >
-            {leaving ? '離開中...' : '立即離開'}
-          </button>
-        )}
+        {/* 所有人（玩家 + 觀戰者 + 房主）：手動離開 */}
+        <button
+          onClick={onLeave}
+          disabled={leaving}
+          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500 disabled:opacity-50"
+        >
+          {leaving ? '離開中...' : '返回大廳'}
+        </button>
       </div>
     </section>
   );

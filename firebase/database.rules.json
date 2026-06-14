@@ -17,6 +17,16 @@
             ".read": "auth != null",
             ".write": "auth != null && auth.uid === $uid"
           }
+        },
+        // 觀戰者與玩家的即時反應（IMPROVEMENTS #8 延伸）
+        // 任何登入者皆可讀寫；資料短暫（sender 3.5s 後自動清掉）
+        // 結構：{ emoji, uid, displayName, xPct, createdAt }
+        "reactions": {
+          ".read": "auth != null",
+          ".write": "auth != null",
+          "$reactionId": {
+            ".validate": "newData.hasChildren(['emoji', 'uid', 'displayName', 'xPct', 'createdAt'])"
+          }
         }
       }
     }

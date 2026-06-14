@@ -25,7 +25,7 @@ const TURN_TIME_LIMIT_SEC_FALLBACK = 30;
 export default function GameRoom() {
   const { roomId } = useParams<{ roomId: string }>();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const { room, loading, error: roomError } = useRoom(roomId ?? null);
   // 動態載入遊戲元件：進入房間且 status=playing 時才 fetch 對應 chunk
   const [GameComp, setGameComp] = useState<ComponentType<GameComponentProps> | null>(null);
@@ -549,11 +549,11 @@ export default function GameRoom() {
             <ResultScreen
               room={room}
               currentUserId={user!.uid}
+              currentUserDisplayName={profile?.nickname ?? currentPlayer?.displayName ?? '匿名'}
               isHost={isHost}
               leaving={actionPending}
               onLeave={handleLeave}
               onPlayAgain={handleReset}
-              autoLeaveSeconds={20}
               isSpectator={isSpectator}
             />
           </div>
