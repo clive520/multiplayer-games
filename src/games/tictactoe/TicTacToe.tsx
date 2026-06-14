@@ -14,6 +14,7 @@ export default function TicTacToe({
 }: GameComponentProps) {
   const [state, setState] = useState<TicTacToeState | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [hoveredCell, setHoveredCell] = useState<{ row: number; col: number } | null>(null);
   const finishedReportedRef = useRef(false);
 
   useEffect(() => {
@@ -129,10 +130,16 @@ export default function TicTacToe({
             state.lastMove.row === row &&
             state.lastMove.col === col;
           const isEmpty = cell === '';
+          const isHovered = hoveredCell?.row === row && hoveredCell?.col === col;
+          const showPreview = isHovered && isMyTurn && isEmpty && mySymbol;
           return (
             <button
               key={idx}
               onClick={() => handleCellClick(row, col)}
+              onMouseEnter={() => setHoveredCell({ row, col })}
+              onMouseLeave={() =>
+                setHoveredCell((h) => (h?.row === row && h?.col === col ? null : h))
+              }
               disabled={!isMyTurn || !isEmpty}
               className={`aspect-square rounded text-5xl font-bold transition ${
                 cell === 'X'
@@ -151,6 +158,13 @@ export default function TicTacToe({
               }`}
             >
               {isEmpty ? '' : cell}
+              {/* 滑鼠 hover 預覽（半透明）*/}
+              {showPreview && mySymbol === 'X' && (
+                <span className="pointer-events-none absolute inset-0 flex items-center justify-center text-blue-400 opacity-40">×</span>
+              )}
+              {showPreview && mySymbol === 'O' && (
+                <span className="pointer-events-none absolute inset-0 flex items-center justify-center text-red-400 opacity-40">○</span>
+              )}
             </button>
           );
         })}

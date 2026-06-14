@@ -14,6 +14,7 @@ export default function Gomoku({
 }: GameComponentProps) {
   const [state, setState] = useState<GomokuState | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [hoveredCell, setHoveredCell] = useState<{ row: number; col: number } | null>(null);
   const finishedReportedRef = useRef(false);
 
   useEffect(() => {
@@ -144,10 +145,16 @@ export default function Gomoku({
               state.lastMove.col === col;
             const isInWinLine = winnerLineSet.has(`${row},${col}`);
             const isEmpty = cell === '';
+            const isHovered = hoveredCell?.row === row && hoveredCell?.col === col;
+            const showPreview = isHovered && isMyTurn && isEmpty && mySymbol;
             return (
               <button
                 key={idx}
                 onClick={() => handleCellClick(row, col)}
+                onMouseEnter={() => setHoveredCell({ row, col })}
+                onMouseLeave={() =>
+                  setHoveredCell((h) => (h?.row === row && h?.col === col ? null : h))
+                }
                 disabled={!isMyTurn || !isEmpty}
                 className={`relative border border-amber-900/30 ${
                   isInWinLine ? 'bg-yellow-300' : 'hover:bg-amber-100'
@@ -159,8 +166,15 @@ export default function Gomoku({
                 {cell === 'O' && (
                   <span className="absolute inset-1 rounded-full bg-white shadow-md ring-2 ring-black" />
                 )}
+                {/* 滑鼠 hover 預覽棋子（半透明）*/}
+                {showPreview && mySymbol === 'X' && (
+                  <span className="pointer-events-none absolute inset-1 rounded-full bg-black opacity-40" />
+                )}
+                {showPreview && mySymbol === 'O' && (
+                  <span className="pointer-events-none absolute inset-1 rounded-full bg-white opacity-40 ring-1 ring-black" />
+                )}
                 {isLastMove && (
-                  <span className="absolute right-0 top-0 h-2 w-2 rounded-full bg-red-500" />
+                  <span className="pointer-events-none absolute right-0 top-0 h-2 w-2 rounded-full bg-red-500" />
                 )}
               </button>
             );
