@@ -261,12 +261,17 @@ export default function GameRoom() {
   return (
     <div className="mx-auto min-h-screen max-w-3xl p-6">
       <header className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-bold">{gameDef?.name ?? room.gameType}</h1>
-          <p className="text-sm text-slate-400">
-            狀態：
-            {room.status === 'waiting' ? '等待中' : isPlaying ? '進行中' : '已結束'}
-          </p>
+        <div className="flex items-center gap-3">
+          {gameDef?.icon && (
+            <gameDef.icon className="h-10 w-10 text-slate-200" />
+          )}
+          <div>
+            <h1 className="text-xl font-bold">{gameDef?.name ?? room.gameType}</h1>
+            <p className="text-sm text-slate-400">
+              狀態：
+              {room.status === 'waiting' ? '等待中' : isPlaying ? '進行中' : '已結束'}
+            </p>
+          </div>
         </div>
         <button
           onClick={handleLeave}

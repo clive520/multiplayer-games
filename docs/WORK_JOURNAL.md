@@ -49,6 +49,32 @@
 
 狀態：✓ 提交
 
+### ~14:30 — 為每個遊戲加 SVG 圖示
+
+需求：每個遊戲需要一個一看就懂的圖示。
+
+設計：每個遊戲自己擁有 `Icon.tsx` 元件，透過 `GameDefinition.icon` 對外暴露；其他模組透過 `gameRegistry` 取得。
+
+**新檔案**：
+- `src/games/tictactoe/Icon.tsx` — 3x3 棋盤 + 藍色 X（左上）+ 紅色 O（中間）
+- `src/games/gomoku/Icon.tsx` — 棋盤 + 5 顆黑子水平連珠
+- `src/games/reversi/Icon.tsx` — 棋盤 + 4 顆黑白棋（黑、白、白、黑）
+
+**修改**：
+- `core/types/game.ts` — `GameDefinition` 加 `icon: ComponentType<{ className?: string }>`
+- 三個遊戲的 `index.ts` — 註冊 icon，並 re-export `*Icon` 給其他模組用
+- `Lobby.tsx` — 遊戲選擇按鈕、房間列表都加 icon
+- `Profile.tsx` — 「分遊戲戰績」每個遊戲加 icon（取代 [井]/[五]/[黑] 文字標籤）
+- `Leaderboard.tsx` — 分頁 tab 加 icon
+- `GameRoom.tsx` — header 標題旁加大 icon（h-10 w-10）
+
+**驗證**：
+- `npm run typecheck` ✓
+- `npm test` 62/62 通過 ✓
+- `npm run build` ✓
+
+狀態：待提交
+
 ### ~12:30 — 玩家暱稱系統（不顯示 Google 名稱）
 
 需求：登入後不使用 Google 帳號名稱，改用自訂暱稱。首次登入自動給流水號（如「玩家001」），使用者可自行編輯。
@@ -85,7 +111,7 @@
 - `npm test` 62/62 通過（新增 9 個 nickname 測試）✓
 - `npm run build` ✓
 
-狀態：待提交
+狀態：✓ 提交
 
 ### ~12:00 — 修正：井字遊戲改回 ×/○ 文字（續）
 

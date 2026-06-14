@@ -1,17 +1,30 @@
-import { useState } from 'react';
+import { useState, type ComponentType } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../core/auth/useAuth';
 import { signOut } from '../core/auth/googleSignIn';
 import { useLeaderboard, type LeaderboardScope } from '../core/hooks/useLeaderboard';
 import { getGameStats } from '../core/services/statsService';
 import type { LeaderboardEntry } from '../core/services/statsService';
+import { gameRegistry } from '@/registry';
 
-
-const TABS: Array<{ value: LeaderboardScope; label: string }> = [
+type IconComponent = ComponentType<{ className?: string }>;
+const TABS: Array<{ value: LeaderboardScope; label: string; Icon?: IconComponent }> = [
   { value: 'overall', label: '綜合' },
-  { value: 'tictactoe', label: '井字遊戲' },
-  { value: 'gomoku', label: '五子棋' },
-  { value: 'reversi', label: '黑白棋' },
+  {
+    value: 'tictactoe',
+    label: '井字遊戲',
+    Icon: gameRegistry.find((g) => g.id === 'tictactoe')!.icon,
+  },
+  {
+    value: 'gomoku',
+    label: '五子棋',
+    Icon: gameRegistry.find((g) => g.id === 'gomoku')!.icon,
+  },
+  {
+    value: 'reversi',
+    label: '黑白棋',
+    Icon: gameRegistry.find((g) => g.id === 'reversi')!.icon,
+  },
 ];
 
 const SCOPE_LABEL: Record<LeaderboardScope, string> = {
@@ -65,19 +78,23 @@ export default function Leaderboard() {
       </header>
 
       <div className="mb-4 flex flex-wrap gap-2">
-        {TABS.map((t) => (
-          <button
-            key={t.value}
-            onClick={() => setScope(t.value)}
-            className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
-              scope === t.value
-                ? 'bg-blue-600 text-white'
-                : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-            }`}
-          >
-            {t.label}
-          </button>
-        ))}
+        {TABS.map((t) => {
+          const Icon = t.Icon;
+          return (
+            <button
+              key={t.value}
+              onClick={() => setScope(t.value)}
+              className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition ${
+                scope === t.value
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+              }`}
+            >
+              {Icon && <Icon className="h-5 w-5" />}
+              {t.label}
+            </button>
+          );
+        })}
       </div>
 
       {error && (

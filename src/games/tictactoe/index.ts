@@ -1,5 +1,6 @@
 import type { GameDefinition } from '../../core/types/game';
 import TicTacToe from './TicTacToe';
+import TicTacToeIcon from './Icon';
 import { tictactoeEngine } from './engine';
 import type { TicTacToeState } from './types';
 
@@ -12,8 +13,10 @@ export const tictactoeDefinition: GameDefinition<TicTacToeState> = {
   component: TicTacToe,
   engine: tictactoeEngine,
   syncStrategy: 'hybrid',
+  icon: TicTacToeIcon,
 };
 
 export { default as TicTacToe } from './TicTacToe';
+export { default as TicTacToeIcon } from './Icon';
 export { tictactoeEngine } from './engine';
 export * from './types';

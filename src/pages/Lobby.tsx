@@ -228,22 +228,30 @@ export default function Lobby() {
         <div className="rounded-lg border border-slate-700 bg-slate-800 p-4">
           <p className="mb-2 text-sm text-slate-400">選擇遊戲</p>
           <div className="flex flex-wrap gap-2">
-            {gameRegistry.map((g) => (
-              <button
-                key={g.id}
-                onClick={() => setSelectedGame(g.id as GameType)}
-                className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
-                  selectedGame === g.id
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-                }`}
-              >
-                {g.name}
-                <span className="ml-1 text-xs opacity-70">
-                  ({g.minPlayers}-{g.maxPlayers} 人)
-                </span>
-              </button>
-            ))}
+            {gameRegistry.map((g) => {
+              const Icon = g.icon;
+              return (
+                <button
+                  key={g.id}
+                  onClick={() => setSelectedGame(g.id as GameType)}
+                  className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition ${
+                    selectedGame === g.id
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                  }`}
+                >
+                  <Icon
+                    className={`h-5 w-5 ${
+                      selectedGame === g.id ? 'text-white' : 'text-slate-300'
+                    }`}
+                  />
+                  {g.name}
+                  <span className="text-xs opacity-70">
+                    ({g.minPlayers}-{g.maxPlayers} 人)
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </div>
 
@@ -376,33 +384,39 @@ export default function Lobby() {
           </p>
         ) : (
           <ul className="space-y-2">
-            {rooms.map((room) => (
-              <li key={room.id}>
-                <button
-                  onClick={() => handleEnterRoom(room)}
-                  className="w-full rounded-lg border border-slate-700 bg-slate-800 p-4 text-left hover:border-slate-500"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      {room.hasPassword && (
-                        <span
-                          className="text-yellow-400"
-                          title="需要密碼"
-                          aria-label="需要密碼"
-                        >
-                          [鎖]
-                        </span>
-                      )}
-                      <div>
-                        <p className="font-medium">
-                          {GAME_LABELS[room.gameType] ?? room.gameType}
-                        </p>
-                        <p className="text-sm text-slate-400">
-                          房主：{room.hostName} · {room.playerCount}/
-                          {room.maxPlayers} 人
-                        </p>
+            {rooms.map((room) => {
+              const gameDef = gameRegistry.find((g) => g.id === room.gameType);
+              const Icon = gameDef?.icon;
+              return (
+                <li key={room.id}>
+                  <button
+                    onClick={() => handleEnterRoom(room)}
+                    className="w-full rounded-lg border border-slate-700 bg-slate-800 p-4 text-left hover:border-slate-500"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        {Icon && (
+                          <Icon className="h-8 w-8 text-slate-300" />
+                        )}
+                        <div>
+                          <p className="font-medium">
+                            {GAME_LABELS[room.gameType] ?? room.gameType}
+                            {room.hasPassword && (
+                              <span
+                                className="ml-2 text-xs text-yellow-400"
+                                title="需要密碼"
+                                aria-label="需要密碼"
+                              >
+                                [鎖]
+                              </span>
+                            )}
+                          </p>
+                          <p className="text-sm text-slate-400">
+                            房主：{room.hostName} · {room.playerCount}/
+                            {room.maxPlayers} 人
+                          </p>
+                        </div>
                       </div>
-                    </div>
                     <span
                       className={`rounded px-2 py-1 text-xs ${
                         room.status === 'waiting'
@@ -415,7 +429,8 @@ export default function Lobby() {
                   </div>
                 </button>
               </li>
-            ))}
+              );
+            })}
           </ul>
         )}
       </section>

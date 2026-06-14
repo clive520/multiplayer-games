@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent, type ComponentType } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../core/auth/useAuth';
 import { useUserHistory } from '../core/hooks/useUserHistory';
@@ -7,6 +7,7 @@ import { signOut } from '../core/auth/googleSignIn';
 import { calculateWinRate, getGameStats } from '../core/services/statsService';
 import { updateNickname, validateNickname } from '../core/services/profileService';
 import { isDefaultNicknameFormat } from '../core/types/user';
+import { gameRegistry } from '@/registry';
 import type { GameHistoryEntry } from '../core/services/historyService';
 import type { GameType } from '../core/types/room';
 
@@ -16,10 +17,11 @@ const GAME_LABELS: Record<GameType, string> = {
   reversi: '黑白棋',
 };
 
-const GAME_ICONS: Record<GameType, string> = {
-  tictactoe: '[井]',
-  gomoku: '[五]',
-  reversi: '[黑]',
+type IconComponent = ComponentType<{ className?: string }>;
+const GAME_ICONS: Record<GameType, IconComponent> = {
+  tictactoe: gameRegistry.find((g) => g.id === 'tictactoe')!.icon,
+  gomoku: gameRegistry.find((g) => g.id === 'gomoku')!.icon,
+  reversi: gameRegistry.find((g) => g.id === 'reversi')!.icon,
 };
 
 function formatTime(ms: number): string {
@@ -233,16 +235,19 @@ export default function Profile() {
             {(Object.keys(GAME_LABELS) as GameType[]).map((gt) => {
               const gs = getGameStats(showStats, gt);
               const rate = calculateWinRate(gs);
+              const Icon = GAME_ICONS[gt];
               return (
                 <div
                   key={gt}
                   className="rounded-lg border border-slate-700 bg-slate-800 p-4"
                 >
                   <div className="mb-2 flex items-center justify-between">
-                    <p className="text-sm font-medium text-white">
-                      <span className="mr-1 text-slate-500">{GAME_ICONS[gt]}</span>
-                      {GAME_LABELS[gt]}
-                    </p>
+                    <div className="flex items-center gap-2">
+                      {Icon && <Icon className="h-5 w-5 text-slate-300" />}
+                      <p className="text-sm font-medium text-white">
+                        {GAME_LABELS[gt]}
+                      </p>
+                    </div>
                     <p className="text-xs text-slate-500">{gs.totalGames} 場</p>
                   </div>
                   <div className="grid grid-cols-4 gap-2 text-center text-sm">
