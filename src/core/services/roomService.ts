@@ -306,6 +306,7 @@ export async function leaveRoom(roomId: string): Promise<void> {
   const room = roomFromDoc(snap.id, snap.data());
   const remaining = room.players.filter((p) => p.uid !== uid);
 
+  // 房間空了：刪除房間與相關資源（密碼索引、secret）
   if (remaining.length === 0) {
     await deleteDoc(ref);
     if (room.hasPassword) {
@@ -316,16 +317,25 @@ export async function leaveRoom(roomId: string): Promise<void> {
     return;
   }
 
+  // 還有其他玩家：更新房間狀態
   const updates: Record<string, unknown> = {
     players: remaining,
     playerUids: remaining.map((p) => p.uid),
     lastActivityAt: Date.now(),
   };
 
+  // 房主轉移邏輯：如果離開的是房主，自動把主持權轉給下一位
+  // （陣列中第一個剩餘玩家 = 最早加入的非房主玩家）
   if (room.hostId === uid) {
     const newHost = remaining[0];
-    remaining[0] = { ...newHost, isHost: true, ready: true };
-    updates.hostId = newHost.uid;
+    const transferredPlayer: RoomPlayer = {
+      ...newHost,
+      isHost: true,
+      ready: true, // 新房主預設為「準備」狀態
+    };
+    remaining[0] = transferredPlayer;
+    updates.players = remaining;
+    updates.hostId = transferredPlayer.uid;
   }
 
   await updateDoc(ref, updates);

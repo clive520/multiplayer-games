@@ -42,11 +42,12 @@ service cloud.firestore {
 
       // 更新規則：三種合法情境
       // 1. 已加入房間的玩家（改 ready、開始遊戲、結束遊戲等）
-      // 2. 房主（重置房間）
+      // 2. 房主（重置房間、轉移房主給下一位）
       // 3. 還未加入但正要加入（把自己加進 playerUids 與 players）
+      // 允許的欄位含 hostId（房主離開時轉移給下一位）
       allow update: if isSignedIn() &&
         request.resource.data.diff(resource.data).affectedKeys()
-          .hasOnly(['players', 'playerUids', 'status', 'startedAt', 'endedAt', 'winnerId', 'isDraw', 'lastActivityAt']) &&
+          .hasOnly(['players', 'playerUids', 'hostId', 'status', 'startedAt', 'endedAt', 'winnerId', 'isDraw', 'lastActivityAt']) &&
         (
           isRoomPlayer() ||
           resource.data.hostId == request.auth.uid ||
