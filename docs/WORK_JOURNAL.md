@@ -104,6 +104,41 @@
 
 狀態：✓ 提交
 
+### ~18:55 — #7 大廳 hover 預覽房間（IMPROVEMENTS #7）
+
+需求：進房前先預覽房間資訊和棋盤現況。
+
+**新增**：
+- `core/components/BoardThumbnail.tsx`：棋盤縮圖
+  - 井字：3×3 文字格
+  - 黑白棋：8×8 黑白圓盤 + 計數
+  - 五子棋：15×15 太密不易看，改顯示「已下 N/225 子」
+- `core/components/RoomPreviewCard.tsx`：hover 預覽卡片
+  - 接受 `RoomSummary`（避免 API 變動）
+  - 房主、玩家數、回合時間、預計時間、觀戰人數
+  - 棋盤縮圖（僅 playing 房間）
+
+**修改**：
+- `pages/Lobby.tsx`：
+  - 加 `previewedRoomId` 狀態和 `previewedGameState` 訂閱
+  - 訂閱**單一**連線（避免 N 房間 N 訂閱）
+  - 房間按鈕加 onMouseEnter / onMouseLeave / onFocus / onBlur
+  - `<li>` 加 relative 定位
+  - Preview 卡片 absolute 定位於按鈕下方
+
+**MVP 限制**：
+- 預覽卡片只列房主名 + 玩家數，沒列每個玩家大頭貼
+  （RoomSummary 不含 players 詳細資料，要拿需改用 Room 型別）
+- 手機版無 hover 體驗（無 touch 事件支援），可後續加 tap-to-preview
+
+**驗證**：
+- `npm run build` ✓
+- `npm test` 78/78 通過 ✓
+
+**IMPROVEMENTS.md 狀態**：#7 改為 ✅
+
+狀態：✓ 提交
+
 ### ~18:45 — #6 棋譜 / 移動歷史面板（IMPROVEMENTS #6）
 
 需求：觀戰者要能回顧「這場下了哪些步、每步是誰」。

@@ -11,6 +11,9 @@ import {
 } from '../core/services/roomService';
 import { gameRegistry } from '@/registry';
 import { TURN_TIME_LIMITS, type GameType, type RoomSummary, type TurnTimeLimit } from '../core/types/room';
+import { RoomPreviewCard } from '../core/components/RoomPreviewCard';
+import { rtdb } from '../core/firebase/rtdb';
+import { ref, onValue, off } from 'firebase/database';
 
 const GAME_LABELS: Record<string, string> = Object.fromEntries(
   gameRegistry.map((g) => [g.id, g.name])
@@ -43,6 +46,12 @@ export default function Lobby() {
 
   const [cleanupInfo, setCleanupInfo] = useState<string | null>(null);
 
+  // IMPROVEMENTS #7：房間 hover 預覽
+  const [previewedRoomId, setPreviewedRoomId] = useState<string | null>(null);
+  const [previewedGameState, setPreviewedGameState] = useState<{
+    board?: ReadonlyArray<string>;
+  } | null>(null);
+
   useEffect(() => {
     cleanupAbandonedRooms()
       .then((result) => {
@@ -57,6 +66,22 @@ export default function Lobby() {
         console.warn('清理廢棄房間失敗', err);
       });
   }, []);
+
+  // IMPROVEMENTS #7：訂閱當前 hover 房間的 game state（單一連線，避免 N 個房間 N 個訂閱）
+  useEffect(() => {
+    if (!previewedRoomId) {
+      setPreviewedGameState(null);
+      return;
+    }
+    const stateRef = ref(rtdb, `rooms-live/${previewedRoomId}/state`);
+    const handler = onValue(stateRef, (snap) => {
+      const v = snap.val() as { board?: ReadonlyArray<string> } | null;
+      setPreviewedGameState(v);
+    });
+    return () => {
+      off(stateRef, 'value', handler);
+    };
+  }, [previewedRoomId]);
 
   const handleCreate = async () => {
     setActionError(null);
@@ -412,10 +437,19 @@ export default function Lobby() {
               const gameDef = gameRegistry.find((g) => g.id === room.gameType);
               const Icon = gameDef?.icon;
               const isPlaying = room.status === 'playing';
+              const isPreviewed = previewedRoomId === room.id;
               return (
-                <li key={room.id}>
+                <li key={room.id} className="group relative">
                   <button
                     onClick={() => handleEnterRoom(room)}
+                    onMouseEnter={() => setPreviewedRoomId(room.id)}
+                    onMouseLeave={() =>
+                      setPreviewedRoomId((id) => (id === room.id ? null : id))
+                    }
+                    onFocus={() => setPreviewedRoomId(room.id)}
+                    onBlur={() =>
+                      setPreviewedRoomId((id) => (id === room.id ? null : id))
+                    }
                     className="w-full rounded-lg border border-slate-700 bg-slate-800 p-4 text-left hover:border-slate-500"
                   >
                     <div className="flex items-center justify-between">
@@ -482,6 +516,19 @@ export default function Lobby() {
                       </div>
                     </div>
                   </button>
+                  {/* IMPROVEMENTS #7：hover / focus 時顯示的預覽卡片 */}
+                  <div
+                    aria-hidden={!isPreviewed}
+                    className={`pointer-events-none absolute left-0 right-0 top-full z-20 mt-2 transition-opacity duration-150 ${
+                      isPreviewed ? 'opacity-100' : 'invisible opacity-0'
+                    }`}
+                  >
+                    <RoomPreviewCard
+                      room={room}
+                      gameDef={gameDef}
+                      gameState={isPreviewed ? previewedGameState : null}
+                    />
+                  </div>
                 </li>
               );
             })}

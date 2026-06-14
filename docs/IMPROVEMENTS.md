@@ -9,11 +9,11 @@
 ## 進度總覽
 
 - **總項目**：26
-- **✅ 已完成**：6
+- **✅ 已完成**：7
 - **⏳ 進行中**：0
-- **⬜ 待辦**：20
-- **已完成優先項目**：1, 2, 3, 4, 5, 6
-- **剩餘優先項目**：7, 8, 9, 10
+- **⬜ 待辦**：19
+- **已完成優先項目**：1, 2, 3, 4, 5, 6, 7
+- **剩餘優先項目**：8, 9, 10
 
 ---
 
@@ -212,7 +212,7 @@
 
 ---
 
-### 7. 大廳 hover 預覽房間 — ⬜ 待辦
+### 7. 大廳 hover 預覽房間 — ✅ 已完成
 
 **類別**：觀戰體驗
 
@@ -226,7 +226,22 @@
 - 觀戰者能快速找到有趣的對局
 
 **完成紀錄**：
-- ⬜
+- 2026-06-12 ✅
+  - 新增 `core/components/BoardThumbnail.tsx`：棋盤縮圖元件
+    - tictactoe：3×3 文字格
+    - reversi：8×8 黑白圓盤 + 計數
+    - gomoku：15×15 太密不易看，改顯示「已下 N/225 子」
+  - 新增 `core/components/RoomPreviewCard.tsx`：hover 預覽卡片
+    - 左側：房主、玩家數、回合時間、預計時間、觀戰人數、建立時間
+    - 右側：棋盤縮圖（僅 playing 房間）
+    - 接受 `RoomSummary`（避免 API 變動）
+  - `pages/Lobby.tsx`：
+    - 新增 `previewedRoomId` 狀態
+    - 訂閱當前 preview 房間的 game state（**單一連線**，避免 N 房間 N 訂閱）
+    - 房間按鈕加 `onMouseEnter` / `onMouseLeave` / `onFocus` / `onBlur` 處理
+    - 每個房間 `<li>` 加上 preview 卡片（absolute 定位於卡片下方）
+  - 78 測試通過、typecheck ✓、build ✓
+  - **MVP 限制**：預覽卡片沒列出詳細玩家名單（RoomSummary 只含 hostName 和 count）
 
 ---
 
@@ -603,3 +618,4 @@
 | 2026-06-12 | ✅ #4 Toast 通知系統：4 種樣式 + useToast hook，替換首個 alert |
 | 2026-06-12 | ✅ #5 移動動畫：cell-appear / pulse-ring CSS keyframes + useNewlyChangedCells hook + BoardCell 兩個新 props |
 | 2026-06-12 | ✅ #6 棋譜面板：MoveRecord 型別 + 3 個遊戲 sync 記錄 + MoveHistory 元件 + GameRoom grid 佈局 |
+| 2026-06-12 | ✅ #7 Lobby hover 預覽：BoardThumbnail + RoomPreviewCard + 單一 RTDB 訂閱 + 鍵盤/滑鼠 hover 雙支援 |
