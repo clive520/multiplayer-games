@@ -104,33 +104,36 @@
 
 狀態：✓ 提交
 
-### ~15:45 — #1 程式碼分割（IMPROVEMENTS #1）
+### ~16:30 — Bug 修復：黑白棋棋盤滿了卻不結束
 
-需求：bundle 太大（870kB），加第四個遊戲會爆。
+**問題**：使用者回報黑白棋在全部 64 格下完時，遊戲不會自動結束，要等雙方都按 Pass 才結束。
 
-**修改**：
-- `core/types/game.ts`：`GameDefinition.component` 改為 `loadComponent: () => Promise<...>`
-- 三個遊戲 `index.ts`：`loadComponent: () => import('./Xxx').then(m => m.default)`
-- 移除不再被引用的 `TicTacToe/Gomoku/Reversi` re-exports（避免拉進 initial bundle）
-- `pages/GameRoom.tsx`：用 useState + useEffect 動態載入，加載入中 fallback
-  - 載入時顯示「載入遊戲中...」placeholder
-  - 切換 gameType 時自動重新載入
+**根因**：`engine.ts` 的 `checkResult` 用 `state.moveCount >= TOTAL_CELLS` 判斷棋盤已滿，但 `moveCount` 是「下棋次數」，不是「填入的格子數」。實際對戰中，每次落子都會翻好幾顆，所以 `moveCount` 永遠到不了 64，但 board 早就滿了。
+
+**修正**（`src/games/reversi/engine.ts`）：
+```ts
+// 改成計算實際填入的格子數
+const filledCells = state.board.reduce(
+  (n, c) => (c !== EMPTY_CELL ? n + 1 : n),
+  0
+);
+if (filledCells >= TOTAL_CELLS) {
+  return declareWinner(state, players);
+}
+```
+
+**測試**（`engine.test.ts` 新增 2 個 case）：
+- `棋盤已滿但 moveCount 為實際下棋次數（小於 64）：仍判結束`：模擬 bug 場景，moveCount=28 但 board 全填
+- `棋盤只有 1 格空：未結束`：邊界情況
 
 **驗證**：
+- `npm test` 68/68 通過（原 66 + 新增 2）✓
 - `npm run typecheck` ✓
-- `npm test` 66/66 通過 ✓
-- `npm run build` ✓ 拆分成功：
-  - `TicTacToe-...js` 4.33kB
-  - `Gomoku-...js` 4.06kB
-  - `Reversi-...js` 5.46kB
-  - `TurnCountdown-...js` 0.50kB（被兩遊戲共用，自動 split）
-  - main 略縮至 867kB（Firebase SDK 仍是主因，後續優化）
+- `npm run build` ✓
 
-**IMPROVEMENTS.md 狀態**：#1 改為 ✅
+狀態：待提交
 
-狀態：✓ 提交
-
-### ~15:20 — 房主可設定每回合思考時間
+### ~15:45 — #1 程式碼分割（IMPROVEMENTS #1）
 
 需求：30 秒太短，房主建立房間時可從 30 / 60 / 120 / 150 秒中選擇。
 

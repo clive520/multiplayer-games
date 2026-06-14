@@ -199,6 +199,33 @@ describe('reversiEngine', () => {
       expect(r.isDraw).toBe(true);
     });
 
+    it('棋盤已滿但 moveCount 為實際下棋次數（小於 64）：仍判結束（修復 bug）', () => {
+      // Bug 場景：實際對戰中，moveCount 永遠到不了 64（因為每次落子會翻好幾顆），
+      // 棋盤滿的判斷必須用「實際填的格子數」而非 moveCount。
+      // 此測試構造一個 board 全填、moveCount 只走 28 步的局面。
+      const s: ReversiState = {
+        ...reversiEngine.getInitialState(),
+        board: Array<Cell>(TOTAL_CELLS).fill('X'),
+        moveCount: 28,
+      };
+      const r = reversiEngine.checkResult(s, players);
+      expect(r.finished).toBe(true);
+      expect(r.winnerId).toBe('p1');
+    });
+
+    it('棋盤只有 1 格空：未結束', () => {
+      // 確認邊界情況：差一格沒滿時不能算結束
+      const board: Cell[] = Array<Cell>(TOTAL_CELLS).fill('X');
+      board[0] = ''; // 留 1 格空
+      const s: ReversiState = {
+        ...reversiEngine.getInitialState(),
+        board,
+        moveCount: 28,
+      };
+      const r = reversiEngine.checkResult(s, players);
+      expect(r.finished).toBe(false);
+    });
+
     it('passCount >= 2：遊戲結束（雙方都無法走）', () => {
       const s: ReversiState = {
         ...reversiEngine.getInitialState(),

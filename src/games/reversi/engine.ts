@@ -127,8 +127,12 @@ export const reversiEngine: GameEngine<ReversiState> = {
   },
 
   checkResult(state, players): GameResult {
-    // 棋盤已滿
-    if (state.moveCount >= TOTAL_CELLS) {
+    // 棋盤已滿（用實際填入的格子數判斷，moveCount 不等於此數，因為每次落子會翻好幾顆）
+    const filledCells = state.board.reduce(
+      (n, c) => (c !== EMPTY_CELL ? n + 1 : n),
+      0
+    );
+    if (filledCells >= TOTAL_CELLS) {
       return declareWinner(state, players);
     }
     // 雙方連續都 pass（無人能走）
