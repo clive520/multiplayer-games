@@ -14,6 +14,7 @@ export default function Reversi({
   currentUserId,
   players,
   isHost,
+  isSpectator = false,
   onGameFinished,
   onActivity,
 }: GameComponentProps) {
@@ -53,11 +54,11 @@ export default function Reversi({
 
   const currentPlayer = players.find((p) => p.uid === currentUserId) ?? null;
   const mySymbol = currentPlayer?.symbol as 'X' | 'O' | undefined;
-  const isMyTurn = state !== null && mySymbol === state.currentTurn;
+  const isMyTurn = !isSpectator && state !== null && mySymbol === state.currentTurn;
   const playerCanMove = useMemo(() => {
-    if (!state || !mySymbol) return false;
+    if (!state || !mySymbol || isSpectator) return false;
     return hasValidMove(state, mySymbol);
-  }, [state, mySymbol]);
+  }, [state, mySymbol, isSpectator]);
 
   const handleCellClick = async (row: number, col: number) => {
     if (!state || !currentPlayer || !isMyTurn) return;
@@ -130,7 +131,16 @@ export default function Reversi({
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-700 bg-slate-800 p-4">
         <div>
-          {isMyTurn ? (
+          {isSpectator ? (
+            <p className="text-lg text-slate-400">
+              觀戰中（{state.currentTurn} 下）
+              {state.passCount > 0 && (
+                <span className="ml-2 text-sm text-yellow-400">
+                  （已連續 Pass {state.passCount} 次）
+                </span>
+              )}
+            </p>
+          ) : isMyTurn ? (
             <p className="text-lg font-semibold text-green-400">
               輪到你（{mySymbol}）
               {!playerCanMove && (

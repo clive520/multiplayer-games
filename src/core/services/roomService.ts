@@ -23,7 +23,7 @@ import { hashPassword, isValidPasswordFormat, normalizePassword } from '../utils
 import { getGameDefinition } from '@/registry';
 import { recordGameResult } from './statsService';
 import { recordGameHistory } from './historyService';
-import type { GameType, Room, RoomPlayer, RoomStatus, RoomSummary } from '../types/room';
+import type { GameType, Room, RoomPlayer, RoomStatus, RoomSummary, Spectator } from '../types/room';
 
 const ROOMS_COLLECTION = 'rooms';
 const PASSWORD_INDEX_COLLECTION = 'passwordIndex';
@@ -54,6 +54,8 @@ function roomFromDoc(id: string, data: Record<string, unknown>): Room {
     status: data.status as RoomStatus,
     players: (data.players as RoomPlayer[]) ?? [],
     playerUids: (data.playerUids as string[]) ?? [],
+    spectators: (data.spectators as Spectator[]) ?? [],
+    spectatorUids: (data.spectatorUids as string[]) ?? [],
     hasPassword: (data.hasPassword as boolean) ?? false,
     createdAt: tsToMillis(data.createdAt),
     lastActivityAt: tsToMillis(data.lastActivityAt) || now,
@@ -66,6 +68,7 @@ function roomFromDoc(id: string, data: Record<string, unknown>): Room {
 
 function roomSummaryFromDoc(id: string, data: Record<string, unknown>): RoomSummary {
   const players = (data.players as RoomPlayer[]) ?? [];
+  const spectators = (data.spectators as Spectator[]) ?? [];
   const host = players.find((p) => p.isHost) ?? players[0];
   const def = getGameDefinition(data.gameType as GameType);
   return {
@@ -75,6 +78,7 @@ function roomSummaryFromDoc(id: string, data: Record<string, unknown>): RoomSumm
     hostName: host?.displayName ?? 'Unknown',
     playerCount: players.length,
     maxPlayers: def?.maxPlayers ?? 2,
+    spectatorCount: spectators.length,
     status: data.status as RoomStatus,
     hasPassword: (data.hasPassword as boolean) ?? false,
     createdAt: tsToMillis(data.createdAt),
@@ -101,6 +105,16 @@ function buildPlayerEntry(
     symbol,
     ready: isHost,
     isHost,
+  };
+}
+
+function buildSpectatorEntry(uid: string, nickname: string): Spectator {
+  const user = auth.currentUser!;
+  return {
+    uid,
+    nickname,
+    photoURL: user.photoURL ?? null,
+    joinedAt: Date.now(),
   };
 }
 
@@ -195,6 +209,8 @@ export async function createRoom(
       status: 'waiting' as RoomStatus,
       players: [player],
       playerUids: [uid],
+      spectators: [],
+      spectatorUids: [],
       hasPassword,
       createdAt: serverTimestamp(),
       lastActivityAt: now,
@@ -270,10 +286,17 @@ export async function joinRoomByCode(
   const def = getGameDefinition(room.gameType);
   if (!def) throw new Error('房間使用未知的遊戲類型');
 
+  // 已是玩家：直接返回房間 id
   if (room.players.some((p) => p.uid === uid)) {
     return roomDocRef.id;
   }
 
+  // 已是觀戰者：直接返回房間 id
+  if (room.spectatorUids.includes(uid)) {
+    return roomDocRef.id;
+  }
+
+  // 密碼驗證：玩家和觀戰者都需要
   if (room.hasPassword) {
     const password = options.password ?? '';
     if (!password) {
@@ -292,6 +315,18 @@ export async function joinRoomByCode(
     }
   }
 
+  // 進行中的房間：以觀戰者身份加入
+  if (room.status === 'playing') {
+    const newSpectator = buildSpectatorEntry(uid, nickname);
+    await updateDoc(roomDocRef, {
+      spectators: [...room.spectators, newSpectator],
+      spectatorUids: [...room.spectatorUids, uid],
+      lastActivityAt: Date.now(),
+    });
+    return roomDocRef.id;
+  }
+
+  // 等待中的房間：以玩家身份加入（若已滿則拒絕）
   if (room.players.length >= def.maxPlayers) {
     throw new Error('房間已滿');
   }
@@ -315,10 +350,24 @@ export async function leaveRoom(roomId: string): Promise<void> {
   if (!snap.exists()) return;
 
   const room = roomFromDoc(snap.id, snap.data());
+
+  // 觀戰者離開：只把自己從 spectators / spectatorUids 移出，不影響玩家
+  if (room.spectatorUids.includes(uid) && !room.playerUids.includes(uid)) {
+    const remainingSpectators = room.spectators.filter((s) => s.uid !== uid);
+    const remainingSpectatorUids = room.spectatorUids.filter((id) => id !== uid);
+    await updateDoc(ref, {
+      spectators: remainingSpectators,
+      spectatorUids: remainingSpectatorUids,
+      lastActivityAt: Date.now(),
+    });
+    return;
+  }
+
   const remaining = room.players.filter((p) => p.uid !== uid);
 
-  // 房間空了：刪除房間與相關資源（密碼索引、secret）
-  if (remaining.length === 0) {
+  // 房間空了（玩家 + 觀戰者都沒了）：刪除房間與相關資源（密碼索引、secret）
+  const remainingSpectators = room.spectatorUids.filter((id) => id !== uid);
+  if (remaining.length === 0 && remainingSpectators.length === 0) {
     await deleteDoc(ref);
     if (room.hasPassword) {
       const hash = await getRoomPasswordHash(roomId);

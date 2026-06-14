@@ -387,6 +387,7 @@ export default function Lobby() {
             {rooms.map((room) => {
               const gameDef = gameRegistry.find((g) => g.id === room.gameType);
               const Icon = gameDef?.icon;
+              const isPlaying = room.status === 'playing';
               return (
                 <li key={room.id}>
                   <button
@@ -414,21 +415,37 @@ export default function Lobby() {
                           <p className="text-sm text-slate-400">
                             房主：{room.hostName} · {room.playerCount}/
                             {room.maxPlayers} 人
+                            {room.spectatorCount > 0 && (
+                              <span className="ml-2 text-blue-300">
+                                · {room.spectatorCount} 觀戰
+                              </span>
+                            )}
                           </p>
                         </div>
                       </div>
-                    <span
-                      className={`rounded px-2 py-1 text-xs ${
-                        room.status === 'waiting'
-                          ? 'bg-yellow-900/50 text-yellow-300'
-                          : 'bg-green-900/50 text-green-300'
-                      }`}
-                    >
-                      {room.status === 'waiting' ? '等待中' : '進行中'}
-                    </span>
-                  </div>
-                </button>
-              </li>
+                      <div className="flex flex-col items-end gap-1">
+                        <span
+                          className={`rounded px-2 py-1 text-xs ${
+                            isPlaying
+                              ? 'bg-green-900/50 text-green-300'
+                              : 'bg-yellow-900/50 text-yellow-300'
+                          }`}
+                        >
+                          {isPlaying ? '進行中' : '等待中'}
+                        </span>
+                        <span
+                          className={`rounded px-2 py-1 text-xs ${
+                            isPlaying
+                              ? 'bg-blue-900/50 text-blue-300'
+                              : 'bg-slate-700 text-slate-300'
+                          }`}
+                        >
+                          {isPlaying ? '觀戰' : '加入'}
+                        </span>
+                      </div>
+                    </div>
+                  </button>
+                </li>
               );
             })}
           </ul>

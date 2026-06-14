@@ -9,6 +9,7 @@ export default function Gomoku({
   currentUserId,
   players,
   isHost,
+  isSpectator = false,
   onGameFinished,
   onActivity,
 }: GameComponentProps) {
@@ -47,7 +48,7 @@ export default function Gomoku({
 
   const currentPlayer = players.find((p) => p.uid === currentUserId) ?? null;
   const mySymbol = currentPlayer?.symbol;
-  const isMyTurn = state !== null && mySymbol === state.nextSymbol;
+  const isMyTurn = !isSpectator && state !== null && mySymbol === state.nextSymbol;
   const winnerSymbol = state?.lastMove && state.winnerLine ? state.lastMove.symbol : null;
   const winnerPlayer = winnerSymbol
     ? players.find((p) => p.symbol === winnerSymbol) ?? null
@@ -96,6 +97,10 @@ export default function Gomoku({
             </p>
           ) : state.moveCount >= BOARD_SIZE * BOARD_SIZE ? (
             <p className="text-lg font-semibold text-slate-300">平手！</p>
+          ) : isSpectator ? (
+            <p className="text-lg text-slate-400">
+              觀戰中（{state.nextSymbol} 下）
+            </p>
           ) : isMyTurn ? (
             <p className="text-lg font-semibold text-green-400">
               輪到你（{mySymbol}）

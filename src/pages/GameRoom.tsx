@@ -89,6 +89,7 @@ export default function GameRoom() {
   useEffect(() => {
     if (!room || !user || room.status !== 'playing') return;
     if (forfeitTriggered) return;
+    if (isSpectator) return; // 觀戰者不觸發 forfeit 計時
 
     // 找出「不是自己」的玩家
     const opponent = room.players.find((p) => p.uid !== user.uid);
@@ -199,6 +200,7 @@ export default function GameRoom() {
   }
 
   const currentPlayer = room.players.find((p) => p.uid === user?.uid) ?? null;
+  const isSpectator = !!user && !currentPlayer;
   const gameDef = getGameDefinition(room.gameType);
   const isHost = currentPlayer?.isHost ?? false;
   const isFinished = room.status === 'finished';
@@ -217,7 +219,15 @@ export default function GameRoom() {
   };
 
   const handleLeave = async () => {
-    // 遊戲進行中：跳出確認對話框
+    // 觀戰者：直接離開，沒 forfeit 風險
+    if (isSpectator) {
+      await runAction(async () => {
+        await leaveRoom(roomId);
+        navigate('/lobby');
+      });
+      return;
+    }
+    // 玩家遊戲進行中：跳出確認對話框
     if (room?.status === 'playing' && !forfeitTriggered) {
       setShowLeaveConfirm(true);
       return;
@@ -357,8 +367,16 @@ export default function GameRoom() {
         </div>
       )}
 
-      <section className="mb-6 rounded-lg border border-slate-700 bg-slate-800 p-4">
-        <h2 className="mb-3 text-sm font-semibold text-slate-300">玩家</h2>
+      {isSpectator && (
+        <section className="mb-4 rounded-lg border border-blue-700 bg-blue-900/20 p-3 text-sm text-blue-200">
+          您正在觀戰這場比賽，無法進行任何操作。
+        </section>
+      )}
+
+      <section className="mb-4 rounded-lg border border-slate-700 bg-slate-800 p-4">
+        <h2 className="mb-3 text-sm font-semibold text-slate-300">
+          玩家（{room.players.length}/{gameDef?.maxPlayers ?? 2}）
+        </h2>
         <ul className="space-y-2">
           {room.players.length === 0 ? (
             <li className="text-slate-500">房間沒有玩家</li>
@@ -414,6 +432,47 @@ export default function GameRoom() {
         </ul>
       </section>
 
+      {room.spectators.length > 0 && (
+        <section className="mb-6 rounded-lg border border-slate-700 bg-slate-800 p-4">
+          <h2 className="mb-3 text-sm font-semibold text-slate-300">
+            觀戰者（{room.spectators.length}）
+          </h2>
+          <ul className="space-y-2">
+            {room.spectators.map((s) => {
+              const isOnline = presence[s.uid]?.online === true;
+              return (
+                <li
+                  key={s.uid}
+                  className="flex items-center gap-3 rounded bg-slate-900/50 p-2"
+                >
+                  <div className="relative">
+                    {s.photoURL ? (
+                      <img
+                        src={s.photoURL}
+                        alt={s.nickname}
+                        className="h-8 w-8 rounded-full"
+                      />
+                    ) : (
+                      <div className="h-8 w-8 rounded-full bg-slate-700" />
+                    )}
+                    <span
+                      className={`absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-slate-900 ${
+                        isOnline ? 'bg-green-500' : 'bg-slate-500'
+                      }`}
+                      title={isOnline ? '在線' : '離線'}
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium">{s.nickname}</p>
+                    <p className="text-xs text-slate-500">觀戰中</p>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
+
       {room.status === 'waiting' && currentPlayer && (
         <div className="mb-6 flex flex-wrap gap-2">
           <button
@@ -439,7 +498,7 @@ export default function GameRoom() {
         </div>
       )}
 
-      {isPlaying && gameDef && currentPlayer && (
+      {isPlaying && gameDef && (currentPlayer || isSpectator) && (
         <gameDef.component
           roomId={roomId}
           currentUserId={user!.uid}
@@ -450,6 +509,7 @@ export default function GameRoom() {
             photoURL: p.photoURL,
           }))}
           isHost={isHost}
+          isSpectator={isSpectator}
           onGameFinished={async (winnerId, isDraw) => {
             await finishGame(roomId, winnerId, isDraw);
           }}

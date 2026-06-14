@@ -22,6 +22,7 @@ export interface GameComponentProps {
     photoURL: string | null;
   }>;
   isHost: boolean;
+  isSpectator?: boolean;
   onGameFinished: (winnerId: string | null, isDraw: boolean) => Promise<void>;
   onActivity?: () => void;
 }

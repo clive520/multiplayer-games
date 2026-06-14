@@ -49,6 +49,61 @@
 
 狀態：✓ 提交
 
+### ~17:20 — 觀戰者（spectator）機制
+
+需求：比賽開始後，其他人可進場觀戰；玩家和觀戰者都能看到彼此名單；觀戰者只能看不能操作。
+
+**資料模型**：
+- `Room` 加 `spectators: Spectator[]` + `spectatorUids: string[]`
+- `RoomSummary` 加 `spectatorCount: number`
+- `Spectator = { uid, nickname, photoURL, joinedAt }`
+- 向後相容：舊資料沒這兩個欄位時，`roomFromDoc` 補空陣列
+
+**Firestore Rules**（已部署到 multiplayer-games-73a8f）：
+- `isAddingSelfToSpectators` / `isRemovingSelfFromSpectators` 兩個 helper function
+- `rooms/{roomId}` update 允許的 keys 加入 `spectators`/`spectatorUids`
+- 允許觀戰者加入（自己原本不在 `spectatorUids`、更新後在）與離開（反之）
+- `isEmptyRoom` 同時檢查 players 與 spectators 都為空
+
+**roomService 改動**：
+- `createRoom` 初始化 `spectators: []`, `spectatorUids: []`
+- `joinRoomByCode` 分流：
+  - `waiting` 房間 → 玩家身份（既有邏輯）
+  - `playing` 房間 → 觀戰者身份（新）
+  - 已在 players/spectators 名單 → 直接返回 room id
+- `leaveRoom` 處理：
+  - 觀戰者離開 → 只把自己從 `spectators`/`spectatorUids` 移出
+  - 玩家離開 → 既有邏輯（forfeit 風險）
+  - 房間空了（players + spectators 都為空）→ 刪除
+- `roomFromDoc` / `roomSummaryFromDoc` 解析 spectators
+
+**Game 元件（tictactoe/gomoku/reversi）**：
+- `GameComponentProps` 加 `isSpectator?: boolean`
+- `isMyTurn = !isSpectator && ...` → 觀戰時自動 disable 所有 cell
+- 標題列顯示「觀戰中（X 下）」訊息
+- hover 預覽棋子自動隱藏（因為 `showPreview` 條件含 `isMyTurn`）
+
+**GameRoom.tsx**：
+- 計算 `isSpectator = !!user && !currentPlayer`
+- 拆成兩個 section：「玩家（2/2）」、「觀戰者（N）」
+- 觀戰者顯示藍色 banner「您正在觀戰這場比賽，無法進行任何操作。」
+- 「準備」「開始遊戲」按鈕只在 `currentPlayer` 存在時顯示（觀戰者看不到）
+- forfeit 倒數計時器對觀戰者不觸發
+- 觀戰者離開直接跳過 forfeit 確認 modal
+- 觀戰者也能看見 `ResultScreen`（不影響遊戲流程）
+
+**Lobby.tsx**：
+- 房間列表加「N 觀戰」標籤（如果有觀戰者）
+- `playing` 房間的按鈕文字改為「觀戰」（藍色 badge）；`waiting` 仍是「加入」
+
+**驗證**：
+- `npm run typecheck` ✓
+- `npm test` 62/62 通過 ✓
+- `npm run build` ✓
+- Firestore rules 部署 ✓
+
+狀態：待提交
+
 ### ~14:30 — 為每個遊戲加 SVG 圖示
 
 需求：每個遊戲需要一個一看就懂的圖示。
@@ -73,7 +128,7 @@
 - `npm test` 62/62 通過 ✓
 - `npm run build` ✓
 
-狀態：待提交
+狀態：✓ 提交
 
 ### ~12:30 — 玩家暱稱系統（不顯示 Google 名稱）
 

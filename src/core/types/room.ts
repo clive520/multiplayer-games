@@ -13,6 +13,13 @@ export interface RoomPlayer {
   isHost: boolean;
 }
 
+export interface Spectator {
+  uid: string;
+  nickname: string;
+  photoURL: string | null;
+  joinedAt: number;
+}
+
 export interface Room {
   id: string;
   code: string;
@@ -21,6 +28,8 @@ export interface Room {
   status: RoomStatus;
   players: RoomPlayer[];
   playerUids: string[];
+  spectators: Spectator[];
+  spectatorUids: string[];
   hasPassword: boolean;
   createdAt: number;
   lastActivityAt: number;
@@ -37,6 +46,7 @@ export interface RoomSummary {
   hostName: string;
   playerCount: number;
   maxPlayers: number;
+  spectatorCount: number;
   status: RoomStatus;
   hasPassword: boolean;
   createdAt: number;
