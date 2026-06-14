@@ -9,11 +9,11 @@
 ## 進度總覽
 
 - **總項目**：26
-- **✅ 已完成**：7
+- **✅ 已完成**：8
 - **⏳ 進行中**：0
-- **⬜ 待辦**：19
-- **已完成優先項目**：1, 2, 3, 4, 5, 6, 7
-- **剩餘優先項目**：8, 9, 10
+- **⬜ 待辦**：18
+- **已完成優先項目**：1, 2, 3, 4, 5, 6, 7, 8
+- **剩餘優先項目**：9, 10
 
 ---
 
@@ -245,7 +245,7 @@
 
 ---
 
-### 8. 房間結束的觀戰體驗 — ⬜ 待辦
+### 8. 房間結束的觀戰體驗 — ✅ 已完成
 
 **類別**：觀戰體驗
 
@@ -260,7 +260,24 @@
 - 提升觀戰完成率
 
 **完成紀錄**：
-- ⬜
+- 2026-06-12 ✅
+  - `index.css` 新增 `@keyframes reaction-float`：emoji 從底部飄上去 + 淡出（3s）
+  - `core/components/ResultScreen.tsx`：
+    - 新增 `disableAutoLeave?: boolean` 和 `isSpectator?: boolean` 兩個 props
+    - 觀戰者預設**不啟用**自動離開倒數
+    - 新增反應按鈕列（5 種：👏 加油 / 🎉 祝賀 / 😱 驚訝 / 👍 佩服 / 💪 鼓勵）
+    - 點擊反應按鈕：emoji 從底部飄上去（隨機水平位置 10~90%），3 秒自動消失
+    - 浮動反應用 `aria-hidden` 標記（純視覺裝飾）
+    - 觀戰者用「返回大廳」手動離開按鈕
+    - 玩家用「立即離開」/「再來一局」（房主）
+    - 觀戰者顯示「你正在觀戰這場比賽」提示
+    - 觀戰者可選擇「恢復自動離開」（想被踢走時用）
+    - 玩家用「留在此頁」暫停倒數
+  - `pages/GameRoom.tsx`：
+    - ResultScreen 加 `isSpectator={isSpectator}`
+    - 觀戰者在右側棋譜面板加說明文字
+  - 78 測試通過、typecheck ✓、build ✓
+  - **MVP 限制**：反應是 local-only（自己看到自己發的），未來可加 RTDB 同步讓所有人看到
 
 ---
 
@@ -619,3 +636,4 @@
 | 2026-06-12 | ✅ #5 移動動畫：cell-appear / pulse-ring CSS keyframes + useNewlyChangedCells hook + BoardCell 兩個新 props |
 | 2026-06-12 | ✅ #6 棋譜面板：MoveRecord 型別 + 3 個遊戲 sync 記錄 + MoveHistory 元件 + GameRoom grid 佈局 |
 | 2026-06-12 | ✅ #7 Lobby hover 預覽：BoardThumbnail + RoomPreviewCard + 單一 RTDB 訂閱 + 鍵盤/滑鼠 hover 雙支援 |
+| 2026-06-12 | ✅ #8 房間結束觀戰體驗：觀戰者不被踢、5 種 emoji 反應飄動、返回大廳按鈕、棋譜提示 |

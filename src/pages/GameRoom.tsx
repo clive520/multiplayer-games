@@ -554,6 +554,7 @@ export default function GameRoom() {
               onLeave={handleLeave}
               onPlayAgain={handleReset}
               autoLeaveSeconds={20}
+              isSpectator={isSpectator}
             />
           </div>
           <aside className="lg:col-span-1">
@@ -562,6 +563,11 @@ export default function GameRoom() {
               currentUserId={user!.uid}
               formatSymbol={gameDef?.formatSymbol}
             />
+            {isSpectator && (
+              <p className="mt-2 text-xs text-slate-400">
+                完整棋譜請看上方。觀戰者可自由留下觀看結果，按「返回大廳」手動離開。
+              </p>
+            )}
           </aside>
         </div>
       )}

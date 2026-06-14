@@ -104,6 +104,34 @@
 
 狀態：✓ 提交
 
+### ~21:40 — #8 房間結束的觀戰體驗（IMPROVEMENTS #8）
+
+需求：觀戰者不該被 20 秒倒數踢出；該有反應機制鼓勵玩家。
+
+**新增**：
+- `index.css` 新增 `@keyframes reaction-float`：emoji 飄上 + 淡出（3s）
+- `ResultScreen.tsx`：
+  - `disableAutoLeave?: boolean` 和 `isSpectator?: boolean` 兩個 props
+  - 觀戰者預設不啟用自動倒數
+  - 5 種反應按鈕（👏 加油 / 🎉 祝賀 / 😱 驚訝 / 👍 佩服 / 💪 鼓勵）
+  - 點擊：emoji 從底部飄上去（隨機水平 10-90%），3 秒自動消失
+  - 觀戰者用「返回大廳」手動離開按鈕
+  - 玩家保留「留在此頁」「再來一局」「立即離開」
+
+**修改**：
+- `pages/GameRoom.tsx`：ResultScreen 加 `isSpectator={isSpectator}` prop
+- 觀戰者在右側棋譜面板加說明文字
+
+**驗證**：
+- `npm run build` ✓
+- `npm test` 78/78 通過 ✓
+
+**MVP 限制**：反應是 local-only（自己看到自己發的），未來可加 RTDB 同步讓所有人看到
+
+**IMPROVEMENTS.md 狀態**：#8 改為 ✅
+
+狀態：✓ 提交
+
 ### ~18:55 — #7 大廳 hover 預覽房間（IMPROVEMENTS #7）
 
 需求：進房前先預覽房間資訊和棋盤現況。

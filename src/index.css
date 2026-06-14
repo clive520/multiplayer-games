@@ -60,7 +60,36 @@ body {
 /* 使用者偏好：減少動畫（無障礙考量） */
 @media (prefers-reduced-motion: reduce) {
   .animate-cell-appear,
-  .animate-pulse-ring {
+  .animate-pulse-ring,
+  .animate-reaction-float {
     animation: none;
   }
+}
+
+/* ============================================
+   觀戰者反應動畫（IMPROVEMENTS #8 房間結束的觀戰體驗）
+   點擊表情按鈕時，emoji 從下方往上飄 + 淡出
+   ============================================ */
+
+@keyframes reaction-float {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 0) scale(0.5);
+  }
+  10% {
+    opacity: 1;
+    transform: translate(-50%, -10px) scale(1.2);
+  }
+  60% {
+    opacity: 1;
+    transform: translate(-50%, -120px) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -240px) scale(0.8);
+  }
+}
+
+.animate-reaction-float {
+  animation: reaction-float 3s ease-out forwards;
 }

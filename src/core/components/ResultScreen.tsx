@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import type { Room } from '../types/room';
 
 interface ResultScreenProps {
@@ -9,9 +9,28 @@ interface ResultScreenProps {
   onLeave: () => void;
   onPlayAgain: () => void;
   autoLeaveSeconds?: number;
+  /** 觀戰者設為 true：不自動離開、可選擇「返回大廳」手動離開（IMPROVEMENTS #8） */
+  disableAutoLeave?: boolean;
+  /** 觀戰者身份（影響訊息文案） */
+  isSpectator?: boolean;
 }
 
 type Outcome = 'win' | 'lose' | 'draw';
+
+interface Reaction {
+  id: string;
+  emoji: string;
+  /** 水平位置（百分比），避免 emoji 全部擠在中間 */
+  xPct: number;
+}
+
+const REACTION_OPTIONS: ReadonlyArray<{ emoji: string; label: string }> = [
+  { emoji: '👏', label: '加油' },
+  { emoji: '🎉', label: '祝賀' },
+  { emoji: '😱', label: '驚訝' },
+  { emoji: '👍', label: '佩服' },
+  { emoji: '💪', label: '鼓勵' },
+];
 
 function getOutcome(room: Room, currentUserId: string): Outcome {
   if (room.isDraw) return 'draw';
@@ -54,10 +73,17 @@ export function ResultScreen({
   onLeave,
   onPlayAgain,
   autoLeaveSeconds = 20,
+  disableAutoLeave = false,
+  isSpectator = false,
 }: ResultScreenProps) {
   const [countdown, setCountdown] = useState(autoLeaveSeconds);
-  const [countdownActive, setCountdownActive] = useState(true);
+  // 觀戰者預設不啟用倒數（disableAutoLeave 或 isSpectator）
+  const [countdownActive, setCountdownActive] = useState(!disableAutoLeave && !isSpectator);
   const [hasAutoLeft, setHasAutoLeft] = useState(false);
+
+  // 觀戰者反應（IMPROVEMENTS #8）：點擊表情按鈕，emoji 飄起來
+  const [reactions, setReactions] = useState<Reaction[]>([]);
+  const reactionIdRef = useRef(0);
 
   useEffect(() => {
     if (!countdownActive) return;
@@ -72,6 +98,17 @@ export function ResultScreen({
     return () => clearTimeout(timer);
   }, [countdown, countdownActive, hasAutoLeft, onLeave]);
 
+  const sendReaction = (emoji: string) => {
+    const id = `reaction-${++reactionIdRef.current}`;
+    // 隨機水平位置（10% ~ 90%）讓 emoji 不會全部擠在中間
+    const xPct = 10 + Math.random() * 80;
+    setReactions((prev) => [...prev, { id, emoji, xPct }]);
+    // 3 秒後自動移除（與動畫時間一致）
+    window.setTimeout(() => {
+      setReactions((prev) => prev.filter((r) => r.id !== id));
+    }, 3000);
+  };
+
   const outcome = getOutcome(room, currentUserId);
   const style = OUTCOME_STYLE[outcome];
   const winner = room.players.find((p) => p.uid === room.winnerId) ?? null;
@@ -81,8 +118,26 @@ export function ResultScreen({
     <section
       data-testid="result-screen"
       data-outcome={outcome}
-      className={`rounded-xl border-2 ${style.border} ${style.bg} p-8 shadow-xl`}
+      className={`relative rounded-xl border-2 ${style.border} ${style.bg} p-8 shadow-xl`}
     >
+      {/* 觀戰者反應浮動層 */}
+      {reactions.length > 0 && (
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 overflow-hidden"
+        >
+          {reactions.map((r) => (
+            <span
+              key={r.id}
+              className="animate-reaction-float absolute bottom-12 text-3xl"
+              style={{ left: `${r.xPct}%` }}
+            >
+              {r.emoji}
+            </span>
+          ))}
+        </div>
+      )}
+
       <div className="text-center">
         <p className={`text-xs font-semibold uppercase tracking-widest ${style.subtitle}`}>
           遊戲結束
@@ -99,6 +154,10 @@ export function ResultScreen({
 
         {room.isDraw && (
           <p className="mt-3 text-slate-400">雙方勢均力敵，棋逢敵手</p>
+        )}
+
+        {isSpectator && (
+          <p className="mt-2 text-xs text-blue-300">（你正在觀戰這場比賽）</p>
         )}
       </div>
 
@@ -158,6 +217,23 @@ export function ResultScreen({
         })}
       </div>
 
+      {/* 觀戰者反應按鈕列（IMPROVEMENTS #8） */}
+      <div className="mt-6 flex flex-wrap justify-center gap-2">
+        {REACTION_OPTIONS.map((r) => (
+          <button
+            key={r.emoji}
+            type="button"
+            onClick={() => sendReaction(r.emoji)}
+            disabled={leaving}
+            className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-600 bg-slate-800 text-xl hover:scale-110 hover:bg-slate-700 disabled:opacity-50"
+            title={r.label}
+            aria-label={`傳送反應：${r.label}`}
+          >
+            {r.emoji}
+          </button>
+        ))}
+      </div>
+
       <div className="mt-6">
         {countdownActive ? (
           <>
@@ -173,21 +249,16 @@ export function ResultScreen({
           </>
         ) : (
           <p className="text-center text-sm text-slate-400">
-            自動離開已暫停
+            {disableAutoLeave || isSpectator
+              ? '觀戰者可自由留下，無自動離開'
+              : '自動離開已暫停'}
           </p>
         )}
       </div>
 
       <div className="mt-6 flex flex-wrap justify-center gap-2">
-        {countdownActive ? (
-          <button
-            onClick={() => setCountdownActive(false)}
-            disabled={leaving}
-            className="rounded-lg border border-slate-600 bg-slate-800 px-4 py-2 text-sm text-slate-200 hover:bg-slate-700 disabled:opacity-50"
-          >
-            留在此頁
-          </button>
-        ) : (
+        {/* 觀戰者用：可重新啟動自動離開 */}
+        {isSpectator && !countdownActive && (
           <button
             onClick={() => {
               setCountdown(autoLeaveSeconds);
@@ -200,7 +271,30 @@ export function ResultScreen({
           </button>
         )}
 
-        {isHost && (
+        {/* 玩家用：可暫停自動離開 */}
+        {!isSpectator && !disableAutoLeave && countdownActive && (
+          <button
+            onClick={() => setCountdownActive(false)}
+            disabled={leaving}
+            className="rounded-lg border border-slate-600 bg-slate-800 px-4 py-2 text-sm text-slate-200 hover:bg-slate-700 disabled:opacity-50"
+          >
+            留在此頁
+          </button>
+        )}
+
+        {/* 觀戰者用：手動返回大廳（明顯 CTA） */}
+        {isSpectator && (
+          <button
+            onClick={onLeave}
+            disabled={leaving}
+            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500 disabled:opacity-50"
+          >
+            {leaving ? '離開中...' : '返回大廳'}
+          </button>
+        )}
+
+        {/* 玩家用：再來一局（僅房主） */}
+        {isHost && !isSpectator && (
           <button
             onClick={onPlayAgain}
             disabled={leaving}
@@ -210,13 +304,16 @@ export function ResultScreen({
           </button>
         )}
 
-        <button
-          onClick={onLeave}
-          disabled={leaving}
-          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500 disabled:opacity-50"
-        >
-          {leaving ? '離開中...' : '立即離開'}
-        </button>
+        {/* 玩家用：立即離開 */}
+        {!isSpectator && (
+          <button
+            onClick={onLeave}
+            disabled={leaving}
+            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500 disabled:opacity-50"
+          >
+            {leaving ? '離開中...' : '立即離開'}
+          </button>
+        )}
       </div>
     </section>
   );
