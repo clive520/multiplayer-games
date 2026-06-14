@@ -139,14 +139,17 @@ export default function GameRoom() {
     if (!room || !user || forfeitTriggered) return;
     setForfeitTriggered(true);
 
-    // 找出「不是自己」的玩家（為勝者）
-    const winner = room.players.find((p) => p.uid !== user.uid);
-    if (!winner) return;
+    // 自己（仍在線上、無 idle）獲勝
+    // 對方（斷線 / 無動作）為敗方
+    const loser = room.players.find((p) => p.uid !== user.uid);
+    if (!loser) return;
 
-    console.log(`[Forfeit] 原因：${reason}，勝者：${winner.displayName}`);
+    console.log(
+      `[Forfeit] 原因：${reason}，勝者：${user.displayName}（我），敗者：${loser.displayName}`
+    );
 
     try {
-      await finishGame(roomId!, winner.uid, false);
+      await finishGame(roomId!, user.uid, false);
     } catch (err) {
       console.error('自動判斷勝負失敗', err);
       setForfeitTriggered(false);

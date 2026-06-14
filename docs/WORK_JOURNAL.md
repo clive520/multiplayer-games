@@ -8,6 +8,27 @@
 
 ## 2026-06-12（Day 2）— 部署、文件整理
 
+### ~11:35 — 修正：forfeit 判斷把贏家當輸家
+
+問題：使用者回報「對方離線，但判斷卻是判斷我輸」
+
+根因：handleForfeit 把「對方」當作 winner，實際上應該是 loser
+- 舊版本：`const winner = room.players.find((p) => p.uid !== user.uid)` → 變數名誤導
+- 這個變數抓到的是「對方」（斷線的那個），把它傳給 finishGame
+- 結果 finishGame 把對方設為 winnerId，current user（仍在線上）反而變成輸家
+
+修正：
+- 變數名 `winner` → `loser`
+- 呼叫 `finishGame(roomId, user.uid, false)`，把「自己」（current user，仍在線上）設為 winner
+- 對方（斷線 / 無動作）為 loser
+
+額外註解：MVP 階段還沒實作「偵測誰該落子」邏輯
+- 目前 effect 偵測「對方離線 / 30s 無動作」就觸發 forfeit
+- 邊界情況：自己的回合時自己 AFK，會被誤判為自己贏
+- 這個邊界情況 MVP 階段可接受，未來用 `currentTurn` 偵測來改進
+
+狀態：✓ 提交
+
 ### ~11:20 — 斷線 / 無動作 / 主動離開 處理
 
 #### 需求
