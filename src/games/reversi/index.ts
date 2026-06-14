@@ -2,6 +2,7 @@ import type { GameDefinition } from '../../core/types/game';
 import Reversi from './Reversi';
 import ReversiIcon from './Icon';
 import { reversiEngine } from './engine';
+import { formatReversiSymbol } from './symbols';
 import type { ReversiState } from './types';
 
 export const reversiDefinition: GameDefinition<ReversiState> = {
@@ -14,9 +15,11 @@ export const reversiDefinition: GameDefinition<ReversiState> = {
   engine: reversiEngine,
   syncStrategy: 'hybrid',
   icon: ReversiIcon,
+  formatSymbol: formatReversiSymbol,
 };
 
 export { default as Reversi } from './Reversi';
 export { default as ReversiIcon } from './Icon';
 export { reversiEngine } from './engine';
+export { formatReversiSymbol } from './symbols';
 export * from './types';

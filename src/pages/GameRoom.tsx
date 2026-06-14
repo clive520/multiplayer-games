@@ -383,6 +383,17 @@ export default function GameRoom() {
           ) : (
             room.players.map((p) => {
               const isOnline = presence[p.uid]?.online === true;
+              const symbolLabel = gameDef?.formatSymbol
+                ? gameDef.formatSymbol(p.symbol)
+                : p.symbol;
+              const symbolBadgeClass =
+                room.gameType === 'tictactoe'
+                  ? p.symbol === 'X'
+                    ? 'bg-blue-900/60 text-blue-200'
+                    : 'bg-red-900/60 text-red-200'
+                  : p.symbol === 'X'
+                    ? 'bg-zinc-800 text-zinc-100'
+                    : 'bg-zinc-100 text-zinc-900';
               return (
                 <li
                   key={p.uid}
@@ -406,15 +417,20 @@ export default function GameRoom() {
                     />
                   </div>
                   <div className="flex-1">
-                    <p className="text-sm font-medium">
+                    <p className="flex items-center gap-2 text-sm font-medium">
                       {p.displayName}
                       {p.isHost && (
-                        <span className="ml-2 rounded bg-yellow-900/50 px-1.5 py-0.5 text-xs text-yellow-300">
+                        <span className="rounded bg-yellow-900/50 px-1.5 py-0.5 text-xs text-yellow-300">
                           房主
                         </span>
                       )}
+                      <span
+                        className={`rounded px-1.5 py-0.5 text-xs ${symbolBadgeClass}`}
+                        title={room.gameType === 'tictactoe' ? '棋子符號' : '隊伍'}
+                      >
+                        {symbolLabel}
+                      </span>
                     </p>
-                    <p className="text-xs text-slate-400">符號：{p.symbol}</p>
                   </div>
                   <span
                     className={`rounded px-2 py-0.5 text-xs ${

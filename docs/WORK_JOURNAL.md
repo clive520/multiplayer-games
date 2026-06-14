@@ -102,6 +102,28 @@
 - `npm run build` ✓
 - Firestore rules 部署 ✓
 
+狀態：✓ 提交
+
+### ~14:50 — 棋子符號顯示優化（X/O → 黑棋/白棋）
+
+需求：五子棋和黑白棋的「符號：X」會讓觀戰者搞不清楚隊伍（X 是黑棋還是白棋？）。
+
+設計：保留內部 `symbol = 'X' | 'O'`（engine、game state 都不用改），用 `formatSymbol(symbol)` 在顯示層做轉換。
+
+**修改**：
+- `core/types/game.ts` — `GameDefinition` 加 `formatSymbol?: (symbol: string) => string`
+- `games/gomoku/symbols.ts` — `formatGomokuSymbol`: X→黑棋, O→白棋
+- `games/reversi/symbols.ts` — `formatReversiSymbol`: X→黑棋, O→白棋
+- `games/gomoku/index.ts` / `games/reversi/index.ts` — 註冊 formatSymbol
+- `Gomoku.tsx` / `Reversi.tsx` — 「輪到你（X）」改為「輪到你（黑棋）」
+- `GameRoom.tsx` 玩家名單：
+  - 移除「符號：X」這行
+  - 在暱稱旁加彩色徽章：
+    - 井字：X=藍底藍字、O=紅底紅字（符合棋子色）
+    - 五子棋/黑白棋：X=黑底白字、O=白底黑字（符合棋子色）
+
+**驗證**：typecheck ✓、62 測試通過、build ✓
+
 狀態：待提交
 
 ### ~14:30 — 為每個遊戲加 SVG 圖示

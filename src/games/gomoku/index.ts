@@ -2,6 +2,7 @@ import type { GameDefinition } from '../../core/types/game';
 import Gomoku from './Gomoku';
 import GomokuIcon from './Icon';
 import { gomokuEngine } from './engine';
+import { formatGomokuSymbol } from './symbols';
 import type { GomokuState } from './types';
 
 export const gomokuDefinition: GameDefinition<GomokuState> = {
@@ -14,9 +15,11 @@ export const gomokuDefinition: GameDefinition<GomokuState> = {
   engine: gomokuEngine,
   syncStrategy: 'hybrid',
   icon: GomokuIcon,
+  formatSymbol: formatGomokuSymbol,
 };
 
 export { default as Gomoku } from './Gomoku';
 export { default as GomokuIcon } from './Icon';
 export { gomokuEngine } from './engine';
+export { formatGomokuSymbol } from './symbols';
 export * from './types';

@@ -51,4 +51,5 @@ export interface GameDefinition<TState = unknown> {
   engine: GameEngine<TState>;
   syncStrategy: 'firestore' | 'rtdb' | 'hybrid';
   icon: ComponentType<{ className?: string }>;
+  formatSymbol?: (symbol: string) => string;
 }

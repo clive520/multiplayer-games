@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import type { GameComponentProps } from '../../core/types/game';
 import { gomokuEngine } from './engine';
 import { ensureGameState, submitMove, subscribeGameState } from './sync';
+import { formatGomokuSymbol } from './symbols';
 import { BOARD_SIZE, type GomokuState } from './types';
 
 export default function Gomoku({
@@ -99,15 +100,15 @@ export default function Gomoku({
             <p className="text-lg font-semibold text-slate-300">平手！</p>
           ) : isSpectator ? (
             <p className="text-lg text-slate-400">
-              觀戰中（{state.nextSymbol} 下）
+              觀戰中（{formatGomokuSymbol(state.nextSymbol)} 下）
             </p>
           ) : isMyTurn ? (
             <p className="text-lg font-semibold text-green-400">
-              輪到你（{mySymbol}）
+              輪到你（{formatGomokuSymbol(mySymbol ?? '')}）
             </p>
           ) : (
             <p className="text-lg text-slate-400">
-              等待對方落子（{state.nextSymbol}）
+              等待對方落子（{formatGomokuSymbol(state.nextSymbol)}）
             </p>
           )}
         </div>

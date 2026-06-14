@@ -7,6 +7,7 @@ import {
   passTurn,
   subscribeGameState,
 } from './sync';
+import { formatReversiSymbol } from './symbols';
 import { BOARD_SIZE, type ReversiState } from './types';
 
 export default function Reversi({
@@ -133,7 +134,7 @@ export default function Reversi({
         <div>
           {isSpectator ? (
             <p className="text-lg text-slate-400">
-              觀戰中（{state.currentTurn} 下）
+              觀戰中（{formatReversiSymbol(state.currentTurn)} 下）
               {state.passCount > 0 && (
                 <span className="ml-2 text-sm text-yellow-400">
                   （已連續 Pass {state.passCount} 次）
@@ -142,14 +143,14 @@ export default function Reversi({
             </p>
           ) : isMyTurn ? (
             <p className="text-lg font-semibold text-green-400">
-              輪到你（{mySymbol}）
+              輪到你（{formatReversiSymbol(mySymbol ?? '')}）
               {!playerCanMove && (
                 <span className="ml-2 text-sm text-yellow-400">（無合法步，需 Pass）</span>
               )}
             </p>
           ) : (
             <p className="text-lg text-slate-400">
-              等待對方（{state.currentTurn}）落子
+              等待對方（{formatReversiSymbol(state.currentTurn)}）落子
               {state.passCount > 0 && (
                 <span className="ml-2 text-sm text-yellow-400">
                   （已連續 Pass {state.passCount} 次）
