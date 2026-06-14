@@ -141,13 +141,7 @@ export default function TicTacToe({
                 setHoveredCell((h) => (h?.row === row && h?.col === col ? null : h))
               }
               disabled={!isMyTurn || !isEmpty}
-              className={`aspect-square rounded text-5xl font-bold transition ${
-                cell === 'X'
-                  ? 'text-blue-400'
-                  : cell === 'O'
-                    ? 'text-red-400'
-                    : 'text-slate-700'
-              } ${
+              className={`relative aspect-square rounded-lg transition ${
                 isLastMove
                   ? 'bg-yellow-900/40 ring-2 ring-yellow-500'
                   : 'bg-slate-900'
@@ -157,13 +151,22 @@ export default function TicTacToe({
                   : 'cursor-not-allowed'
               }`}
             >
-              {isEmpty ? '' : cell}
-              {/* 滑鼠 hover 預覽（半透明）*/}
+              {cell === 'X' && (
+                <span className="pointer-events-none absolute inset-2 rounded-full bg-zinc-900 shadow-md ring-1 ring-zinc-500" />
+              )}
+              {cell === 'O' && (
+                <span className="pointer-events-none absolute inset-2 rounded-full bg-white shadow-md ring-1 ring-zinc-500" />
+              )}
+              {/* 滑鼠 hover 預覽（半透明，與五子棋/黑白棋一致）*/}
               {showPreview && mySymbol === 'X' && (
-                <span className="pointer-events-none absolute inset-0 flex items-center justify-center text-blue-400 opacity-40">×</span>
+                <span className="pointer-events-none absolute inset-2 rounded-full bg-zinc-900 opacity-40 ring-1 ring-zinc-500" />
               )}
               {showPreview && mySymbol === 'O' && (
-                <span className="pointer-events-none absolute inset-0 flex items-center justify-center text-red-400 opacity-40">○</span>
+                <span className="pointer-events-none absolute inset-2 rounded-full bg-white opacity-40 ring-1 ring-zinc-500" />
+              )}
+              {/* 最後落子標記 */}
+              {isLastMove && cell !== '' && (
+                <span className="pointer-events-none absolute right-1 top-1 h-2 w-2 rounded-full bg-red-500" />
               )}
             </button>
           );

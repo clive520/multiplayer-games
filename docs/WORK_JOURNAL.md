@@ -8,6 +8,32 @@
 
 ## 2026-06-12（Day 2）— 部署、文件整理
 
+### ~11:50 — 井字遊戲棋子視覺改為實心圓
+
+需求：井字遊戲原本用 `×` 文字（藍）和 `○` 文字（紅）代表棋子，與五子棋/黑白棋的實心圓球不一致。統一改用實心圓球。
+
+**改動**（`src/games/tictactoe/TicTacToe.tsx`）：
+- X：`<span class="absolute inset-2 rounded-full bg-zinc-900 ring-1 ring-zinc-500">`（黑實心圓，與五子棋/黑白棋一致）
+- O：`<span class="absolute inset-2 rounded-full bg-white ring-1 ring-zinc-500">`（白實心圓）
+- 移除文字 `text-blue-400` / `text-red-400`
+- 移除 `text-5xl font-bold`（不再需要大字）
+- 加 `relative` 讓絕對定位的圓球對齊
+- 加上「最後落子標記」：右上角小紅點（`bg-red-500`，`h-2 w-2`），更直觀看出誰剛下
+
+**hover 預覽**：
+- X：半透明黑圓（`opacity-40`）
+- O：半透明白圓
+- 與五子棋/黑白棋完全一致
+
+**驗證**：
+- `npm run typecheck` ✓
+- `npm test` 53/53 通過 ✓
+- `npm run build` ✓
+
+### ~11:50 — 井字遊戲棋子視覺改為實心圓（續）
+
+狀態：✓ 提交
+
 ### ~11:45 — 井字/五子棋加 hover 預覽棋子
 
 需求：跟黑白棋一樣，使用者下棋前要能在滑鼠上看到「自己下的是 X 還是 O」或「黑棋還是白棋」的預覽。
