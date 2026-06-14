@@ -24,12 +24,11 @@ service cloud.firestore {
     }
 
     // 使用者資料：所有人可讀，僅自己可寫
+    // （含 stats 欄位，因為 recordGameResult 需在使用者端更新 stats）
     match /users/{uid} {
       allow read: if isSignedIn();
       allow create: if isSelf(uid);
-      allow update: if isSelf(uid) &&
-        !request.resource.data.diff(resource.data).affectedKeys()
-          .hasAny(['wins', 'losses', 'draws', 'totalGames']);
+      allow update: if isSelf(uid);
       allow delete: if false;
     }
 

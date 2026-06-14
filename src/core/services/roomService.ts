@@ -176,15 +176,10 @@ export async function createRoom(
 
   if (hasPassword && passwordHash) {
     await reservePasswordIndex(passwordHash, roomRef.id);
-    try {
-      await storeRoomPassword(roomRef.id, passwordHash);
-    } catch (err) {
-      await releasePasswordIndex(passwordHash);
-      throw err;
-    }
   }
 
   try {
+    // 先建立 room doc（此時 secret 子規則裡的 get() 才能查到 hostId）
     await setDoc(roomRef, {
       code,
       gameType,
@@ -203,9 +198,23 @@ export async function createRoom(
   } catch (err) {
     if (hasPassword && passwordHash) {
       await releasePasswordIndex(passwordHash);
-      await deleteRoomPassword(roomRef.id);
     }
     throw err;
+  }
+
+  if (hasPassword && passwordHash) {
+    try {
+      await storeRoomPassword(roomRef.id, passwordHash);
+    } catch (err) {
+      // room 已建立但密碼寫入失敗，清理
+      try {
+        await deleteDoc(roomRef);
+      } catch {
+        // ignore
+      }
+      await releasePasswordIndex(passwordHash);
+      throw err;
+    }
   }
 
   return roomRef.id;

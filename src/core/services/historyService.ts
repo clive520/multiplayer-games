@@ -3,7 +3,6 @@ import {
   addDoc,
   query,
   where,
-  orderBy,
   limit,
   getDocs,
   onSnapshot,
@@ -65,14 +64,17 @@ export function subscribeUserHistory(
   callback: (entries: GameHistoryEntry[]) => void,
   max = 20
 ): Unsubscribe {
+  // 不加 orderBy 避免需要複合索引；client 端排序
   const q = query(
     collection(db, 'gameHistory'),
     where('playerUids', 'array-contains', uid),
-    orderBy('endedAt', 'desc'),
-    limit(max)
+    limit(Math.max(max, 60))
   );
   return onSnapshot(q, (snapshot) => {
-    const entries = snapshot.docs.map((d) => fromDoc(d.id, d.data()));
+    const entries = snapshot.docs
+      .map((d) => fromDoc(d.id, d.data()))
+      .sort((a, b) => b.endedAt - a.endedAt)
+      .slice(0, max);
     callback(entries);
   });
 }
@@ -81,9 +83,11 @@ export async function fetchUserHistory(uid: string, max = 20): Promise<GameHisto
   const q = query(
     collection(db, 'gameHistory'),
     where('playerUids', 'array-contains', uid),
-    orderBy('endedAt', 'desc'),
-    limit(max)
+    limit(Math.max(max, 60))
   );
   const snapshot = await getDocs(q);
-  return snapshot.docs.map((d) => fromDoc(d.id, d.data()));
+  return snapshot.docs
+    .map((d) => fromDoc(d.id, d.data()))
+    .sort((a, b) => b.endedAt - a.endedAt)
+    .slice(0, max);
 }

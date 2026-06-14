@@ -8,6 +8,35 @@
 
 ## 2026-06-12（Day 2）— 部署、文件整理
 
+### ~23:00 — 三個權限與索引問題修正
+
+#### 問題 1：密碼房間建立失敗
+- **根因**：`createRoom` 順序錯誤
+  - 先 `storeRoomPassword`（寫入 secret 子文件）
+  - 但此時 room doc 還沒建立，secret 規則裡的 `get(roomId).data.hostId` 找不到 doc → 失敗
+- **修正**：改為先建立 room doc，再寫 secret
+
+#### 問題 2：stats 更新被規則擋下
+- **根因**：`users/{uid}` 的 update 規則有「禁止改 stats 欄位」的條件
+  ```javascript
+  allow update: if isSelf(uid) &&
+    !affectedKeys().hasAny(['wins', 'losses', 'draws', 'totalGames']);
+  ```
+  原本是為了防作弊，但也擋掉了 `recordGameResult` 的合法更新
+- **修正**：移除 hasAny 限制，接受 MVP 階段的作弊風險
+  ```javascript
+  allow update: if isSelf(uid);
+  ```
+
+#### 問題 3：對戰歷史查詢需要複合索引
+- **錯誤**：`gameHistory` 查詢 `where('playerUids', 'array-contains', uid)` + `orderBy('endedAt', 'desc')` 需要複合索引
+- **修正**：client 端排序（與 subscribeLobby 同樣策略）
+  - 多撈一些（limit 60）做緩衝
+  - 排序後 slice 到 max
+
+#### 狀態
+✓ 規則已部署、TypeScript/Tests/Build 全過
+
 ### ~22:50 — 修正 Firestore 規則運算子優先順序 bug
 - **問題**：使用者回報加入房間時仍出現「Missing or insufficient permissions」
 - **根因**：上一版修正的規則有運算子優先順序 bug
