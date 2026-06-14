@@ -8,6 +8,50 @@
 
 ## 2026-06-12（Day 2）— 部署、文件整理
 
+### ~00:00（Day 3）— 分遊戲排行榜與綜合排行榜
+
+需求：排行榜依不同遊戲類型分別計算，再加一個綜合排行榜統計全部。
+
+實作：
+
+1. **statsService 重構**：
+   - UserStats 從扁平（wins/losses/draws）改為巢狀結構
+   ```typescript
+   {
+     overall: { wins, losses, draws, totalGames },
+     byGame: {
+       tictactoe: { wins, losses, draws, totalGames },
+       gomoku: { wins, losses, draws, totalGames },
+     }
+   }
+   ```
+   - recordGameResult 同時更新 overall 與對應 byGame.X
+   - 使用 FieldValue.increment 巢狀欄位
+   - 第一次玩某遊戲時自動建立完整文件
+
+2. **useLeaderboard** 接受 scope 參數：
+   - 'overall'：orderBy('overall.wins')
+   - 'tictactoe'：orderBy('byGame.tictactoe.wins')
+   - 'gomoku'：orderBy('byGame.gomoku.wins')
+   - 過濾掉該類別下完全沒玩過的玩家
+
+3. **Leaderboard 頁面加分頁切換**：
+   - 三個按鈕：綜合 / 井字遊戲 / 五子棋
+   - 切換時即時重新訂閱
+   - 顯示「目前顯示：xxx（n 筆）」
+
+4. **Profile 頁面新增分遊戲戰績區**：
+   - 從 Firestore 訂閱 stats（即時更新）
+   - 顯示綜合戰績 + 各遊戲分項戰績
+   - 原本用最近 50 場計算，改用累計 stats
+
+5. **helpers**：
+   - getGameStats(stats, scope)：取得對應類別的 stats
+   - calculateWinRate(stats)：計算勝率
+   - DEFAULT_GAME_STATS：預設空 stats
+
+狀態：✓ 提交並推送
+
 ### ~23:30 — 房主轉移功能修正
 - **需求**：建立房間的人（房主）離開房間時，應由下一位玩家自動接手房主身份
 - **現狀**：`leaveRoom` 程式碼已包含轉移邏輯（把 `remaining[0]` 設為新房主，更新 `hostId` 與 `isHost`），但 Firestore 規則的 affectedKeys 白名單沒包含 `hostId` → 被規則擋下
