@@ -14,7 +14,8 @@ import { resetGameState as resetGomokuState } from '@/games/gomoku/sync';
 import { resetGameState as resetReversiState } from '@/games/reversi/sync';
 import { ResultScreen } from '../core/components/ResultScreen';
 import { getGameDefinition } from '@/registry';
-import { useEffect, useState, useCallback } from 'react';
+import type { GameComponentProps } from '../core/types/game';
+import { useEffect, useState, useCallback, type ComponentType } from 'react';
 
 const TURN_TIME_LIMIT_SEC_FALLBACK = 30;
 
@@ -23,6 +24,11 @@ export default function GameRoom() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { room, loading, error: roomError } = useRoom(roomId ?? null);
+  // 動態載入遊戲元件：進入房間且 status=playing 時才 fetch 對應 chunk
+  const [GameComp, setGameComp] = useState<ComponentType<GameComponentProps> | null>(null);
+  const [gameCompLoading, setGameCompLoading] = useState(false);
+  // 提早計算 gameDef，給後面的 useEffect 依賴用
+  const gameDef = room ? getGameDefinition(room.gameType) : undefined;
   const presence = usePresence(roomId ?? null);
   const [actionPending, setActionPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -77,6 +83,34 @@ export default function GameRoom() {
       setForfeitTriggered(false);
     }
   }, [room?.status]);
+
+  // 動態載入遊戲 React 元件 chunk
+  // 房間 status 變成 playing 或 gameType 改變時，重新 fetch 對應的遊戲程式碼
+  useEffect(() => {
+    if (!gameDef) {
+      setGameComp(null);
+      return;
+    }
+    let cancelled = false;
+    setGameCompLoading(true);
+    gameDef
+      .loadComponent()
+      .then((Comp) => {
+        if (!cancelled) {
+          setGameComp(() => Comp);
+          setGameCompLoading(false);
+        }
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          console.error('載入遊戲元件失敗', err);
+          setGameCompLoading(false);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [gameDef]);
 
   // 遊戲內有活動（下棋）時清空 forfeit 旗標（讓下一場不會立刻被誤判）
   const handleGameActivity = useCallback(() => {
@@ -159,7 +193,6 @@ export default function GameRoom() {
     );
   }
 
-  const gameDef = getGameDefinition(room.gameType);
   const isHost = currentPlayer?.isHost ?? false;
   const isFinished = room.status === 'finished';
   const isPlaying = room.status === 'playing';
@@ -452,8 +485,8 @@ export default function GameRoom() {
         </div>
       )}
 
-      {isPlaying && gameDef && (currentPlayer || isSpectator) && (
-        <gameDef.component
+      {isPlaying && gameDef && (currentPlayer || isSpectator) && GameComp && (
+        <GameComp
           roomId={roomId}
           currentUserId={user!.uid}
           players={room.players.map((p) => ({
@@ -473,6 +506,14 @@ export default function GameRoom() {
           }}
           onActivity={handleGameActivity}
         />
+      )}
+
+      {isPlaying && gameDef && (currentPlayer || isSpectator) && !GameComp && (
+        <div className="rounded-lg border border-slate-700 bg-slate-800 p-6 text-center">
+          <p className="text-slate-400">
+            {gameCompLoading ? '載入遊戲中...' : '遊戲元件準備中...'}
+          </p>
+        </div>
       )}
 
       {isFinished && (

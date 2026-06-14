@@ -1,5 +1,4 @@
 import type { GameDefinition } from '../../core/types/game';
-import TicTacToe from './TicTacToe';
 import TicTacToeIcon from './Icon';
 import { tictactoeEngine } from './engine';
 import type { TicTacToeState } from './types';
@@ -10,13 +9,12 @@ export const tictactoeDefinition: GameDefinition<TicTacToeState> = {
   description: '兩人輪流在 3×3 棋盤上放置 X 與 O，先連成一線者獲勝。',
   minPlayers: 2,
   maxPlayers: 2,
-  component: TicTacToe,
+  loadComponent: () => import('./TicTacToe').then((m) => m.default),
   engine: tictactoeEngine,
   syncStrategy: 'hybrid',
   icon: TicTacToeIcon,
 };
 
-export { default as TicTacToe } from './TicTacToe';
 export { default as TicTacToeIcon } from './Icon';
 export { tictactoeEngine } from './engine';
 export * from './types';

@@ -9,10 +9,11 @@
 ## 進度總覽
 
 - **總項目**：26
-- **✅ 已完成**：0
+- **✅ 已完成**：1
 - **⏳ 進行中**：0
-- **⬜ 待辦**：26
-- **優先順序前 10 項**：1, 2, 3, 4, 5, 6, 7, 8, 9, 10
+- **⬜ 待辦**：25
+- **已完成優先項目**：1
+- **剩餘優先項目**：2, 3, 4, 5, 6, 7, 8, 9, 10
 
 ---
 
@@ -20,7 +21,7 @@
 
 ---
 
-### 1. 程式碼分割（Lazy loading）— ⬜ 待辦
+### 1. 程式碼分割（Lazy loading）— ✅ 已完成
 
 **類別**：結構面
 
@@ -35,7 +36,14 @@
 - 新遊戲增量更小、易擴展
 
 **完成紀錄**：
-- ⬜
+- 2026-06-12 ✅
+  - `core/types/game.ts`：`GameDefinition.component` 改為 `loadComponent: () => Promise<...>`
+  - 三個遊戲 `index.ts`：`loadComponent: () => import('./Xxx').then(m => m.default)`
+  - 移除不再被引用的 `TicTacToe/Gomoku/Reversi` re-exports
+  - `pages/GameRoom.tsx`：用 useState + useEffect 動態載入，加載入中 fallback
+  - **build 結果**：遊戲程式碼拆成 3 個獨立 chunk（TicTacToe 4.3kB / Gomoku 4.0kB / Reversi 5.5kB）+ 共享元件 TurnCountdown 0.5kB；main chunk 略縮至 867kB
+  - 66 測試通過、typecheck ✓
+  - 後續可考慮：進一步把 Firebase SDK、UI 庫等也拆 chunk（這次沒動因為影響太大）
 
 ---
 
@@ -521,3 +529,4 @@
 | 日期 | 變更 |
 |------|------|
 | 2026-06-12 | 初版建立，列出 26 項改進建議 |
+| 2026-06-12 | ✅ #1 程式碼分割完成：3 個遊戲拆成獨立 chunk，main 略縮 |

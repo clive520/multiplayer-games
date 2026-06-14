@@ -104,6 +104,32 @@
 
 狀態：✓ 提交
 
+### ~15:45 — #1 程式碼分割（IMPROVEMENTS #1）
+
+需求：bundle 太大（870kB），加第四個遊戲會爆。
+
+**修改**：
+- `core/types/game.ts`：`GameDefinition.component` 改為 `loadComponent: () => Promise<...>`
+- 三個遊戲 `index.ts`：`loadComponent: () => import('./Xxx').then(m => m.default)`
+- 移除不再被引用的 `TicTacToe/Gomoku/Reversi` re-exports（避免拉進 initial bundle）
+- `pages/GameRoom.tsx`：用 useState + useEffect 動態載入，加載入中 fallback
+  - 載入時顯示「載入遊戲中...」placeholder
+  - 切換 gameType 時自動重新載入
+
+**驗證**：
+- `npm run typecheck` ✓
+- `npm test` 66/66 通過 ✓
+- `npm run build` ✓ 拆分成功：
+  - `TicTacToe-...js` 4.33kB
+  - `Gomoku-...js` 4.06kB
+  - `Reversi-...js` 5.46kB
+  - `TurnCountdown-...js` 0.50kB（被兩遊戲共用，自動 split）
+  - main 略縮至 867kB（Firebase SDK 仍是主因，後續優化）
+
+**IMPROVEMENTS.md 狀態**：#1 改為 ✅
+
+狀態：✓ 提交
+
 ### ~15:20 — 房主可設定每回合思考時間
 
 需求：30 秒太短，房主建立房間時可從 30 / 60 / 120 / 150 秒中選擇。

@@ -51,7 +51,12 @@ export interface GameDefinition<TState = unknown> {
   description: string;
   minPlayers: number;
   maxPlayers: number;
-  component: ComponentType<GameComponentProps>;
+  /**
+   * 動態載入遊戲 React 元件：進入 GameRoom 時才 fetch 對應的 chunk，
+   * 避免所有遊戲程式碼塞進 initial bundle。
+   * 範例：`loadComponent: () => import('./TicTacToe').then(m => m.default)`
+   */
+  loadComponent: () => Promise<ComponentType<GameComponentProps>>;
   engine: GameEngine<TState>;
   syncStrategy: 'firestore' | 'rtdb' | 'hybrid';
   icon: ComponentType<{ className?: string }>;
