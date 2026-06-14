@@ -1,8 +1,21 @@
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../core/auth/useAuth';
 import { useUserHistory } from '../core/hooks/useUserHistory';
+import { useUserStats } from '../core/hooks/useUserStats';
 import { signOut } from '../core/auth/googleSignIn';
+import { calculateWinRate, getGameStats } from '../core/services/statsService';
 import type { GameHistoryEntry } from '../core/services/historyService';
+import type { GameType } from '../core/types/room';
+
+const GAME_LABELS: Record<GameType, string> = {
+  tictactoe: '井字遊戲',
+  gomoku: '五子棋',
+};
+
+const GAME_ICONS: Record<GameType, string> = {
+  tictactoe: '[井]',
+  gomoku: '[五]',
+};
 
 function formatTime(ms: number): string {
   const d = new Date(ms);
@@ -24,15 +37,20 @@ function describeResult(entry: GameHistoryEntry, uid: string): { text: string; c
 export default function Profile() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { entries, loading } = useUserHistory(user?.uid ?? null, 50);
+  const { entries, loading: historyLoading } = useUserHistory(user?.uid ?? null, 50);
+  const { stats, loading: statsLoading } = useUserStats(user?.uid ?? null);
 
   if (!user) return null;
 
-  const wins = entries.filter((e) => e.winnerId === user.uid).length;
-  const losses = entries.filter((e) => !e.isDraw && e.winnerId !== user.uid).length;
-  const draws = entries.filter((e) => e.isDraw).length;
-  const total = entries.length;
-  const winRate = total > 0 ? Math.round((wins / total) * 100) : 0;
+  // 顯示的 stats：以 Firestore 的累計為主，否則 fallback 到最近 50 場計算
+  const showStats = stats ?? null;
+  const overallStats = showStats?.overall ?? {
+    wins: entries.filter((e) => e.winnerId === user.uid).length,
+    losses: entries.filter((e) => !e.isDraw && e.winnerId !== user.uid).length,
+    draws: entries.filter((e) => e.isDraw).length,
+    totalGames: entries.length,
+  };
+  const overallWinRate = calculateWinRate(overallStats);
 
   return (
     <div className="mx-auto min-h-screen max-w-3xl p-6">
@@ -73,34 +91,86 @@ export default function Profile() {
           <p className="text-sm text-slate-400">{user.email}</p>
         </div>
         <div className="text-right">
-          <p className="text-xs text-slate-500">最近 50 場</p>
-          <p className="text-2xl font-bold text-yellow-400">{wins}</p>
-          <p className="text-xs text-slate-500">勝</p>
+          <p className="text-xs text-slate-500">總勝場</p>
+          <p className="text-3xl font-bold text-yellow-400">
+            {showStats ? overallStats.wins : '—'}
+          </p>
         </div>
       </section>
 
-      <section className="mb-6 grid grid-cols-4 gap-3">
-        <div className="rounded-lg border border-slate-700 bg-slate-800 p-4 text-center">
-          <p className="text-2xl font-bold text-yellow-400">{wins}</p>
-          <p className="text-xs text-slate-500">勝場</p>
-        </div>
-        <div className="rounded-lg border border-slate-700 bg-slate-800 p-4 text-center">
-          <p className="text-2xl font-bold text-red-400">{losses}</p>
-          <p className="text-xs text-slate-500">敗場</p>
-        </div>
-        <div className="rounded-lg border border-slate-700 bg-slate-800 p-4 text-center">
-          <p className="text-2xl font-bold text-slate-400">{draws}</p>
-          <p className="text-xs text-slate-500">和局</p>
-        </div>
-        <div className="rounded-lg border border-slate-700 bg-slate-800 p-4 text-center">
-          <p className="text-2xl font-bold text-blue-400">{winRate}%</p>
-          <p className="text-xs text-slate-500">勝率</p>
+      <section className="mb-6">
+        <h2 className="mb-3 text-sm font-semibold text-slate-300">綜合戰績</h2>
+        <div className="grid grid-cols-4 gap-3">
+          <div className="rounded-lg border border-slate-700 bg-slate-800 p-4 text-center">
+            <p className="text-2xl font-bold text-yellow-400">{overallStats.wins}</p>
+            <p className="text-xs text-slate-500">勝場</p>
+          </div>
+          <div className="rounded-lg border border-slate-700 bg-slate-800 p-4 text-center">
+            <p className="text-2xl font-bold text-red-400">{overallStats.losses}</p>
+            <p className="text-xs text-slate-500">敗場</p>
+          </div>
+          <div className="rounded-lg border border-slate-700 bg-slate-800 p-4 text-center">
+            <p className="text-2xl font-bold text-slate-400">{overallStats.draws}</p>
+            <p className="text-xs text-slate-500">和局</p>
+          </div>
+          <div className="rounded-lg border border-slate-700 bg-slate-800 p-4 text-center">
+            <p className="text-2xl font-bold text-blue-400">{overallWinRate}%</p>
+            <p className="text-xs text-slate-500">勝率</p>
+          </div>
         </div>
       </section>
+
+      {showStats && (
+        <section className="mb-6">
+          <h2 className="mb-3 text-sm font-semibold text-slate-300">分遊戲戰績</h2>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {(Object.keys(GAME_LABELS) as GameType[]).map((gt) => {
+              const gs = getGameStats(showStats, gt);
+              const rate = calculateWinRate(gs);
+              return (
+                <div
+                  key={gt}
+                  className="rounded-lg border border-slate-700 bg-slate-800 p-4"
+                >
+                  <div className="mb-2 flex items-center justify-between">
+                    <p className="text-sm font-medium text-white">
+                      <span className="mr-1 text-slate-500">{GAME_ICONS[gt]}</span>
+                      {GAME_LABELS[gt]}
+                    </p>
+                    <p className="text-xs text-slate-500">{gs.totalGames} 場</p>
+                  </div>
+                  <div className="grid grid-cols-4 gap-2 text-center text-sm">
+                    <div>
+                      <p className="text-base font-bold text-yellow-400">{gs.wins}</p>
+                      <p className="text-xs text-slate-500">勝</p>
+                    </div>
+                    <div>
+                      <p className="text-base font-bold text-red-400">{gs.losses}</p>
+                      <p className="text-xs text-slate-500">敗</p>
+                    </div>
+                    <div>
+                      <p className="text-base font-bold text-slate-400">{gs.draws}</p>
+                      <p className="text-xs text-slate-500">和</p>
+                    </div>
+                    <div>
+                      <p className="text-base font-bold text-blue-400">{rate}%</p>
+                      <p className="text-xs text-slate-500">勝率</p>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
+      {statsLoading && !showStats && (
+        <p className="mb-4 text-sm text-slate-400">載入 stats 中...</p>
+      )}
 
       <section>
         <h2 className="mb-3 text-lg font-semibold">對戰紀錄</h2>
-        {loading ? (
+        {historyLoading ? (
           <p className="text-slate-400">載入中...</p>
         ) : entries.length === 0 ? (
           <div className="rounded-lg border border-dashed border-slate-700 p-8 text-center text-slate-500">
@@ -128,7 +198,7 @@ export default function Profile() {
                     <p className="text-xs text-slate-500">{formatTime(e.endedAt)}</p>
                   </div>
                   <span className="text-xs text-slate-500">
-                    {e.gameType}
+                    {GAME_LABELS[e.gameType as GameType] ?? e.gameType}
                   </span>
                 </li>
               );

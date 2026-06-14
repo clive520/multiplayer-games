@@ -395,7 +395,12 @@ export async function finishGame(
     photoURL: p.photoURL,
   }));
   await Promise.all([
-    recordGameResult({ winnerId, isDraw, players: playersForStats }).catch((err) => {
+    recordGameResult({
+      gameType: room.gameType,
+      winnerId,
+      isDraw,
+      players: playersForStats,
+    }).catch((err) => {
       console.error('更新使用者 stats 失敗', err);
     }),
     recordGameHistory({

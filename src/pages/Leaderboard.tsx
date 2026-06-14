@@ -1,12 +1,31 @@
-import { useLeaderboard } from '../core/hooks/useLeaderboard';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../core/auth/useAuth';
 import { signOut } from '../core/auth/googleSignIn';
-import { useNavigate } from 'react-router-dom';
+import { useLeaderboard, type LeaderboardScope } from '../core/hooks/useLeaderboard';
+import { getGameStats } from '../core/services/statsService';
+import type { LeaderboardEntry } from '../core/services/statsService';
+
+
+const TABS: Array<{ value: LeaderboardScope; label: string }> = [
+  { value: 'overall', label: '綜合' },
+  { value: 'tictactoe', label: '井字遊戲' },
+  { value: 'gomoku', label: '五子棋' },
+];
+
+const SCOPE_LABEL: Record<LeaderboardScope, string> = {
+  overall: '綜合',
+  tictactoe: '井字遊戲',
+  gomoku: '五子棋',
+};
 
 export default function Leaderboard() {
   const { user } = useAuth();
-  const { entries, loading, error } = useLeaderboard();
   const navigate = useNavigate();
+  const [scope, setScope] = useState<LeaderboardScope>('overall');
+  const { entries, loading, error } = useLeaderboard(scope);
+
+  const gameLabel = SCOPE_LABEL[scope];
 
   return (
     <div className="mx-auto min-h-screen max-w-3xl p-6">
@@ -43,6 +62,22 @@ export default function Leaderboard() {
         </div>
       </header>
 
+      <div className="mb-4 flex flex-wrap gap-2">
+        {TABS.map((t) => (
+          <button
+            key={t.value}
+            onClick={() => setScope(t.value)}
+            className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
+              scope === t.value
+                ? 'bg-blue-600 text-white'
+                : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+            }`}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
       {error && (
         <div className="mb-4 rounded-lg border border-red-700 bg-red-900/30 p-3 text-sm text-red-300">
           載入排行榜失敗：{error.message}
@@ -53,14 +88,17 @@ export default function Leaderboard() {
         <p className="text-slate-400">載入中...</p>
       ) : entries.length === 0 ? (
         <div className="rounded-lg border border-dashed border-slate-700 p-8 text-center text-slate-500">
-          目前還沒有任何對戰紀錄
+          目前還沒有任何「{gameLabel}」的對戰紀錄
           <br />
           <span className="text-xs text-slate-600">
-            完成一場遊戲後就會出現在這裡
+            完成一場 {gameLabel} 對戰後就會出現在這裡
           </span>
         </div>
       ) : (
         <div className="overflow-hidden rounded-lg border border-slate-700">
+          <div className="border-b border-slate-700 bg-slate-800 px-4 py-2 text-xs text-slate-400">
+            目前顯示：{gameLabel}（{entries.length} 筆）
+          </div>
           <table className="w-full">
             <thead className="bg-slate-800 text-xs text-slate-400">
               <tr>
@@ -70,14 +108,16 @@ export default function Leaderboard() {
                 <th className="px-3 py-2 text-right">敗</th>
                 <th className="px-3 py-2 text-right">和</th>
                 <th className="px-3 py-2 text-right">勝率</th>
+                <th className="px-3 py-2 text-right">總場</th>
               </tr>
             </thead>
             <tbody>
-              {entries.map((e: import('../core/services/statsService').LeaderboardEntry, idx: number) => {
-                const isMe = e.uid === user?.uid;
+              {entries.map((entry: LeaderboardEntry, idx) => {
+                const stats = getGameStats(entry, scope);
+                const isMe = entry.uid === user?.uid;
                 return (
                   <tr
-                    key={e.uid}
+                    key={entry.uid}
                     className={`border-t border-slate-700 ${
                       isMe ? 'bg-blue-900/20' : ''
                     }`}
@@ -87,17 +127,17 @@ export default function Leaderboard() {
                     </td>
                     <td className="px-3 py-2">
                       <div className="flex items-center gap-2">
-                        {e.photoURL ? (
+                        {entry.photoURL ? (
                           <img
-                            src={e.photoURL}
-                            alt={e.displayName}
+                            src={entry.photoURL}
+                            alt={entry.displayName}
                             className="h-6 w-6 rounded-full"
                           />
                         ) : (
                           <div className="h-6 w-6 rounded-full bg-slate-700" />
                         )}
                         <span className="text-sm font-medium text-white">
-                          {e.displayName}
+                          {entry.displayName}
                           {isMe && (
                             <span className="ml-1 text-xs text-slate-400">（你）</span>
                           )}
@@ -105,16 +145,19 @@ export default function Leaderboard() {
                       </div>
                     </td>
                     <td className="px-3 py-2 text-right text-sm text-yellow-400">
-                      {e.wins}
+                      {stats.wins}
                     </td>
                     <td className="px-3 py-2 text-right text-sm text-red-400">
-                      {e.losses}
+                      {stats.losses}
                     </td>
                     <td className="px-3 py-2 text-right text-sm text-slate-400">
-                      {e.draws}
+                      {stats.draws}
                     </td>
                     <td className="px-3 py-2 text-right text-sm text-slate-300">
-                      {e.winRate}%
+                      {entry.winRate}%
+                    </td>
+                    <td className="px-3 py-2 text-right text-sm text-slate-400">
+                      {stats.totalGames}
                     </td>
                   </tr>
                 );
