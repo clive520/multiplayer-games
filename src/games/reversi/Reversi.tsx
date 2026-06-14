@@ -19,6 +19,7 @@ export default function Reversi({
   const [state, setState] = useState<ReversiState | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [hintMode, setHintMode] = useState(false);
+  const [hoveredCell, setHoveredCell] = useState<{ row: number; col: number } | null>(null);
   const finishedReportedRef = useRef(false);
 
   useEffect(() => {
@@ -197,10 +198,14 @@ export default function Reversi({
             const isFlipped = lastFlipsSet.has(`${row},${col}`);
             const showHint = hintSet.has(`${row},${col}`);
             const canClick = isMyTurn && cell === '';
+            const isHovered = hoveredCell?.row === row && hoveredCell?.col === col;
+            const showPreview = isHovered && canClick && mySymbol;
             return (
               <button
                 key={idx}
                 onClick={() => handleCellClick(row, col)}
+                onMouseEnter={() => setHoveredCell({ row, col })}
+                onMouseLeave={() => setHoveredCell((h) => (h?.row === row && h?.col === col ? null : h))}
                 disabled={!canClick}
                 className={`relative border border-emerald-900/40 ${
                   canClick
@@ -214,11 +219,18 @@ export default function Reversi({
                 {cell === 'O' && (
                   <span className="absolute inset-2 rounded-full bg-white shadow-md ring-1 ring-slate-500" />
                 )}
+                {/* 滑鼠 hover 預覽棋子（半透明）*/}
+                {showPreview && mySymbol === 'X' && (
+                  <span className="pointer-events-none absolute inset-2 rounded-full bg-black opacity-40 ring-1 ring-black/20" />
+                )}
+                {showPreview && mySymbol === 'O' && (
+                  <span className="pointer-events-none absolute inset-2 rounded-full bg-white opacity-40 ring-1 ring-slate-500" />
+                )}
                 {showHint && cell === '' && (
-                  <span className="absolute inset-3 rounded-full border-2 border-dashed border-green-400 opacity-60" />
+                  <span className="pointer-events-none absolute inset-3 rounded-full border-2 border-dashed border-green-400 opacity-60" />
                 )}
                 {isLastMove && (
-                  <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-red-500" />
+                  <span className="pointer-events-none absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-red-500" />
                 )}
               </button>
             );
