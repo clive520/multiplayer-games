@@ -97,8 +97,8 @@ export default function Reversi({
 
   if (!state) {
     return (
-      <div className="rounded-lg border border-slate-700 bg-slate-800 p-6 text-center">
-        <p className="text-slate-400">{t('games.reversi.loading')}</p>
+      <div className="rounded-lg border dark:border-slate-700 border-slate-200 dark:bg-slate-800 bg-white p-6 text-center">
+        <p className="dark:text-slate-400 text-slate-600">{t('games.reversi.loading')}</p>
       </div>
     );
   }
@@ -187,14 +187,14 @@ export default function Reversi({
         extraHint={extraHint}
         rightContent={
           <>
-            <div className="flex items-center gap-1 rounded bg-slate-900/50 px-2 py-1">
+            <div className="flex items-center gap-1 rounded dark:bg-slate-900 bg-slate-50/50 px-2 py-1">
               <span className="h-3 w-3 rounded-full bg-black ring-1 ring-slate-600"></span>
-              <span className="text-slate-300">{xCount}</span>
+              <span className="dark:text-slate-300 text-slate-700">{xCount}</span>
             </div>
             <span className="text-slate-500">vs</span>
-            <div className="flex items-center gap-1 rounded bg-slate-900/50 px-2 py-1">
+            <div className="flex items-center gap-1 rounded dark:bg-slate-900 bg-slate-50/50 px-2 py-1">
               <span className="h-3 w-3 rounded-full bg-white ring-1 ring-slate-600"></span>
-              <span className="text-slate-300">{oCount}</span>
+              <span className="dark:text-slate-300 text-slate-700">{oCount}</span>
             </div>
             <div className="flex gap-2">
               {isMyTurn && (
@@ -202,8 +202,8 @@ export default function Reversi({
                   onClick={() => setHintMode((h) => !h)}
                   className={`rounded px-3 py-1 text-xs ${
                     hintMode
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                      ? 'bg-blue-600 dark:text-white text-slate-900'
+                      : 'dark:bg-slate-700 bg-slate-200 dark:text-slate-300 text-slate-700 hover:dark:bg-slate-600 bg-slate-300'
                   }`}
                 >
                   {hintMode ? t('games.reversi.hideHints') : t('games.reversi.showHints')}
@@ -212,7 +212,7 @@ export default function Reversi({
               {isMyTurn && !playerCanMove && (
                 <button
                   onClick={handlePass}
-                  className="rounded bg-yellow-600 px-3 py-1 text-xs font-medium text-white hover:bg-yellow-500"
+                  className="rounded bg-yellow-600 px-3 py-1 text-xs font-medium dark:text-white text-slate-900 hover:bg-yellow-500"
                 >
                   {t('games.reversi.pass')}
                 </button>

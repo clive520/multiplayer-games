@@ -16,18 +16,18 @@ export function TurnCountdown({
   className = '',
 }: TurnCountdownProps): ReactNode {
   if (secondsLeft == null) return null;
-  let colorClass = 'text-slate-400';
+  let colorClass = 'dark:text-slate-400 text-slate-600';
   if (secondsLeft <= 5) {
     colorClass = 'text-red-400 animate-pulse font-bold';
   } else if (secondsLeft <= 10) {
     colorClass = 'text-yellow-400';
   } else {
-    colorClass = 'text-slate-300';
+    colorClass = 'dark:text-slate-300 text-slate-700';
   }
   const totalText = totalSec ? `/${totalSec}` : '';
   return (
     <span
-      className={`ml-2 inline-flex items-center gap-1 rounded bg-slate-900/60 px-2 py-0.5 text-sm ${colorClass} ${className}`}
+      className={`ml-2 inline-flex items-center gap-1 rounded dark:bg-slate-900 bg-slate-50/60 px-2 py-0.5 text-sm ${colorClass} ${className}`}
       title={`每回合 ${totalSec ?? 30} 秒，超時自動判當前玩家落敗`}
     >
       <span aria-hidden>⏱</span>

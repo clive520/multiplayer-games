@@ -22,7 +22,7 @@ export function BoardThumbnail({ gameType, board, cellSize = 18 }: BoardThumbnai
     const cells = board ?? Array(9).fill('');
     return (
       <div
-        className="grid gap-0.5 rounded border border-slate-700 bg-slate-900 p-1"
+        className="grid gap-0.5 rounded border dark:border-slate-700 border-slate-200 dark:bg-slate-900 bg-slate-50 p-1"
         style={{
           gridTemplateColumns: `repeat(3, ${cellSize}px)`,
           gridTemplateRows: `repeat(3, ${cellSize}px)`,
@@ -32,7 +32,7 @@ export function BoardThumbnail({ gameType, board, cellSize = 18 }: BoardThumbnai
         {cells.map((c, i) => (
           <div
             key={i}
-            className="flex items-center justify-center bg-slate-800 text-xs font-bold"
+            className="flex items-center justify-center dark:bg-slate-800 bg-white text-xs font-bold"
             style={{ width: cellSize, height: cellSize }}
           >
             {c === 'X' && <span className="text-blue-400">×</span>}
@@ -72,7 +72,7 @@ export function BoardThumbnail({ gameType, board, cellSize = 18 }: BoardThumbnai
             </div>
           ))}
         </div>
-        <div className="text-xs text-slate-400">
+        <div className="text-xs dark:text-slate-400 text-slate-600">
           <div>黑 {xCount}</div>
           <div>白 {oCount}</div>
         </div>
@@ -84,7 +84,7 @@ export function BoardThumbnail({ gameType, board, cellSize = 18 }: BoardThumbnai
   if (gameType === 'gomoku') {
     const moveCount = board?.filter((c) => c !== '').length ?? 0;
     return (
-      <div className="flex items-center gap-2 rounded border border-amber-900/50 bg-amber-900/20 px-3 py-2 text-xs text-slate-300">
+      <div className="flex items-center gap-2 rounded border border-amber-900/50 bg-amber-900/20 px-3 py-2 text-xs dark:text-slate-300 text-slate-700">
         <span>已下 {moveCount} / 225 子</span>
         <span className="text-slate-500">（15×15 棋盤縮圖省略）</span>
       </div>

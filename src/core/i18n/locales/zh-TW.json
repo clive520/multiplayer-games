@@ -38,9 +38,9 @@
     "language": "介面語言",
     "languageHint": "切換後立即生效",
     "theme": "主題",
-    "themeDark": "深色（目前）",
-    "themeLight": "淺色（即將推出）",
-    "themeHint": "淺色模式即將推出（IMPROVEMENTS #18）",
+    "themeDark": "深色模式",
+    "themeLight": "淺色模式",
+    "themeHint": "切換後立即生效",
     "saved": "已儲存",
     "autoSaved": "設定自動儲存"
   },

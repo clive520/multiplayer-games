@@ -15,7 +15,7 @@ function HomePage() {
   if (loading || (user && profileLoading)) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <p className="text-slate-400">載入中...</p>
+        <p className="dark:text-slate-400 text-slate-600 dark:text-slate-400">載入中...</p>
       </div>
     );
   }
@@ -25,7 +25,7 @@ function HomePage() {
     const photoURL = profile?.photoURL ?? user.photoURL;
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-6 p-6">
-        <h1 className="text-4xl font-bold">Multiplayer Games</h1>
+        <h1 className="text-4xl font-bold dark:text-white text-slate-900">Multiplayer Games</h1>
         <div className="flex items-center gap-3">
           {photoURL && (
             <img
@@ -34,30 +34,30 @@ function HomePage() {
               className="h-10 w-10 rounded-full"
             />
           )}
-          <p className="text-slate-300">{displayName}</p>
+          <p className="dark:text-slate-300 text-slate-700">{displayName}</p>
         </div>
         <div className="flex flex-col gap-2 sm:flex-row">
           <button
             onClick={() => navigate('/lobby')}
-            className="rounded-lg bg-blue-600 px-6 py-3 font-medium text-white hover:bg-blue-500"
+            className="rounded-lg bg-blue-600 px-6 py-3 font-medium dark:text-white text-slate-900 hover:bg-blue-500"
           >
             進入遊戲大廳
           </button>
           <button
             onClick={() => navigate('/leaderboard')}
-            className="rounded-lg bg-slate-700 px-6 py-3 font-medium text-white hover:bg-slate-600"
+            className="rounded-lg dark:bg-slate-700 bg-slate-200 dark:bg-slate-700 bg-slate-200 px-6 py-3 font-medium dark:text-white text-slate-900 hover:dark:bg-slate-600 bg-slate-300 dark:hover:dark:bg-slate-600 bg-slate-300 hover:bg-slate-300"
           >
             排行榜
           </button>
           <button
             onClick={() => navigate('/profile')}
-            className="rounded-lg bg-slate-700 px-6 py-3 font-medium text-white hover:bg-slate-600"
+            className="rounded-lg dark:bg-slate-700 bg-slate-200 dark:bg-slate-700 bg-slate-200 px-6 py-3 font-medium dark:text-white text-slate-900 hover:dark:bg-slate-600 bg-slate-300 dark:hover:dark:bg-slate-600 bg-slate-300 hover:bg-slate-300"
           >
             我的檔案
           </button>
           <button
             onClick={() => navigate('/settings')}
-            className="rounded-lg bg-slate-700 px-6 py-3 font-medium text-white hover:bg-slate-600"
+            className="rounded-lg dark:bg-slate-700 bg-slate-200 dark:bg-slate-700 bg-slate-200 px-6 py-3 font-medium dark:text-white text-slate-900 hover:dark:bg-slate-600 bg-slate-300 dark:hover:dark:bg-slate-600 bg-slate-300 hover:bg-slate-300"
           >
             設定
           </button>

@@ -228,32 +228,32 @@ export default function Lobby() {
       <header className="mb-8 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">{t('lobby.title')}</h1>
-          <p className="text-sm text-slate-400">
+          <p className="text-sm dark:text-slate-400 text-slate-600">
             {t('lobby.welcome', { name: profileLoading ? t('common.loading') : (nickname ?? t('lobby.guest')) })}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={() => navigate('/profile')}
-            className="rounded bg-slate-700 px-3 py-1.5 text-sm hover:bg-slate-600"
+            className="rounded dark:bg-slate-700 bg-slate-200 px-3 py-1.5 text-sm hover:dark:bg-slate-600 bg-slate-300"
           >
             {t('nav.editNickname')}
           </button>
           <button
             onClick={() => navigate('/leaderboard')}
-            className="rounded bg-slate-700 px-3 py-1.5 text-sm hover:bg-slate-600"
+            className="rounded dark:bg-slate-700 bg-slate-200 px-3 py-1.5 text-sm hover:dark:bg-slate-600 bg-slate-300"
           >
             {t('nav.leaderboard')}
           </button>
           <button
             onClick={() => navigate('/settings')}
-            className="rounded bg-slate-700 px-3 py-1.5 text-sm hover:bg-slate-600"
+            className="rounded dark:bg-slate-700 bg-slate-200 px-3 py-1.5 text-sm hover:dark:bg-slate-600 bg-slate-300"
           >
             {t('nav.settings')}
           </button>
           <button
             onClick={() => signOut()}
-            className="rounded bg-slate-700 px-3 py-1.5 text-sm hover:bg-slate-600"
+            className="rounded dark:bg-slate-700 bg-slate-200 px-3 py-1.5 text-sm hover:dark:bg-slate-600 bg-slate-300"
           >
             {t('nav.signOut')}
           </button>
@@ -261,7 +261,7 @@ export default function Lobby() {
       </header>
 
       {cleanupInfo && (
-        <div className="mb-4 rounded-lg border border-slate-600 bg-slate-800 p-3 text-sm text-slate-300">
+        <div className="mb-4 rounded-lg border dark:border-slate-600 border-slate-300 dark:bg-slate-800 bg-white p-3 text-sm dark:text-slate-300 text-slate-700">
           {cleanupInfo}
         </div>
       )}
@@ -273,8 +273,8 @@ export default function Lobby() {
       )}
 
       <section className="mb-6 space-y-3">
-        <div className="rounded-lg border border-slate-700 bg-slate-800 p-4">
-          <p className="mb-2 text-sm text-slate-400">
+        <div className="rounded-lg border dark:border-slate-700 border-slate-200 dark:bg-slate-800 bg-white p-4">
+          <p className="mb-2 text-sm dark:text-slate-400 text-slate-600">
             {t('lobby.selectGame')}
             {createMode === 'ai' && (
               <span className="ml-2 text-xs text-slate-500">
@@ -293,13 +293,13 @@ export default function Lobby() {
                     onClick={() => setSelectedGame(g.id as GameType)}
                     className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition ${
                       selectedGame === g.id
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                        ? 'bg-blue-600 dark:text-white text-slate-900'
+                        : 'dark:bg-slate-700 bg-slate-200 dark:text-slate-300 text-slate-700 hover:dark:bg-slate-600 bg-slate-300'
                     }`}
                   >
                     <Icon
                       className={`h-5 w-5 ${
-                        selectedGame === g.id ? 'text-white' : 'text-slate-300'
+                        selectedGame === g.id ? 'dark:text-white text-slate-900' : 'dark:text-slate-300 text-slate-700'
                       }`}
                     />
                     {t(g.name)}
@@ -313,19 +313,19 @@ export default function Lobby() {
         </div>
 
         <div className="grid gap-3 sm:grid-cols-2">
-          <div className="rounded-lg border border-slate-700 bg-slate-800 p-4">
+          <div className="rounded-lg border dark:border-slate-700 border-slate-200 dark:bg-slate-800 bg-white p-4">
             <div className="mb-3 flex items-center justify-between">
-              <p className="text-sm font-medium text-slate-300">
+              <p className="text-sm font-medium dark:text-slate-300 text-slate-700">
                 {t('lobby.createRoom')}
               </p>
-              <div className="flex rounded-md border border-slate-600 p-0.5">
+              <div className="flex rounded-md border dark:border-slate-600 border-slate-300 p-0.5">
                 <button
                   type="button"
                   onClick={() => setCreateMode('pvp')}
                   className={`rounded px-2 py-1 text-xs font-medium transition ${
                     createMode === 'pvp'
-                      ? 'bg-blue-600 text-white'
-                      : 'text-slate-300 hover:bg-slate-700'
+                      ? 'bg-blue-600 dark:text-white text-slate-900'
+                      : 'dark:text-slate-300 text-slate-700 hover:dark:bg-slate-700 bg-slate-200'
                   }`}
                 >
                   {t('lobby.createModePvp')}
@@ -335,8 +335,8 @@ export default function Lobby() {
                   onClick={() => setCreateMode('ai')}
                   className={`rounded px-2 py-1 text-xs font-medium transition ${
                     createMode === 'ai'
-                      ? 'bg-purple-600 text-white'
-                      : 'text-slate-300 hover:bg-slate-700'
+                      ? 'bg-purple-600 dark:text-white text-slate-900'
+                      : 'dark:text-slate-300 text-slate-700 hover:dark:bg-slate-700 bg-slate-200'
                   }`}
                 >
                   {t('lobby.createModeAi')}
@@ -347,7 +347,7 @@ export default function Lobby() {
             {createMode === 'pvp' && (
               <>
                 <div className="mb-2">
-                  <p className="mb-1 text-xs text-slate-400">{t('lobby.turnTime')}</p>
+                  <p className="mb-1 text-xs dark:text-slate-400 text-slate-600">{t('lobby.turnTime')}</p>
                   <div className="grid grid-cols-4 gap-1">
                     {TURN_TIME_LIMITS.map((sec) => (
                       <button
@@ -356,8 +356,8 @@ export default function Lobby() {
                         onClick={() => setTurnTimeLimitSec(sec)}
                         className={`rounded px-2 py-1 text-xs font-medium transition ${
                           turnTimeLimitSec === sec
-                            ? 'bg-blue-600 text-white'
-                            : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                            ? 'bg-blue-600 dark:text-white text-slate-900'
+                            : 'dark:bg-slate-700 bg-slate-200 dark:text-slate-300 text-slate-700 hover:dark:bg-slate-600 bg-slate-300'
                         }`}
                       >
                         {sec} {t('common.seconds')}
@@ -365,7 +365,7 @@ export default function Lobby() {
                     ))}
                   </div>
                 </div>
-                <label className="mb-3 flex cursor-pointer items-center gap-2 text-sm text-slate-300">
+                <label className="mb-3 flex cursor-pointer items-center gap-2 text-sm dark:text-slate-300 text-slate-700">
                   <input
                     type="checkbox"
                     checked={usePassword}
@@ -373,7 +373,7 @@ export default function Lobby() {
                       setUsePassword(e.target.checked);
                       if (!e.target.checked) setCreatePassword('');
                     }}
-                    className="h-4 w-4 rounded border-slate-600"
+                    className="h-4 w-4 rounded dark:border-slate-600 border-slate-300"
                   />
                   <span>{t('lobby.enablePassword')}</span>
                 </label>
@@ -389,7 +389,7 @@ export default function Lobby() {
                     }}
                     placeholder={t('lobby.passwordPlaceholder')}
                     maxLength={6}
-                    className="mb-2 w-full rounded border border-slate-600 bg-slate-900 px-3 py-2 text-center text-lg tracking-widest"
+                    className="mb-2 w-full rounded border dark:border-slate-600 border-slate-300 dark:bg-slate-900 bg-slate-50 px-3 py-2 text-center text-lg tracking-widest"
                   />
                 )}
               </>
@@ -397,7 +397,7 @@ export default function Lobby() {
 
             {createMode === 'ai' && (
               <div className="mb-3">
-                <p className="mb-1 text-xs text-slate-400">{t('lobby.aiDifficulty')}</p>
+                <p className="mb-1 text-xs dark:text-slate-400 text-slate-600">{t('lobby.aiDifficulty')}</p>
                 <div className="flex flex-wrap gap-1">
                   {AI_DIFFICULTIES.map((diff) => (
                     <button
@@ -406,8 +406,8 @@ export default function Lobby() {
                       onClick={() => setAIDifficulty(diff)}
                       className={`flex-1 rounded px-2 py-1 text-xs font-medium transition ${
                         aiDifficulty === diff
-                          ? 'bg-purple-600 text-white'
-                          : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                          ? 'bg-purple-600 dark:text-white text-slate-900'
+                          : 'dark:bg-slate-700 bg-slate-200 dark:text-slate-300 text-slate-700 hover:dark:bg-slate-600 bg-slate-300'
                       }`}
                     >
                       {t(`aiDifficulty.${diff}`)}
@@ -426,7 +426,7 @@ export default function Lobby() {
             <button
               onClick={handleCreate}
               disabled={creating || !nickname}
-              className={`w-full rounded-lg px-4 py-3 font-medium text-white disabled:opacity-50 ${
+              className={`w-full rounded-lg px-4 py-3 font-medium dark:text-white text-slate-900 disabled:opacity-50 ${
                 createMode === 'ai'
                   ? 'bg-purple-600 hover:bg-purple-500'
                   : 'bg-blue-600 hover:bg-blue-500'
@@ -446,9 +446,9 @@ export default function Lobby() {
 
           <form
             onSubmit={handleJoinSubmit}
-            className="rounded-lg border border-slate-700 bg-slate-800 p-4"
+            className="rounded-lg border dark:border-slate-700 border-slate-200 dark:bg-slate-800 bg-white p-4"
           >
-            <p className="mb-2 text-sm font-medium text-slate-300">
+            <p className="mb-2 text-sm font-medium dark:text-slate-300 text-slate-700">
               用房號加入
             </p>
             <input
@@ -457,12 +457,12 @@ export default function Lobby() {
               onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
               placeholder={t('lobby.inputCodePlaceholder')}
               maxLength={6}
-              className="mb-2 w-full rounded border border-slate-600 bg-slate-900 px-3 py-2 text-center text-lg tracking-widest uppercase"
+              className="mb-2 w-full rounded border dark:border-slate-600 border-slate-300 dark:bg-slate-900 bg-slate-50 px-3 py-2 text-center text-lg tracking-widest uppercase"
             />
             <button
               type="submit"
               disabled={joining || joinCode.length !== 6 || !nickname}
-              className="w-full rounded-lg bg-green-600 px-4 py-3 font-medium text-white hover:bg-green-500 disabled:opacity-50"
+              className="w-full rounded-lg bg-green-600 px-4 py-3 font-medium dark:text-white text-slate-900 hover:bg-green-500 disabled:opacity-50"
             >
               {joining ? t('lobby.joining') : !nickname ? t('lobby.nicknameLoading') : t('lobby.joinButton')}
             </button>
@@ -488,19 +488,19 @@ export default function Lobby() {
               placeholder={t('lobby.inputPasswordPlaceholder')}
               maxLength={6}
               autoFocus
-              className="flex-1 rounded border border-slate-600 bg-slate-900 px-3 py-2 text-center text-lg tracking-widest"
+              className="flex-1 rounded border dark:border-slate-600 border-slate-300 dark:bg-slate-900 bg-slate-50 px-3 py-2 text-center text-lg tracking-widest"
             />
             <button
               type="submit"
               disabled={joining || enterPassword.length !== 6}
-              className="rounded-lg bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-500 disabled:opacity-50"
+              className="rounded-lg bg-blue-600 px-4 py-2 font-medium dark:text-white text-slate-900 hover:bg-blue-500 disabled:opacity-50"
             >
               {joining ? t('lobby.verifying') : t('common.confirm')}
             </button>
             <button
               type="button"
               onClick={handleCancelPassword}
-              className="rounded-lg bg-slate-700 px-4 py-2 text-slate-300 hover:bg-slate-600"
+              className="rounded-lg dark:bg-slate-700 bg-slate-200 px-4 py-2 dark:text-slate-300 text-slate-700 hover:dark:bg-slate-600 bg-slate-300"
             >
               {t('common.cancel')}
             </button>
@@ -520,9 +520,9 @@ export default function Lobby() {
             </span>
           </div>
         ) : loading ? (
-          <p className="text-slate-400">{t('common.loading')}</p>
+          <p className="dark:text-slate-400 text-slate-600">{t('common.loading')}</p>
         ) : rooms.length === 0 ? (
-          <p className="rounded-lg border border-dashed border-slate-700 p-8 text-center text-slate-500">
+          <p className="rounded-lg border border-dashed dark:border-slate-700 border-slate-200 p-8 text-center text-slate-500">
             {t('lobby.noRooms')}
           </p>
         ) : (
@@ -544,12 +544,12 @@ export default function Lobby() {
                     onBlur={() =>
                       setPreviewedRoomId((id) => (id === room.id ? null : id))
                     }
-                    className="w-full rounded-lg border border-slate-700 bg-slate-800 p-4 text-left hover:border-slate-500"
+                    className="w-full rounded-lg border dark:border-slate-700 border-slate-200 dark:bg-slate-800 bg-white p-4 text-left hover:border-slate-500"
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         {Icon && (
-                          <Icon className="h-8 w-8 text-slate-300" />
+                          <Icon className="h-8 w-8 dark:text-slate-300 text-slate-700" />
                         )}
                         <div>
                           <p className="font-medium">
@@ -564,13 +564,13 @@ export default function Lobby() {
                               </span>
                             )}
                           </p>
-                          <p className="text-sm text-slate-400">
+                          <p className="text-sm dark:text-slate-400 text-slate-600">
                             {t('lobby.hostPrefix')}{room.hostName} · {t('lobby.playersCount', { count: room.playerCount, max: room.maxPlayers })}
                             <span className="ml-2 text-yellow-300">
                               · {t('lobby.turnTimeSec', { sec: room.turnTimeLimitSec })}
                             </span>
                             {gameDef?.estimatedDurationMin !== undefined && (
-                              <span className="ml-2 text-slate-300">
+                              <span className="ml-2 dark:text-slate-300 text-slate-700">
                                 · {t('lobby.estimatedMin', { min: gameDef.estimatedDurationMin })}
                               </span>
                             )}
@@ -601,7 +601,7 @@ export default function Lobby() {
                           className={`rounded px-2 py-1 text-xs ${
                             isPlaying
                               ? 'bg-blue-900/50 text-blue-300'
-                              : 'bg-slate-700 text-slate-300'
+                              : 'dark:bg-slate-700 bg-slate-200 dark:text-slate-300 text-slate-700'
                           }`}
                         >
                           {isPlaying ? t('lobby.actionSpectate') : t('lobby.actionJoin')}

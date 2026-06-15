@@ -70,8 +70,8 @@ const OUTCOME_STYLE: Record<Outcome, ReactionStyle> = {
   draw: {
     border: 'border-slate-500',
     bg: 'bg-gradient-to-b from-slate-700/40 to-slate-800',
-    subtitle: 'text-slate-300',
-    accent: 'text-slate-300',
+    subtitle: 'dark:text-slate-300 text-slate-700',
+    accent: 'dark:text-slate-300 text-slate-700',
   },
   observer: {
     border: 'border-blue-700',
@@ -144,7 +144,7 @@ export function ResultScreen({
               style={{ left: `${r.xPct}%`, transform: 'translateX(-50%)' }}
             >
               <div className="text-3xl drop-shadow-lg">{r.emoji}</div>
-              <div className="mt-1 whitespace-nowrap rounded-full bg-slate-900/70 px-2 py-0.5 text-xs font-medium text-white">
+              <div className="mt-1 whitespace-nowrap rounded-full dark:bg-slate-900 bg-slate-50/70 px-2 py-0.5 text-xs font-medium dark:text-white text-slate-900">
                 {r.displayName}
               </div>
             </div>
@@ -159,15 +159,15 @@ export function ResultScreen({
         <h2 className={`mt-2 text-4xl font-bold ${style.accent}`}>{outcomeTitle[outcome]}</h2>
 
         {!room.isDraw && winner && (
-          <p className="mt-3 text-slate-300">
+          <p className="mt-3 dark:text-slate-300 text-slate-700">
             {t('resultScreen.winnerLabel')}
-            <span className="font-semibold text-white">{winner.displayName}</span>
+            <span className="font-semibold dark:text-white text-slate-900">{winner.displayName}</span>
             <span className="ml-2 text-slate-500">（{winner.symbol}）</span>
           </p>
         )}
 
         {room.isDraw && (
-          <p className="mt-3 text-slate-400">{t('resultScreen.drawDescription')}</p>
+          <p className="mt-3 dark:text-slate-400 text-slate-600">{t('resultScreen.drawDescription')}</p>
         )}
       </div>
 
@@ -185,7 +185,7 @@ export function ResultScreen({
                   ? 'border-yellow-500 bg-yellow-900/20'
                   : isLoser && isMe
                     ? 'border-red-700 bg-red-900/20'
-                    : 'border-slate-700 bg-slate-900/50'
+                    : 'dark:border-slate-700 border-slate-200 dark:bg-slate-900 bg-slate-50/50'
               }`}
             >
               <div className="flex items-center gap-2">
@@ -197,10 +197,10 @@ export function ResultScreen({
                   />
                 )}
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium text-white">
+                  <p className="truncate text-sm font-medium dark:text-white text-slate-900">
                     {p.displayName}
                     {isMe && (
-                      <span className="ml-1 text-xs text-slate-400">{t('common.you')}</span>
+                      <span className="ml-1 text-xs dark:text-slate-400 text-slate-600">{t('common.you')}</span>
                     )}
                   </p>
                   <p className="text-xs text-slate-500">符號：{p.symbol}</p>
@@ -214,7 +214,7 @@ export function ResultScreen({
                 </span>
               </div>
               <p className={`mt-2 text-center text-xs font-semibold ${
-                isDraw ? 'text-slate-300' : isWinner ? 'text-yellow-400' : 'text-slate-500'
+                isDraw ? 'dark:text-slate-300 text-slate-700' : isWinner ? 'text-yellow-400' : 'text-slate-500'
               }`}>
                 {isDraw ? t('resultScreen.drawShort') : isWinner ? t('resultScreen.win') : t('resultScreen.lose')}
               </p>
@@ -231,7 +231,7 @@ export function ResultScreen({
             type="button"
             onClick={() => handleSendReaction(rk)}
             disabled={leaving}
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-600 bg-slate-800 text-xl hover:scale-110 hover:bg-slate-700 disabled:opacity-50"
+            className="flex h-10 w-10 items-center justify-center rounded-full border dark:border-slate-600 border-slate-300 dark:bg-slate-800 bg-white text-xl hover:scale-110 hover:dark:bg-slate-700 bg-slate-200 disabled:opacity-50"
             title={t(`resultScreen.reactions.${rk}`)}
             aria-label={t('resultScreen.reactionsAria', { label: t(`resultScreen.reactions.${rk}`) })}
           >
@@ -246,7 +246,7 @@ export function ResultScreen({
           <button
             onClick={onPlayAgain}
             disabled={leaving}
-            className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-500 disabled:opacity-50"
+            className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium dark:text-white text-slate-900 hover:bg-green-500 disabled:opacity-50"
           >
             {leaving ? t('resultScreen.processing') : t('resultScreen.playAgain')}
           </button>
@@ -256,7 +256,7 @@ export function ResultScreen({
         <button
           onClick={onLeave}
           disabled={leaving}
-          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500 disabled:opacity-50"
+          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium dark:text-white text-slate-900 hover:bg-blue-500 disabled:opacity-50"
         >
           {leaving ? t('resultScreen.leaving') : t('resultScreen.backToLobby')}
         </button>

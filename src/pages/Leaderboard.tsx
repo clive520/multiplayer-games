@@ -37,27 +37,27 @@ export default function Leaderboard() {
       <header className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">{t('leaderboard.title')}</h1>
-          <p className="text-sm text-slate-400">ELO 評分排序 · 前 20 名</p>
+          <p className="text-sm dark:text-slate-400 text-slate-600">ELO 評分排序 · 前 20 名</p>
         </div>
         <div className="flex items-center gap-2">
           {user && (
             <button
               onClick={() => navigate('/profile')}
-              className="rounded bg-slate-700 px-3 py-1.5 text-sm hover:bg-slate-600"
+              className="rounded dark:bg-slate-700 bg-slate-200 px-3 py-1.5 text-sm hover:dark:bg-slate-600 bg-slate-300"
             >
               {t('nav.profile')}
             </button>
           )}
           <button
             onClick={() => navigate('/lobby')}
-            className="rounded bg-slate-700 px-3 py-1.5 text-sm hover:bg-slate-600"
+            className="rounded dark:bg-slate-700 bg-slate-200 px-3 py-1.5 text-sm hover:dark:bg-slate-600 bg-slate-300"
           >
             {t('nav.lobby')}
           </button>
           {user ? (
             <button
               onClick={() => signOut()}
-              className="rounded bg-slate-700 px-3 py-1.5 text-sm hover:bg-slate-600"
+              className="rounded dark:bg-slate-700 bg-slate-200 px-3 py-1.5 text-sm hover:dark:bg-slate-600 bg-slate-300"
             >
               {t('nav.signOut')}
             </button>
@@ -74,8 +74,8 @@ export default function Leaderboard() {
               onClick={() => setScope(tab.value)}
               className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition ${
                 scope === tab.value
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                  ? 'bg-blue-600 dark:text-white text-slate-900'
+                  : 'dark:bg-slate-700 bg-slate-200 dark:text-slate-300 text-slate-700 hover:dark:bg-slate-600 bg-slate-300'
               }`}
             >
               {Icon && <Icon className="h-5 w-5" />}
@@ -92,18 +92,18 @@ export default function Leaderboard() {
       )}
 
       {loading ? (
-        <p className="text-slate-400">{t('common.loading')}</p>
+        <p className="dark:text-slate-400 text-slate-600">{t('common.loading')}</p>
       ) : entries.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-slate-700 p-8 text-center text-slate-500">
+        <div className="rounded-lg border border-dashed dark:border-slate-700 border-slate-200 p-8 text-center text-slate-500">
           {t('leaderboard.empty')}
         </div>
       ) : (
-        <div className="overflow-hidden rounded-lg border border-slate-700">
-          <div className="border-b border-slate-700 bg-slate-800 px-4 py-2 text-xs text-slate-400">
+        <div className="overflow-hidden rounded-lg border dark:border-slate-700 border-slate-200">
+          <div className="border-b dark:border-slate-700 border-slate-200 dark:bg-slate-800 bg-white px-4 py-2 text-xs dark:text-slate-400 text-slate-600">
             {t('common.loading')}：{gameLabel}（{entries.length}）
           </div>
           <table className="w-full">
-            <thead className="bg-slate-800 text-xs text-slate-400">
+            <thead className="dark:bg-slate-800 bg-white text-xs dark:text-slate-400 text-slate-600">
               <tr>
                 <th className="px-3 py-2 text-left">#</th>
                 <th className="px-3 py-2 text-left">{t('leaderboard.player')}</th>
@@ -122,11 +122,11 @@ export default function Leaderboard() {
                 return (
                   <tr
                     key={entry.uid}
-                    className={`border-t border-slate-700 ${
+                    className={`border-t dark:border-slate-700 border-slate-200 ${
                       isMe ? 'bg-blue-900/20' : ''
                     }`}
                   >
-                    <td className="px-3 py-2 text-sm text-slate-400">
+                    <td className="px-3 py-2 text-sm dark:text-slate-400 text-slate-600">
                       {idx + 1}
                     </td>
                     <td className="px-3 py-2">
@@ -138,12 +138,12 @@ export default function Leaderboard() {
                             className="h-6 w-6 rounded-full"
                           />
                         ) : (
-                          <div className="h-6 w-6 rounded-full bg-slate-700" />
+                          <div className="h-6 w-6 rounded-full dark:bg-slate-700 bg-slate-200" />
                         )}
-                        <span className="text-sm font-medium text-white">
+                        <span className="text-sm font-medium dark:text-white text-slate-900">
                           {entry.displayName}
                           {isMe && (
-                            <span className="ml-1 text-xs text-slate-400">{t('common.you')}</span>
+                            <span className="ml-1 text-xs dark:text-slate-400 text-slate-600">{t('common.you')}</span>
                           )}
                         </span>
                       </div>
@@ -157,13 +157,13 @@ export default function Leaderboard() {
                     <td className="px-3 py-2 text-right text-sm text-red-400">
                       {stats.losses}
                     </td>
-                    <td className="px-3 py-2 text-right text-sm text-slate-400">
+                    <td className="px-3 py-2 text-right text-sm dark:text-slate-400 text-slate-600">
                       {stats.draws}
                     </td>
-                    <td className="px-3 py-2 text-right text-sm text-slate-300">
+                    <td className="px-3 py-2 text-right text-sm dark:text-slate-300 text-slate-700">
                       {entry.winRate}%
                     </td>
-                    <td className="px-3 py-2 text-right text-sm text-slate-400">
+                    <td className="px-3 py-2 text-right text-sm dark:text-slate-400 text-slate-600">
                       {stats.totalGames}
                     </td>
                   </tr>

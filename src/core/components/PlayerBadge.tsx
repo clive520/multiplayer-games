@@ -21,7 +21,7 @@ export function PlayerBadge({
       className={`rounded px-2 py-1 ${
         isMe
           ? 'bg-blue-900/50 text-blue-300'
-          : 'bg-slate-700 text-slate-300'
+          : 'dark:bg-slate-700 bg-slate-200 dark:text-slate-300 text-slate-700'
       }`}
     >
       {label}: {displayName}

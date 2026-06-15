@@ -38,9 +38,9 @@
     "language": "Interface language",
     "languageHint": "Changes take effect immediately",
     "theme": "Theme",
-    "themeDark": "Dark (current)",
-    "themeLight": "Light (coming soon)",
-    "themeHint": "Light mode coming soon (IMPROVEMENTS #18)",
+    "themeDark": "Dark mode",
+    "themeLight": "Light mode",
+    "themeHint": "Changes take effect immediately",
     "saved": "Saved",
     "autoSaved": "Settings auto-saved"
   },

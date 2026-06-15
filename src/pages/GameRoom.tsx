@@ -235,7 +235,7 @@ export default function GameRoom() {
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <p className="text-slate-400">{t('gameRoom.loadingRoom')}</p>
+        <p className="dark:text-slate-400 text-slate-600">{t('gameRoom.loadingRoom')}</p>
       </div>
     );
   }
@@ -251,7 +251,7 @@ export default function GameRoom() {
         </div>
         <button
           onClick={() => navigate('/lobby')}
-          className="rounded bg-slate-700 px-4 py-2 hover:bg-slate-600"
+          className="rounded dark:bg-slate-700 bg-slate-200 px-4 py-2 hover:dark:bg-slate-600 bg-slate-300"
         >
           {t('gameRoom.backToLobby')}
         </button>
@@ -261,10 +261,10 @@ export default function GameRoom() {
   if (!room) {
     return (
       <div className="mx-auto flex min-h-screen max-w-md flex-col items-center justify-center gap-4 p-6">
-        <p className="text-slate-300">{t('gameRoom.roomNotFound')}</p>
+        <p className="dark:text-slate-300 text-slate-700">{t('gameRoom.roomNotFound')}</p>
         <button
           onClick={() => navigate('/lobby')}
-          className="rounded bg-slate-700 px-4 py-2 hover:bg-slate-600"
+          className="rounded dark:bg-slate-700 bg-slate-200 px-4 py-2 hover:dark:bg-slate-600 bg-slate-300"
         >
           {t('gameRoom.backToLobby')}
         </button>
@@ -343,11 +343,11 @@ export default function GameRoom() {
       <header className="mb-6 flex items-center justify-between">
         <div className="flex items-center gap-3">
           {gameDef?.icon && (
-            <gameDef.icon className="h-10 w-10 text-slate-200" />
+            <gameDef.icon className="h-10 w-10 dark:text-slate-200 text-slate-800" />
           )}
           <div>
             <h1 className="text-xl font-bold">{gameDef ? t(gameDef.name) : room.gameType}</h1>
-            <p className="text-sm text-slate-400">
+            <p className="text-sm dark:text-slate-400 text-slate-600">
               {t('gameRoom.status')}
               {room.status === 'waiting' ? t('gameRoom.statusWaiting') : isPlaying ? t('gameRoom.statusPlaying') : t('gameRoom.statusFinished')}
             </p>
@@ -356,7 +356,7 @@ export default function GameRoom() {
         <button
           onClick={handleLeave}
           disabled={actionPending}
-          className="rounded bg-slate-700 px-3 py-1.5 text-sm hover:bg-slate-600 disabled:opacity-50"
+          className="rounded dark:bg-slate-700 bg-slate-200 px-3 py-1.5 text-sm hover:dark:bg-slate-600 bg-slate-300 disabled:opacity-50"
         >
           {t('gameRoom.leaveRoom')}
         </button>
@@ -371,7 +371,7 @@ export default function GameRoom() {
             </span>
             <button
               onClick={handleCopyCode}
-              className="rounded bg-yellow-700 px-3 py-1 text-sm text-white hover:bg-yellow-600"
+              className="rounded bg-yellow-700 px-3 py-1 text-sm dark:text-white text-slate-900 hover:bg-yellow-600"
             >
               {copied ? t('gameRoom.copied') : t('gameRoom.copyCode')}
             </button>
@@ -388,9 +388,9 @@ export default function GameRoom() {
       {/* 離開房間確認對話框（遊戲進行中） */}
       {showLeaveConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-          <div className="w-full max-w-md rounded-lg border border-red-700 bg-slate-800 p-6 shadow-2xl">
+          <div className="w-full max-w-md rounded-lg border border-red-700 dark:bg-slate-800 bg-white p-6 shadow-2xl">
             <h3 className="mb-2 text-lg font-bold text-red-300">{t('gameRoom.leaveConfirmTitle')}</h3>
-            <p className="mb-2 text-sm leading-relaxed text-slate-300">
+            <p className="mb-2 text-sm leading-relaxed dark:text-slate-300 text-slate-700">
               {t('gameRoom.leaveConfirmBody')}
               <span className="mx-1 font-bold text-red-400">{t('gameRoom.leaveConfirmLose')}</span>
               {t('gameRoom.leaveConfirmAfter')}
@@ -401,14 +401,14 @@ export default function GameRoom() {
             <div className="flex justify-end gap-2">
               <button
                 onClick={() => setShowLeaveConfirm(false)}
-                className="rounded-lg border border-slate-600 bg-slate-700 px-4 py-2 text-sm font-medium text-slate-200 hover:bg-slate-600"
+                className="rounded-lg border dark:border-slate-600 border-slate-300 dark:bg-slate-700 bg-slate-200 px-4 py-2 text-sm font-medium dark:text-slate-200 text-slate-800 hover:dark:bg-slate-600 bg-slate-300"
               >
                 {t('common.cancel')}
               </button>
               <button
                 onClick={confirmLeave}
                 disabled={actionPending}
-                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-500 disabled:opacity-50"
+                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium dark:text-white text-slate-900 hover:bg-red-500 disabled:opacity-50"
               >
                 {actionPending ? t('gameRoom.leaving') : t('gameRoom.leaveConfirmSubmit')}
               </button>
@@ -423,8 +423,8 @@ export default function GameRoom() {
         </section>
       )}
 
-      <section className="mb-4 rounded-lg border border-slate-700 bg-slate-800 p-4">
-        <h2 className="mb-3 text-sm font-semibold text-slate-300">
+      <section className="mb-4 rounded-lg border dark:border-slate-700 border-slate-200 dark:bg-slate-800 bg-white p-4">
+        <h2 className="mb-3 text-sm font-semibold dark:text-slate-300 text-slate-700">
           {t('gameRoom.players', { count: room.players.length, max: gameDef?.maxPlayers ?? 2 })}
         </h2>
         <ul className="space-y-2">
@@ -447,7 +447,7 @@ export default function GameRoom() {
               return (
                 <li
                   key={p.uid}
-                  className="flex items-center gap-3 rounded bg-slate-900/50 p-2"
+                  className="flex items-center gap-3 rounded dark:bg-slate-900 bg-slate-50/50 p-2"
                 >
                   <div className="relative">
                     {p.photoURL ? (
@@ -457,7 +457,7 @@ export default function GameRoom() {
                         className="h-8 w-8 rounded-full"
                       />
                     ) : (
-                      <div className="h-8 w-8 rounded-full bg-slate-700" />
+                      <div className="h-8 w-8 rounded-full dark:bg-slate-700 bg-slate-200" />
                     )}
                     <span
                       className={`absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-slate-900 ${
@@ -486,7 +486,7 @@ export default function GameRoom() {
                     className={`rounded px-2 py-0.5 text-xs ${
                       p.ready
                         ? 'bg-green-900/50 text-green-300'
-                        : 'bg-slate-700 text-slate-400'
+                        : 'dark:bg-slate-700 bg-slate-200 dark:text-slate-400 text-slate-600'
                     }`}
                   >
                     {p.ready ? t('common.ready') : t('common.notReady')}
@@ -499,8 +499,8 @@ export default function GameRoom() {
       </section>
 
       {room.spectators.length > 0 && (
-        <section className="mb-6 rounded-lg border border-slate-700 bg-slate-800 p-4">
-          <h2 className="mb-3 text-sm font-semibold text-slate-300">
+        <section className="mb-6 rounded-lg border dark:border-slate-700 border-slate-200 dark:bg-slate-800 bg-white p-4">
+          <h2 className="mb-3 text-sm font-semibold dark:text-slate-300 text-slate-700">
             {t('gameRoom.spectators', { count: room.spectators.length })}
           </h2>
           <ul className="space-y-2">
@@ -509,7 +509,7 @@ export default function GameRoom() {
               return (
                 <li
                   key={s.uid}
-                  className="flex items-center gap-3 rounded bg-slate-900/50 p-2"
+                  className="flex items-center gap-3 rounded dark:bg-slate-900 bg-slate-50/50 p-2"
                 >
                   <div className="relative">
                     {s.photoURL ? (
@@ -519,7 +519,7 @@ export default function GameRoom() {
                         className="h-8 w-8 rounded-full"
                       />
                     ) : (
-                      <div className="h-8 w-8 rounded-full bg-slate-700" />
+                      <div className="h-8 w-8 rounded-full dark:bg-slate-700 bg-slate-200" />
                     )}
                     <span
                       className={`absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-slate-900 ${
@@ -544,7 +544,7 @@ export default function GameRoom() {
           <button
             onClick={handleToggleReady}
             disabled={actionPending}
-            className="rounded-lg bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-500 disabled:opacity-50"
+            className="rounded-lg bg-blue-600 px-4 py-2 font-medium dark:text-white text-slate-900 hover:bg-blue-500 disabled:opacity-50"
           >
             {currentPlayer.ready ? t('gameRoom.cancelReadyButton') : t('gameRoom.readyButton')}
           </button>
@@ -556,7 +556,7 @@ export default function GameRoom() {
                 room.players.length < 2 ||
                 !room.players.every((p) => p.ready)
               }
-              className="rounded-lg bg-green-600 px-4 py-2 font-medium text-white hover:bg-green-500 disabled:opacity-50"
+              className="rounded-lg bg-green-600 px-4 py-2 font-medium dark:text-white text-slate-900 hover:bg-green-500 disabled:opacity-50"
             >
               {t('gameRoom.startGame')}
             </button>
@@ -599,8 +599,8 @@ export default function GameRoom() {
       )}
 
       {isPlaying && gameDef && (currentPlayer || isSpectator) && !GameComp && (
-        <div className="rounded-lg border border-slate-700 bg-slate-800 p-6 text-center">
-          <p className="text-slate-400">
+        <div className="rounded-lg border dark:border-slate-700 border-slate-200 dark:bg-slate-800 bg-white p-6 text-center">
+          <p className="dark:text-slate-400 text-slate-600">
             {gameCompLoading ? t('gameRoom.loadingGame') : t('gameRoom.loadGameComponent')}
           </p>
         </div>
@@ -627,7 +627,7 @@ export default function GameRoom() {
               formatSymbol={gameDef?.formatSymbol}
             />
             {isSpectator && (
-              <p className="mt-2 text-xs text-slate-400">
+              <p className="mt-2 text-xs dark:text-slate-400 text-slate-600">
                 {t('moveHistory.spectatorNote')}
               </p>
             )}

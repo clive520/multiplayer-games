@@ -8,7 +8,7 @@ export function RequireAuth({ children }: { children: ReactNode }) {
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <p className="text-slate-400">載入中...</p>
+        <p className="dark:text-slate-400 text-slate-600">載入中...</p>
       </div>
     );
   }

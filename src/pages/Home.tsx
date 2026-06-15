@@ -29,7 +29,7 @@ export default function Home() {
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <p className="text-slate-400">{t('common.loading')}</p>
+        <p className="dark:text-slate-400 text-slate-600">{t('common.loading')}</p>
       </div>
     );
   }
@@ -40,9 +40,9 @@ export default function Home() {
         <LanguageSwitcher />
       </div>
       <h1 className="text-4xl font-bold">{t('home.title')}</h1>
-      <p className="text-slate-400">{t('home.subtitle')}</p>
+      <p className="dark:text-slate-400 text-slate-600">{t('home.subtitle')}</p>
 
-      <div className="rounded-lg border border-slate-700 bg-slate-800 p-6 shadow-lg">
+      <div className="rounded-lg border dark:border-slate-700 border-slate-200 dark:bg-slate-800 bg-white p-6 shadow-lg">
         {user ? (
           <div className="flex flex-col items-center gap-4">
             {user.photoURL && (
@@ -54,11 +54,11 @@ export default function Home() {
             )}
             <div className="text-center">
               <p className="text-xs text-slate-500">{t('home.signedInAs', { name: user.displayName ?? '' })}</p>
-              <p className="text-sm text-slate-400">{user.email}</p>
+              <p className="text-sm dark:text-slate-400 text-slate-600">{user.email}</p>
             </div>
             <button
               onClick={handleSignOut}
-              className="rounded bg-slate-700 px-4 py-2 text-sm hover:bg-slate-600"
+              className="rounded dark:bg-slate-700 bg-slate-200 px-4 py-2 text-sm hover:dark:bg-slate-600 bg-slate-300"
             >
               {t('home.signOut')}
             </button>
@@ -66,7 +66,7 @@ export default function Home() {
         ) : (
           <button
             onClick={handleSignIn}
-            className="rounded bg-blue-600 px-6 py-3 font-medium text-white hover:bg-blue-500"
+            className="rounded bg-blue-600 px-6 py-3 font-medium dark:text-white text-slate-900 hover:bg-blue-500"
           >
             {t('home.signIn')}
           </button>

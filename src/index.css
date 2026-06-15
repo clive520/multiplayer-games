@@ -2,11 +2,19 @@
 @tailwind components;
 @tailwind utilities;
 
+/* IMPROVEMENTS #18：light/dark 模式基底背景
+   預設走 Tailwind dark: 前綴（<html class="dark">）
+   :root 設 fallback 顏色避免 FOUC（首次渲染時還沒套上 dark class） */
 :root {
   font-family: system-ui, -apple-system, 'Segoe UI', 'Microsoft JhengHei', sans-serif;
   line-height: 1.5;
   font-weight: 400;
   color-scheme: light dark;
+  background-color: #f8fafc;
+  color: #0f172a;
+}
+
+html.dark {
   background-color: #0f172a;
   color: #f1f5f9;
 }

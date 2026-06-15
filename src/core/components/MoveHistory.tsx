@@ -33,14 +33,14 @@ export function MoveHistory({ moves, currentUserId, formatSymbol }: MoveHistoryP
   const f = formatSymbol ?? ((s: string) => s);
 
   return (
-    <section className="rounded-lg border border-slate-700 bg-slate-800 p-4">
+    <section className="rounded-lg border dark:border-slate-700 border-slate-200 dark:bg-slate-800 bg-white p-4">
       <button
         type="button"
         onClick={() => setCollapsed((c) => !c)}
         className="mb-3 flex w-full items-center justify-between text-left"
         aria-expanded={!collapsed}
       >
-        <h3 className="text-sm font-semibold text-slate-300">
+        <h3 className="text-sm font-semibold dark:text-slate-300 text-slate-700">
           棋譜（{moves.length}）
         </h3>
         <span className="text-xs text-slate-500 lg:hidden">
@@ -64,7 +64,7 @@ export function MoveHistory({ moves, currentUserId, formatSymbol }: MoveHistoryP
                   <li
                     key={`${m.timestamp}-${idx}`}
                     className={`flex items-center gap-2 rounded px-2 py-1 ${
-                      isMine ? 'bg-blue-900/30' : 'bg-slate-900/30'
+                      isMine ? 'bg-blue-900/30' : 'dark:bg-slate-900 bg-slate-50/30'
                     } ${isLast ? 'border-l-2 border-green-400' : ''}`}
                   >
                     <span className="w-6 text-right text-xs text-slate-500">
@@ -72,7 +72,7 @@ export function MoveHistory({ moves, currentUserId, formatSymbol }: MoveHistoryP
                     </span>
                     <span className="flex-1 truncate text-xs">
                       <span className="font-medium">{m.displayName}</span>
-                      <span className="ml-1 text-slate-400">（{f(m.symbol)}）</span>
+                      <span className="ml-1 dark:text-slate-400 text-slate-600">（{f(m.symbol)}）</span>
                     </span>
                     <span className="font-mono text-xs text-slate-500">
                       ({m.row},{m.col})

@@ -25,37 +25,37 @@ export function RoomPreviewCard({ room, gameDef, gameState }: RoomPreviewCardPro
   return (
     <div
       role="tooltip"
-      className="rounded-lg border border-slate-600 bg-slate-900 p-4 shadow-2xl"
+      className="rounded-lg border dark:border-slate-600 border-slate-300 dark:bg-slate-900 bg-slate-50 p-4 shadow-2xl"
     >
       <div className="grid gap-4 md:grid-cols-[1fr_auto]">
         {/* 左：房間資訊 */}
         <div className="space-y-2">
           <div className="flex items-center gap-2">
             {gameDef?.icon && (
-              <gameDef.icon className="h-6 w-6 text-slate-200" />
+              <gameDef.icon className="h-6 w-6 dark:text-slate-200 text-slate-800" />
             )}
             <div>
-              <h3 className="text-sm font-bold text-white">
+              <h3 className="text-sm font-bold dark:text-white text-slate-900">
                 {gameDef ? t(gameDef.name) : room.gameType}
               </h3>
               {gameDef?.description && (
-                <p className="text-xs text-slate-400">{gameDef.description}</p>
+                <p className="text-xs dark:text-slate-400 text-slate-600">{gameDef.description}</p>
               )}
             </div>
           </div>
 
-          <div className="space-y-1 text-xs text-slate-400">
+          <div className="space-y-1 text-xs dark:text-slate-400 text-slate-600">
             <div>
               房主：
-              <span className="text-slate-200">{room.hostName}</span>
+              <span className="dark:text-slate-200 text-slate-800">{room.hostName}</span>
             </div>
             <div>
-              玩家數：<span className="text-slate-200">
+              玩家數：<span className="dark:text-slate-200 text-slate-800">
                 {room.playerCount}/{room.maxPlayers}
               </span>
             </div>
             <div>
-              每回合：<span className="text-slate-200">{room.turnTimeLimitSec} 秒</span>
+              每回合：<span className="dark:text-slate-200 text-slate-800">{room.turnTimeLimitSec} 秒</span>
               {gameDef?.estimatedDurationMin !== undefined && (
                 <span className="ml-2 text-slate-500">
                   · 預計 {gameDef.estimatedDurationMin} 分鐘

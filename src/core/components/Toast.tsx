@@ -143,10 +143,10 @@ function ToastItem({ toast, onRemove }: ToastItemProps) {
       <span className={`text-base font-bold ${style.iconColor}`} aria-hidden>
         {style.icon}
       </span>
-      <span className="flex-1 text-slate-100">{toast.message}</span>
+      <span className="flex-1 dark:text-slate-100 text-slate-900">{toast.message}</span>
       <button
         onClick={() => onRemove(toast.id)}
-        className="text-slate-400 hover:text-slate-100"
+        className="dark:text-slate-400 text-slate-600 hover:dark:text-slate-100 text-slate-900"
         aria-label="關閉"
         type="button"
       >

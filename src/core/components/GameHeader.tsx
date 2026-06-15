@@ -62,7 +62,7 @@ export function GameHeader({
       break;
     case 'draw':
       statusNode = (
-        <p className="text-lg font-semibold text-slate-300">{t('games.headerStatus.draw')}</p>
+        <p className="text-lg font-semibold dark:text-slate-300 text-slate-700">{t('games.headerStatus.draw')}</p>
       );
       break;
     case 'myTurn': {
@@ -81,7 +81,7 @@ export function GameHeader({
     case 'opponentTurn': {
       const verb = t(`games.verb.${status.gameType}`);
       statusNode = (
-        <p className="text-lg text-slate-400">
+        <p className="text-lg dark:text-slate-400 text-slate-600">
           {t(`games.headerStatus.opponentTurn_${status.gameType}`, {
             symbol: f(status.symbol),
             verb,
@@ -98,7 +98,7 @@ export function GameHeader({
     case 'spectating': {
       const verb = t(`games.verb.${status.gameType}`);
       statusNode = (
-        <p className="text-lg text-slate-400">
+        <p className="text-lg dark:text-slate-400 text-slate-600">
           {t(`games.headerStatus.spectating_${status.gameType}`, {
             symbol: f(status.symbol),
             verb,
@@ -116,7 +116,7 @@ export function GameHeader({
 
   const showRightSide = players || rightContent;
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-700 bg-slate-800 p-4">
+    <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border dark:border-slate-700 border-slate-200 dark:bg-slate-800 bg-white p-4">
       <div>{statusNode}</div>
       {showRightSide && (
         <div className="flex flex-wrap items-center gap-3 text-sm">

@@ -24,7 +24,7 @@ export function LanguageSwitcher() {
       value={current}
       onChange={handleChange}
       aria-label="Language"
-      className="rounded border border-slate-600 bg-slate-800 px-2 py-1 text-xs text-slate-200 hover:bg-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
+      className="rounded border dark:border-slate-600 border-slate-300 dark:bg-slate-800 bg-white px-2 py-1 text-xs dark:text-slate-200 text-slate-800 hover:dark:bg-slate-700 bg-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-500"
     >
       {SUPPORTED_LANGUAGES.map((lang) => (
         <option key={lang} value={lang}>
