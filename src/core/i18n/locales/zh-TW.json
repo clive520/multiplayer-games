@@ -307,5 +307,15 @@
   },
   "auth": {
     "defaultNickname": "玩家"
+  },
+  "chat": {
+    "title": "聊天",
+    "empty": "還沒有訊息，留下第一句話吧！",
+    "placeholder": "輸入訊息…",
+    "send": "送出",
+    "inputHint": "Enter 送出（最多 200 字）",
+    "tooLong": "訊息太長（最多 200 字）",
+    "emptyText": "訊息不能為空",
+    "loadFailed": "載入聊天失敗"
   }
 }

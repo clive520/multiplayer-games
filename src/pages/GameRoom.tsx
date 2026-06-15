@@ -15,6 +15,8 @@ import { resetGameState as resetGomokuState, submitMove as submitGomokuMove } fr
 import { resetGameState as resetReversiState, submitMove as submitReversiMove, passTurn as passReversiTurn } from '@/games/reversi/sync';
 import { ResultScreen } from '../core/components/ResultScreen';
 import { MoveHistory } from '../core/components/MoveHistory';
+import { ChatPanel } from '../core/components/ChatPanel';
+import { clearChatMessages } from '../core/services/chatService';
 import { getGameDefinition } from '@/registry';
 import type { GameComponentProps, MoveRecord } from '../core/types/game';
 import { rtdb } from '../core/firebase/rtdb';
@@ -335,6 +337,10 @@ export default function GameRoom() {
     await runAction(async () => {
       await resetRoom(roomId);
       await resetGameStateFor(room.gameType, roomId);
+      // IMPROVEMENTS #20：再來一局時順便清空聊天
+      await clearChatMessages(roomId).catch((err) => {
+        console.warn('清空聊天失敗', err);
+      });
     });
   };
 
@@ -564,6 +570,17 @@ export default function GameRoom() {
         </div>
       )}
 
+      {/* 等待中：聊天面板（IMPROVEMENTS #20） */}
+      {room.status === 'waiting' && currentPlayer && (
+        <div className="mb-6 h-[400px]">
+          <ChatPanel
+            roomId={roomId}
+            currentUserId={user!.uid}
+            currentNickname={profile?.nickname ?? currentPlayer?.displayName ?? t('auth.defaultNickname')}
+          />
+        </div>
+      )}
+
       {isPlaying && gameDef && (currentPlayer || isSpectator) && GameComp && (
         <div className="grid gap-4 lg:grid-cols-3">
           <div className="lg:col-span-2">
@@ -588,12 +605,19 @@ export default function GameRoom() {
               onActivity={handleGameActivity}
             />
           </div>
-          <aside className="lg:col-span-1">
+          <aside className="flex min-h-[500px] flex-col gap-4 lg:col-span-1">
             <MoveHistory
               moves={moves}
               currentUserId={user!.uid}
               formatSymbol={gameDef.formatSymbol}
             />
+            <div className="min-h-[400px] flex-1">
+              <ChatPanel
+                roomId={roomId}
+                currentUserId={user!.uid}
+                currentNickname={profile?.nickname ?? currentPlayer?.displayName ?? t('auth.defaultNickname')}
+              />
+            </div>
           </aside>
         </div>
       )}
@@ -620,17 +644,24 @@ export default function GameRoom() {
               isSpectator={isSpectator}
             />
           </div>
-          <aside className="lg:col-span-1">
+          <aside className="flex min-h-[500px] flex-col gap-4 lg:col-span-1">
             <MoveHistory
               moves={moves}
               currentUserId={user!.uid}
               formatSymbol={gameDef?.formatSymbol}
             />
             {isSpectator && (
-              <p className="mt-2 text-xs dark:text-slate-400 text-slate-600">
+              <p className="text-xs dark:text-slate-400 text-slate-600">
                 {t('moveHistory.spectatorNote')}
               </p>
             )}
+            <div className="min-h-[400px] flex-1">
+              <ChatPanel
+                roomId={roomId}
+                currentUserId={user!.uid}
+                currentNickname={profile?.nickname ?? currentPlayer?.displayName ?? t('auth.defaultNickname')}
+              />
+            </div>
           </aside>
         </div>
       )}

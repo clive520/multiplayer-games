@@ -28,6 +28,16 @@
           "$reactionId": {
             ".validate": "newData.hasChildren(['emoji', 'uid', 'displayName', 'xPct', 'createdAt'])"
           }
+        },
+        // 房間內聊天（IMPROVEMENTS #20）
+        // 任何登入者皆可讀寫；房主 resetRoom 或房間廢棄時整段清掉
+        // 結構：{ uid, nickname, text, createdAt }
+        "chat": {
+          ".read": "auth != null",
+          ".write": "auth != null",
+          "$msgId": {
+            ".validate": "newData.hasChildren(['uid', 'nickname', 'text', 'createdAt'])"
+          }
         }
       }
     }

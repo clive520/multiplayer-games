@@ -6,6 +6,52 @@
 
 ---
 
+## 2026-06-15（Day 3 續）— #20 房間內聊天
+
+**用戶選**：#20 房間內聊天（高社交價值，明顯缺點）
+
+**決策**：
+- 用 RTDB（跟 reactions 一樣），不用 Firestore
+- 結構：`rooms-live/{roomId}/chat/{msgId}` = {uid, nickname, text, createdAt}
+- 訂閱時 `limitToLast(50)` 避免一次拉太多
+- 暱稱用「快照」（送出當下的 nickname）而不是「查表」，避免改名後舊訊息錯亂
+- 自己靠右藍色、對方靠左灰色（標準 IM 風格）
+- Enter 送出、Shift+Enter 換行（textarea 標準）
+- 觀戰者也可發言（沒被擋）
+- 房主 resetRoom 順便清空聊天
+
+**實作**：
+1. i18n：加 `chat.*` 8 個 keys（title / empty / placeholder / send / inputHint / tooLong / emptyText / loadFailed），中英都加
+2. `core/services/chatService.ts`：
+   - `ChatMessage` interface、CHAT_MAX_LENGTH=200、CHAT_MAX_DISPLAY=50 常數
+   - `validateChatText(text)` 驗證 1-200 字（trim 後）
+   - `sendChatMessage(roomId, {uid, nickname, text})` push 到 RTDB
+   - `subscribeChatMessages(roomId, cb)` onValue + limitToLast + 按 createdAt 排序
+   - `clearChatMessages(roomId)` 整段 remove（房主 resetRoom 用）
+3. `chatService.test.ts`：8 個測試（空 / 空白 / 非字串 / 1-200 / 超過 / trim 後計算）
+4. RTDB rules 加 `chat` 路徑（read/write 需登入、驗證必填欄位）
+5. `core/components/ChatPanel.tsx`：
+   - useEffect 訂閱 RTDB
+   - useRef + useEffect 自動捲到底（訊息數變化時）
+   - 自己的訊息 uid === currentUserId → 靠右藍色氣泡
+   - 對方訊息 → 靠左灰色氣泡
+   - 暱稱 header 用「💬 聊天」+ 訊息數
+   - textarea + 長度計數 + Enter 送出
+   - 錯誤訊息（太長 / 空 / 網路失敗）顯示在輸入框上方紅字
+6. `pages/GameRoom.tsx`：
+   - 引入 ChatPanel
+   - 進行中 / 結束：右欄改為 flex flex-col，MoveHistory 在上、ChatPanel 在下（min-h-[400px] flex-1）
+   - 等待中：原本是單欄，現在 chat 面板也加在底部 h-[400px]
+   - handleReset 加上 `clearChatMessages(roomId).catch(warn)`
+7. 文檔：IMPROVEMENTS.md 標 #20 為完成，加上完成紀錄（8 項）
+
+**效果**：
+- 157/157 測試過、TS 0 錯誤、Vite build 成功
+- 三狀態（等待/進行/結束）都有聊天
+- 之後加 #12 悔棋、#19 好友系統、#13 暫停
+
+---
+
 ## 2026-06-15（Day 3）— #18 多淺色主題架構（CSS 變數 + 語義色）
 
 **用戶請求**：把淺色模式從「單一淺咖啡主題」改成「多淺色主題架構」，先提供綠色系（深→中→淺→極淺 4 色階）。

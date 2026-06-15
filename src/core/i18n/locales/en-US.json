@@ -307,5 +307,15 @@
   },
   "auth": {
     "defaultNickname": "Player"
+  },
+  "chat": {
+    "title": "Chat",
+    "empty": "No messages yet — say something!",
+    "placeholder": "Type a message…",
+    "send": "Send",
+    "inputHint": "Press Enter to send (max 200 chars)",
+    "tooLong": "Message too long (max 200 chars)",
+    "emptyText": "Message cannot be empty",
+    "loadFailed": "Failed to load chat"
   }
 }
