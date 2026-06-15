@@ -5,12 +5,13 @@ export type RoomStatus = 'waiting' | 'playing' | 'finished';
 export type PlayerSymbol = string;
 
 /** 房主可設定的每回合思考時間（秒） */
-export type TurnTimeLimit = 30 | 60 | 120 | 150;
-export const TURN_TIME_LIMITS: readonly TurnTimeLimit[] = [30, 60, 120, 150] as const;
+export type TurnTimeLimit = 15 | 30 | 45 | 60 | 90 | 120 | 150 | 180;
+export const TURN_TIME_LIMITS: readonly TurnTimeLimit[] = [15, 30, 45, 60, 90, 120, 150, 180] as const;
 export const DEFAULT_TURN_TIME_LIMIT: TurnTimeLimit = 30;
 
 export function isValidTurnTimeLimit(value: unknown): value is TurnTimeLimit {
-  return value === 30 || value === 60 || value === 120 || value === 150;
+  return value === 15 || value === 30 || value === 45 || value === 60
+    || value === 90 || value === 120 || value === 150 || value === 180;
 }
 
 export interface RoomPlayer {

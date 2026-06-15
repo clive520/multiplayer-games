@@ -344,13 +344,13 @@ export default function Lobby() {
               <>
                 <div className="mb-2">
                   <p className="mb-1 text-xs text-slate-400">{t('lobby.turnTime')}</p>
-                  <div className="flex flex-wrap gap-1">
+                  <div className="grid grid-cols-4 gap-1">
                     {TURN_TIME_LIMITS.map((sec) => (
                       <button
                         key={sec}
                         type="button"
                         onClick={() => setTurnTimeLimitSec(sec)}
-                        className={`flex-1 rounded px-2 py-1 text-xs font-medium transition ${
+                        className={`rounded px-2 py-1 text-xs font-medium transition ${
                           turnTimeLimitSec === sec
                             ? 'bg-blue-600 text-white'
                             : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
