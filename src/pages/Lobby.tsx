@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../core/auth/useAuth';
 import { signOut } from '../core/auth/googleSignIn';
 import { useLobby } from '../core/hooks/useLobby';
@@ -12,12 +13,11 @@ import {
 import { gameRegistry } from '@/registry';
 import { TURN_TIME_LIMITS, type GameType, type RoomSummary, type TurnTimeLimit } from '../core/types/room';
 import { RoomPreviewCard } from '../core/components/RoomPreviewCard';
+import { LanguageSwitcher } from '../core/components/LanguageSwitcher';
 import { rtdb } from '../core/firebase/rtdb';
 import { ref, onValue, off } from 'firebase/database';
 import {
   AI_DIFFICULTIES,
-  AI_DIFFICULTY_DESCRIPTION,
-  AI_DIFFICULTY_LABEL,
   type AIDifficulty,
 } from '../core/types/ai';
 
@@ -35,6 +35,7 @@ export default function Lobby() {
   const navigate = useNavigate();
   const { profile, profileLoading } = useAuth();
   const { rooms, loading, error: lobbyError } = useLobby();
+  const { t } = useTranslation();
   const nickname = profile?.nickname ?? null;
 
   const [selectedGame, setSelectedGame] = useState<GameType>('tictactoe');
@@ -95,7 +96,7 @@ export default function Lobby() {
   const handleCreate = async () => {
     setActionError(null);
     if (!nickname) {
-      setActionError('暱稱尚未載入，請稍候');
+      setActionError(t('lobby.nicknameRequired'));
       return;
     }
 
@@ -103,7 +104,7 @@ export default function Lobby() {
     if (usePassword) {
       const trimmed = createPassword.trim();
       if (!/^\d{6}$/.test(trimmed)) {
-        setActionError('密碼必須是 6 位數字');
+        setActionError(t('lobby.passwordInvalidFormat'));
         return;
       }
       password = trimmed;
@@ -119,7 +120,7 @@ export default function Lobby() {
       );
       navigate(`/rooms/${roomId}`);
     } catch (err) {
-      setActionError(err instanceof Error ? err.message : '建立房間失敗');
+      setActionError(err instanceof Error ? err.message : t('lobby.createFailed'));
     } finally {
       setCreating(false);
     }
@@ -129,11 +130,11 @@ export default function Lobby() {
     e.preventDefault();
     setActionError(null);
     if (!/^[A-Z2-9]{6}$/.test(joinCode)) {
-      setActionError('房號格式錯誤');
+      setActionError(t('lobby.codeInvalid'));
       return;
     }
     if (!nickname) {
-      setActionError('暱稱尚未載入，請稍候');
+      setActionError(t('lobby.nicknameRequired'));
       return;
     }
 
@@ -141,7 +142,7 @@ export default function Lobby() {
     try {
       const lookup = await lookupRoomByCode(joinCode);
       if (!lookup) {
-        setActionError('找不到此房號的房間');
+        setActionError(t('lobby.roomNotFound'));
         return;
       }
       if (lookup.hasPassword) {
@@ -156,7 +157,7 @@ export default function Lobby() {
       const roomId = await joinRoomByCode(joinCode, { nickname });
       navigate(`/rooms/${roomId}`);
     } catch (err) {
-      setActionError(err instanceof Error ? err.message : '加入房間失敗');
+      setActionError(err instanceof Error ? err.message : t('lobby.joinFailed'));
     } finally {
       setJoining(false);
     }
@@ -225,29 +226,30 @@ export default function Lobby() {
     <div className="mx-auto min-h-screen max-w-3xl p-6">
       <header className="mb-8 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">遊戲大廳</h1>
+          <h1 className="text-2xl font-bold">{t('lobby.title')}</h1>
           <p className="text-sm text-slate-400">
-            歡迎，{profileLoading ? '載入中...' : (nickname ?? '訪客')}
+            {t('lobby.welcome', { name: profileLoading ? t('common.loading') : (nickname ?? t('lobby.guest')) })}
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex items-center gap-2">
+          <LanguageSwitcher />
           <button
             onClick={() => navigate('/profile')}
             className="rounded bg-slate-700 px-3 py-1.5 text-sm hover:bg-slate-600"
           >
-            編輯暱稱
+            {t('nav.editNickname')}
           </button>
           <button
             onClick={() => navigate('/leaderboard')}
             className="rounded bg-slate-700 px-3 py-1.5 text-sm hover:bg-slate-600"
           >
-            排行榜
+            {t('nav.leaderboard')}
           </button>
           <button
             onClick={() => signOut()}
             className="rounded bg-slate-700 px-3 py-1.5 text-sm hover:bg-slate-600"
           >
-            登出
+            {t('nav.signOut')}
           </button>
         </div>
       </header>
@@ -267,10 +269,10 @@ export default function Lobby() {
       <section className="mb-6 space-y-3">
         <div className="rounded-lg border border-slate-700 bg-slate-800 p-4">
           <p className="mb-2 text-sm text-slate-400">
-            選擇遊戲
+            {t('lobby.selectGame')}
             {createMode === 'ai' && (
               <span className="ml-2 text-xs text-slate-500">
-                （僅顯示有 AI 對手的遊戲）
+                {t('lobby.selectGameAIHint')}
               </span>
             )}
           </p>
@@ -308,7 +310,7 @@ export default function Lobby() {
           <div className="rounded-lg border border-slate-700 bg-slate-800 p-4">
             <div className="mb-3 flex items-center justify-between">
               <p className="text-sm font-medium text-slate-300">
-                建立新房間
+                {t('lobby.createRoom')}
               </p>
               <div className="flex rounded-md border border-slate-600 p-0.5">
                 <button
@@ -320,7 +322,7 @@ export default function Lobby() {
                       : 'text-slate-300 hover:bg-slate-700'
                   }`}
                 >
-                  對戰玩家
+                  {t('lobby.createModePvp')}
                 </button>
                 <button
                   type="button"
@@ -331,7 +333,7 @@ export default function Lobby() {
                       : 'text-slate-300 hover:bg-slate-700'
                   }`}
                 >
-                  對戰電腦
+                  {t('lobby.createModeAi')}
                 </button>
               </div>
             </div>
@@ -339,7 +341,7 @@ export default function Lobby() {
             {createMode === 'pvp' && (
               <>
                 <div className="mb-2">
-                  <p className="mb-1 text-xs text-slate-400">每回合思考時間</p>
+                  <p className="mb-1 text-xs text-slate-400">{t('lobby.turnTime')}</p>
                   <div className="flex flex-wrap gap-1">
                     {TURN_TIME_LIMITS.map((sec) => (
                       <button
@@ -352,7 +354,7 @@ export default function Lobby() {
                             : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
                         }`}
                       >
-                        {sec} 秒
+                        {sec} {t('common.seconds')}
                       </button>
                     ))}
                   </div>
@@ -367,7 +369,7 @@ export default function Lobby() {
                     }}
                     className="h-4 w-4 rounded border-slate-600"
                   />
-                  <span>設定 6 位數字密碼</span>
+                  <span>{t('lobby.enablePassword')}</span>
                 </label>
                 {usePassword && (
                   <input
@@ -379,7 +381,7 @@ export default function Lobby() {
                       const v = e.target.value.replace(/\D/g, '').slice(0, 6);
                       setCreatePassword(v);
                     }}
-                    placeholder="6 位數字"
+                    placeholder={t('lobby.passwordPlaceholder')}
                     maxLength={6}
                     className="mb-2 w-full rounded border border-slate-600 bg-slate-900 px-3 py-2 text-center text-lg tracking-widest"
                   />
@@ -389,7 +391,7 @@ export default function Lobby() {
 
             {createMode === 'ai' && (
               <div className="mb-3">
-                <p className="mb-1 text-xs text-slate-400">AI 難度</p>
+                <p className="mb-1 text-xs text-slate-400">{t('lobby.aiDifficulty')}</p>
                 <div className="flex flex-wrap gap-1">
                   {AI_DIFFICULTIES.map((diff) => (
                     <button
@@ -402,15 +404,15 @@ export default function Lobby() {
                           : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
                       }`}
                     >
-                      {AI_DIFFICULTY_LABEL[diff]}
+                      {t(`aiDifficulty.${diff}`)}
                     </button>
                   ))}
                 </div>
                 <p className="mt-1 text-xs text-slate-500">
-                  {AI_DIFFICULTY_DESCRIPTION[aiDifficulty]}
+                  {t(`aiDifficulty.${aiDifficulty}Desc`)}
                 </p>
                 <p className="mt-2 text-xs text-slate-500">
-                  💡 與電腦對戰，AI 會自動加入並開始對局
+                  {t('lobby.aiDifficultyHint')}
                 </p>
               </div>
             )}
@@ -425,12 +427,14 @@ export default function Lobby() {
               }`}
             >
               {creating
-                ? '建立中...'
+                ? t('lobby.creating')
                 : !nickname
-                  ? '暱稱載入中...'
+                  ? t('lobby.nicknameLoading')
                   : createMode === 'ai'
-                    ? '🤖 對戰電腦'
-                    : `建立 ${usePassword ? '密碼' : ''}房間`}
+                    ? '🤖 ' + t('lobby.createModeAi')
+                    : usePassword
+                      ? t('lobby.createPasswordRoom')
+                      : t('lobby.createRoom')}
             </button>
           </div>
 
@@ -445,7 +449,7 @@ export default function Lobby() {
               type="text"
               value={joinCode}
               onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
-              placeholder="輸入 6 碼房號"
+              placeholder={t('lobby.inputCodePlaceholder')}
               maxLength={6}
               className="mb-2 w-full rounded border border-slate-600 bg-slate-900 px-3 py-2 text-center text-lg tracking-widest uppercase"
             />
@@ -454,7 +458,7 @@ export default function Lobby() {
               disabled={joining || joinCode.length !== 6 || !nickname}
               className="w-full rounded-lg bg-green-600 px-4 py-3 font-medium text-white hover:bg-green-500 disabled:opacity-50"
             >
-              {joining ? '加入中...' : !nickname ? '暱稱載入中...' : '加入'}
+              {joining ? t('lobby.joining') : !nickname ? t('lobby.nicknameLoading') : t('lobby.joinButton')}
             </button>
           </form>
         </div>
@@ -463,8 +467,7 @@ export default function Lobby() {
       {pendingJoin && (
         <div className="mb-4 rounded-lg border border-yellow-700 bg-yellow-900/20 p-4">
           <p className="mb-2 text-sm text-yellow-300">
-            房間 <span className="font-mono font-bold">{pendingJoin.code}</span>{' '}
-            需要密碼
+            {t('lobby.roomNeedsPassword', { code: pendingJoin.code })}
           </p>
           <form onSubmit={handleJoinWithPassword} className="flex gap-2">
             <input
@@ -476,7 +479,7 @@ export default function Lobby() {
                 const v = e.target.value.replace(/\D/g, '').slice(0, 6);
                 setEnterPassword(v);
               }}
-              placeholder="輸入 6 位數字密碼"
+              placeholder={t('lobby.inputPasswordPlaceholder')}
               maxLength={6}
               autoFocus
               className="flex-1 rounded border border-slate-600 bg-slate-900 px-3 py-2 text-center text-lg tracking-widest"
@@ -486,35 +489,35 @@ export default function Lobby() {
               disabled={joining || enterPassword.length !== 6}
               className="rounded-lg bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-500 disabled:opacity-50"
             >
-              {joining ? '驗證中...' : '確認'}
+              {joining ? t('lobby.verifying') : t('common.confirm')}
             </button>
             <button
               type="button"
               onClick={handleCancelPassword}
               className="rounded-lg bg-slate-700 px-4 py-2 text-slate-300 hover:bg-slate-600"
             >
-              取消
+              {t('common.cancel')}
             </button>
           </form>
         </div>
       )}
 
       <section>
-        <h2 className="mb-3 text-lg font-semibold">開放中的房間</h2>
+        <h2 className="mb-3 text-lg font-semibold">{t('lobby.openRooms')}</h2>
 
         {lobbyError ? (
           <div className="rounded-lg border border-red-700 bg-red-900/30 p-4 text-sm text-red-300">
-            載入房間列表失敗：{lobbyError.message}
+            {t('lobby.loadRoomsFailed', { message: lobbyError.message })}
             <br />
             <span className="text-xs text-red-400">
-              請確認 Firebase Console 中的 Firestore 規則是否允許讀取
+              {t('lobby.firebaseRulesHint')}
             </span>
           </div>
         ) : loading ? (
-          <p className="text-slate-400">載入中...</p>
+          <p className="text-slate-400">{t('common.loading')}</p>
         ) : rooms.length === 0 ? (
           <p className="rounded-lg border border-dashed border-slate-700 p-8 text-center text-slate-500">
-            目前沒有開放中的房間，點上方「建立新房間」開始
+            {t('lobby.noRooms')}
           </p>
         ) : (
           <ul className="space-y-2">
@@ -548,27 +551,26 @@ export default function Lobby() {
                             {room.hasPassword && (
                               <span
                                 className="ml-2 text-xs text-yellow-400"
-                                title="需要密碼"
-                                aria-label="需要密碼"
+                                title={t('lobby.roomLockedTitle')}
+                                aria-label={t('lobby.roomLockedTitle')}
                               >
-                                [鎖]
+                                {t('lobby.roomLocked')}
                               </span>
                             )}
                           </p>
                           <p className="text-sm text-slate-400">
-                            房主：{room.hostName} · {room.playerCount}/
-                            {room.maxPlayers} 人
+                            {t('lobby.hostPrefix')}{room.hostName} · {t('lobby.playersCount', { count: room.playerCount, max: room.maxPlayers })}
                             <span className="ml-2 text-yellow-300">
-                              · 每回合 {room.turnTimeLimitSec} 秒
+                              · {t('lobby.turnTimeSec', { sec: room.turnTimeLimitSec })}
                             </span>
                             {gameDef?.estimatedDurationMin !== undefined && (
                               <span className="ml-2 text-slate-300">
-                                · 預計 {gameDef.estimatedDurationMin} 分鐘
+                                · {t('lobby.estimatedMin', { min: gameDef.estimatedDurationMin })}
                               </span>
                             )}
                             {room.spectatorCount > 0 && (
                               <span className="ml-2 text-blue-300">
-                                · {room.spectatorCount} 觀戰
+                                · {t('lobby.spectatorCount', { count: room.spectatorCount })}
                               </span>
                             )}
                           </p>
@@ -587,7 +589,7 @@ export default function Lobby() {
                               : 'bg-yellow-900/50 text-yellow-300'
                           }`}
                         >
-                          {isPlaying ? '進行中' : '等待中'}
+                          {isPlaying ? t('lobby.statusPlaying') : t('lobby.statusWaiting')}
                         </span>
                         <span
                           className={`rounded px-2 py-1 text-xs ${
@@ -596,7 +598,7 @@ export default function Lobby() {
                               : 'bg-slate-700 text-slate-300'
                           }`}
                         >
-                          {isPlaying ? '觀戰' : '加入'}
+                          {isPlaying ? t('lobby.actionSpectate') : t('lobby.actionJoin')}
                         </span>
                       </div>
                     </div>

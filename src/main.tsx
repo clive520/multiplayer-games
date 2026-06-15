@@ -5,6 +5,7 @@ import App from './App';
 import { AuthProvider } from './core/auth/AuthProvider';
 import { ErrorBoundary } from './core/components/ErrorBoundary';
 import { ToastProvider } from './core/components/Toast';
+import './core/i18n';
 import './index.css';
 
 createRoot(document.getElementById('root')!).render(
