@@ -31,43 +31,37 @@ export const LANGUAGE_LABELS: Record<SupportedLanguage, string> = {
 export const DEFAULT_LANGUAGE: SupportedLanguage = 'zh-TW';
 
 // 直接捕捉 init 傳回的 promise（不再用 void 忽略錯誤）
+// 注意：LanguageDetector 在 Node 環境會 throw（localStorage 不可用），
+// 所以只在瀏覽器環境才掛載
+const isBrowser = typeof window !== 'undefined' && typeof window.localStorage !== 'undefined';
+
 const initPromise = i18n
-  .use(LanguageDetector)
+  .use(isBrowser ? LanguageDetector : (initReactI18next as never))
   .use(initReactI18next)
   .init({
     resources: {
       'zh-TW': { translation: zhTW },
       'en-US': { translation: enUS },
     },
+    // 預設中文（用戶沒偏好時）；changeLanguage 會覆寫
+    lng: DEFAULT_LANGUAGE,
     fallbackLng: DEFAULT_LANGUAGE,
     supportedLngs: [...SUPPORTED_LANGUAGES],
-    detection: {
-      // 偵測順序：localStorage > navigator > htmlTag
-      order: ['localStorage', 'navigator', 'htmlTag'],
-      // localStorage key（給將來想清掉的時候好找）
-      lookupLocalStorage: 'multiplayer-games-lang',
-      caches: ['localStorage'],
-    },
-    interpolation: {
-      // React 預設就 escape，避免 XSS；不關掉
-      escapeValue: false,
-    },
-    // 開發模式顯示 console 警告（缺 key 之類）
+    detection: isBrowser
+      ? {
+          order: ['localStorage', 'navigator', 'htmlTag'],
+          lookupLocalStorage: 'multiplayer-games-lang',
+          caches: ['localStorage'],
+        }
+      : undefined,
+    interpolation: { escapeValue: false },
     debug: false,
-    // 偵測到非支援語言（eg. en）時，fallback 到 zh-TW
-    nonExplicitSupportedLngs: true,
-    // 關鍵修正：react-i18next 預設 useSuspense: true
-    // 沒包 Suspense 邊界時會 fallback 到 key 字串
-    // 改 false：t() 會回傳 key（直到 init 完成），但至少不 crash
-    // 搭配 main.tsx 的 await initI18n，確保 init 完成才 render
-    react: {
-      useSuspense: false,
-    },
-  })
-  .catch((err) => {
-    // eslint-disable-next-line no-console
-    console.error('[i18n] init 失敗', err);
-    throw err;
+    // ⚠️ 重要：不加 nonExplicitSupportedLngs: true
+    // 經測試，加了會壞掉（t() 會回傳原始 key，不翻譯）
+    // 不加的話：瀏覽器若 'en' 會 fallback 到 fallbackLng='zh-TW'，OK
+    // 用戶可在 header 手動切換到 en-US
+    // 避免 Suspense fallback 顯示原始 key
+    react: { useSuspense: false },
   });
 
 /** 等待 i18n 初始化完成（main.tsx 必須 await 才不會 render 到 key） */
