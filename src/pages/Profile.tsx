@@ -64,6 +64,7 @@ export default function Profile() {
     losses: entries.filter((e) => !e.isDraw && e.winnerId !== user.uid).length,
     draws: entries.filter((e) => e.isDraw).length,
     totalGames: entries.length,
+    elo: 0,
   };
   const overallWinRate = calculateWinRate(overallStats);
 
@@ -208,7 +209,7 @@ export default function Profile() {
 
       <section className="mb-6">
         <h2 className="mb-3 text-sm font-semibold text-slate-300">綜合戰績</h2>
-        <div className="grid grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
           <div className="rounded-lg border border-slate-700 bg-slate-800 p-4 text-center">
             <p className="text-2xl font-bold text-yellow-400">{overallStats.wins}</p>
             <p className="text-xs text-slate-500">勝場</p>
@@ -224,6 +225,13 @@ export default function Profile() {
           <div className="rounded-lg border border-slate-700 bg-slate-800 p-4 text-center">
             <p className="text-2xl font-bold text-blue-400">{overallWinRate}%</p>
             <p className="text-xs text-slate-500">勝率</p>
+          </div>
+          <div
+            className="rounded-lg border border-purple-700 bg-purple-900/20 p-4 text-center sm:col-span-1 col-span-2"
+            title="ELO 評分：基於 PvP 對戰的相對強度（AI 房不計入）"
+          >
+            <p className="text-2xl font-bold text-purple-300">{overallStats.elo}</p>
+            <p className="text-xs text-slate-500">ELO 評分</p>
           </div>
         </div>
       </section>
@@ -250,7 +258,7 @@ export default function Profile() {
                     </div>
                     <p className="text-xs text-slate-500">{gs.totalGames} 場</p>
                   </div>
-                  <div className="grid grid-cols-4 gap-2 text-center text-sm">
+                  <div className="grid grid-cols-5 gap-2 text-center text-sm">
                     <div>
                       <p className="text-base font-bold text-yellow-400">{gs.wins}</p>
                       <p className="text-xs text-slate-500">勝</p>
@@ -266,6 +274,13 @@ export default function Profile() {
                     <div>
                       <p className="text-base font-bold text-blue-400">{rate}%</p>
                       <p className="text-xs text-slate-500">勝率</p>
+                    </div>
+                    <div
+                      title="此遊戲的 ELO 評分"
+                      className="rounded bg-purple-900/30 py-0.5"
+                    >
+                      <p className="text-base font-bold text-purple-300">{gs.elo}</p>
+                      <p className="text-xs text-slate-500">ELO</p>
                     </div>
                   </div>
                 </div>

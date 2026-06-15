@@ -501,7 +501,9 @@ export async function leaveRoom(roomId: string): Promise<void> {
 
   // 如果是 forfeit，補上 stats 與歷史記錄
   // IMPROVEMENTS #9：AI 玩家沒有真實 user doc，過濾掉避免權限錯誤
+  // IMPROVEMENTS #10：isAIRoom 決定要不要算 ELO（AI 房只動 wins/losses）
   if (winnerUidAfterForfeit) {
+    const isAIRoom = room.players.some((p) => isAIPlayerUid(p.uid));
     const realPlayers = room.players.filter((p) => !isAIPlayerUid(p.uid));
     const playersForStats = realPlayers.map((p) => ({
       uid: p.uid,
@@ -515,6 +517,7 @@ export async function leaveRoom(roomId: string): Promise<void> {
         winnerId: realWinnerId,
         isDraw: false,
         players: playersForStats,
+        isAIRoom,
       }).catch((err) => {
         console.error('更新使用者 stats 失敗', err);
       }),
@@ -590,6 +593,8 @@ export async function finishGame(
   });
 
   // IMPROVEMENTS #9：過濾掉 AI 玩家（沒有真實 user doc）
+  // IMPROVEMENTS #10：偵測是否為 AI 房，跳過 ELO 計算
+  const isAIRoom = room.players.some((p) => isAIPlayerUid(p.uid));
   const realPlayers = room.players.filter((p) => !isAIPlayerUid(p.uid));
   const realWinnerId = winnerId && !isAIPlayerUid(winnerId) ? winnerId : null;
   const playersForStats = realPlayers.map((p) => ({
@@ -603,6 +608,7 @@ export async function finishGame(
       winnerId: realWinnerId,
       isDraw,
       players: playersForStats,
+      isAIRoom,
     }).catch((err) => {
       console.error('更新使用者 stats 失敗', err);
     }),

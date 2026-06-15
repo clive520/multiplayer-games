@@ -1,12 +1,15 @@
-import { doc, setDoc, updateDoc, increment, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, updateDoc, increment, serverTimestamp, getDoc } from 'firebase/firestore';
 import { db } from '../firebase/firestore';
 import type { GameType } from '../types/room';
+import { calculateEloChange, getEloOrDefault, INITIAL_ELO, type EloOutcome } from './eloService';
 
 export interface GameStats {
   wins: number;
   losses: number;
   draws: number;
   totalGames: number;
+  /** ELO 評分（IMPROVEMENTS #10）；預設 1000，只在 PvP 結算時更新 */
+  elo: number;
 }
 
 export const DEFAULT_GAME_STATS: GameStats = {
@@ -14,6 +17,7 @@ export const DEFAULT_GAME_STATS: GameStats = {
   losses: 0,
   draws: 0,
   totalGames: 0,
+  elo: INITIAL_ELO,
 };
 
 export interface UserStats {
@@ -61,9 +65,32 @@ export async function recordGameResult(args: {
   winnerId: string | null;
   isDraw: boolean;
   players: Array<{ uid: string; nickname: string; photoURL: string | null }>;
+  /**
+   * 是否為對戰電腦房。true → 只動 wins/losses，不算 ELO（避免 AI 灌水）
+   * （IMPROVEMENTS #10：ELO 只反映 PvP 真實對戰強度）
+   */
+  isAIRoom?: boolean;
 }): Promise<void> {
-  const { gameType, winnerId, isDraw, players } = args;
+  const { gameType, winnerId, isDraw, players, isAIRoom = false } = args;
   const now = Date.now();
+
+  // PvP 時計算 ELO 變化：先讀雙方目前 ELO，再用公式算新分
+  // 注意：此 read+write 不 atomic（client 端），
+  // 極小機率同時多場時 ELO 會略不準，MVP 可接受
+  const eloByPlayer = new Map<string, number>();
+  if (!isAIRoom) {
+    await Promise.all(
+      players.map(async (p) => {
+        const ref = doc(db, 'users', p.uid);
+        const snap = await getDoc(ref);
+        const existingElo = snap.exists()
+          ? (snap.data() as { byGame?: { [k: string]: { elo?: number } } })
+              .byGame?.[gameType]?.elo
+          : undefined;
+        eloByPlayer.set(p.uid, getEloOrDefault(existingElo));
+      })
+    );
+  }
 
   const updates = players.map((p) => {
     const ref = doc(db, 'users', p.uid);
@@ -74,7 +101,7 @@ export async function recordGameResult(args: {
         ? { wins: 1, losses: 0, draws: 0, totalGames: 1 }
         : { wins: 0, losses: 1, draws: 0, totalGames: 1 };
 
-    return updateDoc(ref, {
+    const updates: Record<string, unknown> = {
       'overall.wins': increment(delta.wins),
       'overall.losses': increment(delta.losses),
       'overall.draws': increment(delta.draws),
@@ -87,7 +114,22 @@ export async function recordGameResult(args: {
       displayName: p.nickname,
       photoURL: p.photoURL,
       updatedAt: now,
-    }).catch(async (err) => {
+    };
+
+    // ELO：PvP 兩人局時計算、AI 房跳過
+    if (!isAIRoom && players.length === 2) {
+      const opp = players.find((o) => o.uid !== p.uid);
+      if (opp) {
+        const myElo = eloByPlayer.get(p.uid) ?? INITIAL_ELO;
+        const oppElo = eloByPlayer.get(opp.uid) ?? INITIAL_ELO;
+        const outcome: EloOutcome = isDraw ? 0.5 : isWinner ? 1 : 0;
+        const eloChange = calculateEloChange(myElo, oppElo, outcome);
+        // 用 set（直接寫絕對值），因為 ELO 變化是基於當下讀到的舊值算的
+        updates[`byGame.${gameType}.elo`] = Math.round(myElo + eloChange);
+      }
+    }
+
+    return updateDoc(ref, updates).catch(async (err) => {
       if (err.code === 'not-found') {
         // 第一次玩此遊戲，建立使用者文件（含完整初始結構）
         const initial: any = {
@@ -105,7 +147,8 @@ export async function recordGameResult(args: {
         initial.overall.losses = delta.losses;
         initial.overall.draws = delta.draws;
         initial.overall.totalGames = delta.totalGames;
-        initial.byGame[gameType] = { ...delta };
+        const gameEntry: GameStats = { ...delta, elo: INITIAL_ELO };
+        initial.byGame[gameType] = gameEntry;
         await setDoc(ref, initial);
       } else {
         throw err;

@@ -12,11 +12,12 @@ export function subscribeLeaderboard(
   callback: (entries: LeaderboardEntry[]) => void,
   topN = 20
 ): Unsubscribe {
-  const winsField = scope === 'overall' ? 'overall.wins' : `byGame.${scope}.wins`;
+  // IMPROVEMENTS #10：排序改用 ELO（更反映真實強度），降序
+  const eloField = scope === 'overall' ? 'overall.elo' : `byGame.${scope}.elo`;
 
   const q = query(
     collection(db, 'users'),
-    orderBy(winsField, 'desc'),
+    orderBy(eloField, 'desc'),
     limit(Math.max(topN, 60))
   );
   return onSnapshot(q, (snapshot) => {
@@ -32,12 +33,13 @@ export function subscribeLeaderboard(
           byGame: data.byGame ?? {
             tictactoe: { ...DEFAULT_GAME_STATS },
             gomoku: { ...DEFAULT_GAME_STATS },
+            reversi: { ...DEFAULT_GAME_STATS },
           },
           winRate: calculateWinRate(stats),
         };
       })
       .filter((e) => {
-        // 過濾掉該類別下完全沒玩過的玩家
+        // 過濾掉該類別下完全沒玩過的玩家（totalGames=0 表示新用戶）
         const total = scope === 'overall' ? e.overall.totalGames : e.byGame[scope as GameType].totalGames;
         return total > 0;
       })
