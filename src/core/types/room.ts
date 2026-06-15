@@ -63,4 +63,6 @@ export interface RoomSummary {
   hasPassword: boolean;
   createdAt: number;
   turnTimeLimitSec: TurnTimeLimit;
+  /** IMPROVEMENTS #9：是否為對戰電腦房（AI 房不出現在公開大廳） */
+  isAIRoom?: boolean;
 }

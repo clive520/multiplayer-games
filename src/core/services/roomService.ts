@@ -25,6 +25,7 @@ import { recordGameResult } from './statsService';
 import { recordGameHistory } from './historyService';
 import type { GameType, Room, RoomPlayer, RoomStatus, RoomSummary, Spectator, TurnTimeLimit } from '../types/room';
 import { DEFAULT_TURN_TIME_LIMIT, isValidTurnTimeLimit } from '../types/room';
+import { aiPlayerDisplayName, isAIPlayerUid, makeAIPlayerUid, type AIDifficulty } from '../types/ai';
 
 const ROOMS_COLLECTION = 'rooms';
 const PASSWORD_INDEX_COLLECTION = 'passwordIndex';
@@ -91,6 +92,7 @@ function roomSummaryFromDoc(id: string, data: Record<string, unknown>): RoomSumm
     hasPassword: (data.hasPassword as boolean) ?? false,
     createdAt: tsToMillis(data.createdAt),
     turnTimeLimitSec: parseTurnTimeLimit(data.turnTimeLimitSec),
+    isAIRoom: players.some((p) => isAIPlayerUid(p.uid)),
   };
 }
 
@@ -178,6 +180,8 @@ export interface CreateRoomOptions {
   password?: string;
   nickname?: string;
   turnTimeLimitSec?: TurnTimeLimit;
+  /** IMPROVEMENTS #9：對戰電腦模式（提供時自動把 AI 加為第二位玩家） */
+  aiDifficulty?: AIDifficulty;
 }
 
 export async function createRoom(
@@ -190,8 +194,19 @@ export async function createRoom(
   const def = getGameDefinition(gameType);
   if (!def) throw new Error(`未註冊的遊戲類型：${gameType}`);
 
+  // 對戰電腦模式：確認該遊戲有 AI engine
+  if (options.aiDifficulty && !def.aiEngine) {
+    throw new Error(`${def.name} 尚未支援對戰電腦`);
+  }
+
   const password = options.password?.trim() || '';
   const hasPassword = password.length > 0;
+  // 對戰電腦模式不開密碼（私房沒意義）
+  if (options.aiDifficulty) {
+    if (hasPassword) {
+      throw new Error('對戰電腦模式不支援密碼');
+    }
+  }
   let passwordHash: string | null = null;
 
   if (hasPassword) {
@@ -207,6 +222,23 @@ export async function createRoom(
   const now = Date.now();
   const turnTimeLimitSec: TurnTimeLimit = options.turnTimeLimitSec ?? DEFAULT_TURN_TIME_LIMIT;
 
+  // AI 對手：自動加為第二位玩家（符號 O、ready=true、isHost=false）
+  const players: RoomPlayer[] = [player];
+  const playerUids: string[] = [uid];
+  if (options.aiDifficulty) {
+    const aiUid = makeAIPlayerUid(gameType, options.aiDifficulty);
+    const aiPlayer: RoomPlayer = {
+      uid: aiUid,
+      displayName: aiPlayerDisplayName(options.aiDifficulty),
+      symbol: 'O',
+      isHost: false,
+      ready: true,
+      photoURL: null,
+    };
+    players.push(aiPlayer);
+    playerUids.push(aiUid);
+  }
+
   if (hasPassword && passwordHash) {
     await reservePasswordIndex(passwordHash, roomRef.id);
   }
@@ -218,8 +250,8 @@ export async function createRoom(
       gameType,
       hostId: uid,
       status: 'waiting' as RoomStatus,
-      players: [player],
-      playerUids: [uid],
+      players,
+      playerUids,
       spectators: [],
       spectatorUids: [],
       hasPassword,
@@ -340,9 +372,15 @@ export async function joinRoomByCode(
     return roomDocRef.id;
   }
 
-  // 等待中的房間：以玩家身份加入（若已滿則拒絕）
+  // 等待中的房間且已滿（含 AI 房間）：以觀戰者身份加入（IMPROVEMENTS #9）
   if (room.players.length >= def.maxPlayers) {
-    throw new Error('房間已滿');
+    const newSpectator = buildSpectatorEntry(uid, nickname);
+    await updateDoc(roomDocRef, {
+      spectators: [...room.spectators, newSpectator],
+      spectatorUids: [...room.spectatorUids, uid],
+      lastActivityAt: Date.now(),
+    });
+    return roomDocRef.id;
   }
 
   const usedSymbols = new Set(room.players.map((p) => p.symbol));
@@ -448,16 +486,19 @@ export async function leaveRoom(roomId: string): Promise<void> {
   await updateDoc(ref, updates);
 
   // 如果是 forfeit，補上 stats 與歷史記錄
+  // IMPROVEMENTS #9：AI 玩家沒有真實 user doc，過濾掉避免權限錯誤
   if (winnerUidAfterForfeit) {
-    const playersForStats = room.players.map((p) => ({
+    const realPlayers = room.players.filter((p) => !isAIPlayerUid(p.uid));
+    const playersForStats = realPlayers.map((p) => ({
       uid: p.uid,
       nickname: p.displayName,
       photoURL: p.photoURL,
     }));
+    const realWinnerId = isAIPlayerUid(winnerUidAfterForfeit) ? null : winnerUidAfterForfeit;
     await Promise.all([
       recordGameResult({
         gameType: room.gameType,
-        winnerId: winnerUidAfterForfeit,
+        winnerId: realWinnerId,
         isDraw: false,
         players: playersForStats,
       }).catch((err) => {
@@ -466,9 +507,9 @@ export async function leaveRoom(roomId: string): Promise<void> {
       recordGameHistory({
         roomId,
         gameType: room.gameType,
-        winnerId: winnerUidAfterForfeit,
+        winnerId: realWinnerId,
         isDraw: false,
-        players: room.players.map((p) => ({
+        players: realPlayers.map((p) => ({
           uid: p.uid,
           nickname: p.displayName,
           displayName: p.displayName,
@@ -534,7 +575,10 @@ export async function finishGame(
     turnSymbol: null,
   });
 
-  const playersForStats = room.players.map((p) => ({
+  // IMPROVEMENTS #9：過濾掉 AI 玩家（沒有真實 user doc）
+  const realPlayers = room.players.filter((p) => !isAIPlayerUid(p.uid));
+  const realWinnerId = winnerId && !isAIPlayerUid(winnerId) ? winnerId : null;
+  const playersForStats = realPlayers.map((p) => ({
     uid: p.uid,
     nickname: p.displayName,
     photoURL: p.photoURL,
@@ -542,7 +586,7 @@ export async function finishGame(
   await Promise.all([
     recordGameResult({
       gameType: room.gameType,
-      winnerId,
+      winnerId: realWinnerId,
       isDraw,
       players: playersForStats,
     }).catch((err) => {
@@ -551,9 +595,9 @@ export async function finishGame(
     recordGameHistory({
       roomId,
       gameType: room.gameType,
-      winnerId,
+      winnerId: realWinnerId,
       isDraw,
-      players: room.players.map((p) => ({
+      players: realPlayers.map((p) => ({
         uid: p.uid,
         nickname: p.displayName,
         displayName: p.displayName,
@@ -726,7 +770,7 @@ export function subscribeLobby(
     (snapshot) => {
       const rooms = snapshot.docs
         .map((d) => roomSummaryFromDoc(d.id, d.data()))
-        .filter((r) => r.status === 'waiting' || r.status === 'playing')
+        .filter((r) => !r.isAIRoom && (r.status === 'waiting' || r.status === 'playing'))
         .slice(0, MAX_LOBBY_ROOMS);
       onRooms(rooms);
     },

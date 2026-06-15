@@ -9,9 +9,9 @@ import {
   resetRoom,
   finishGame,
 } from '../core/services/roomService';
-import { resetGameState as resetTictactoeState } from '@/games/tictactoe/sync';
-import { resetGameState as resetGomokuState } from '@/games/gomoku/sync';
-import { resetGameState as resetReversiState } from '@/games/reversi/sync';
+import { resetGameState as resetTictactoeState, submitMove as submitTictactoeMove } from '@/games/tictactoe/sync';
+import { resetGameState as resetGomokuState, submitMove as submitGomokuMove } from '@/games/gomoku/sync';
+import { resetGameState as resetReversiState, submitMove as submitReversiMove } from '@/games/reversi/sync';
 import { ResultScreen } from '../core/components/ResultScreen';
 import { MoveHistory } from '../core/components/MoveHistory';
 import { getGameDefinition } from '@/registry';
@@ -19,6 +19,7 @@ import type { GameComponentProps, MoveRecord } from '../core/types/game';
 import { rtdb } from '../core/firebase/rtdb';
 import { ref, onValue, off } from 'firebase/database';
 import { useEffect, useState, useCallback, type ComponentType } from 'react';
+import { isAIPlayerUid, parseAIPlayerUid, pickAIThinkDelayMs } from '../core/types/ai';
 
 const TURN_TIME_LIMIT_SEC_FALLBACK = 30;
 
@@ -39,14 +40,25 @@ export default function GameRoom() {
 
   // 棋譜歷史（IMPROVEMENTS #6）：訂閱 RTDB 的 moves 陣列
   const [moves, setMoves] = useState<ReadonlyArray<MoveRecord>>([]);
+  // IMPROVEMENTS #9：訂閱 RTDB 完整 state，給 AI 自動下棋用
+  const [rtGameState, setRtGameState] = useState<unknown>(null);
   useEffect(() => {
-    if (!roomId) return;
+    if (!roomId) {
+      setMoves([]);
+      setRtGameState(null);
+      return;
+    }
     const movesRef = ref(rtdb, `rooms-live/${roomId}/state/moves`);
-    const handler = onValue(movesRef, (snap) => {
+    const movesHandler = onValue(movesRef, (snap) => {
       setMoves((snap.val() as MoveRecord[] | null) ?? []);
     });
+    const stateRef = ref(rtdb, `rooms-live/${roomId}/state`);
+    const stateHandler = onValue(stateRef, (snap) => {
+      setRtGameState(snap.val());
+    });
     return () => {
-      off(movesRef, 'value', handler);
+      off(movesRef, 'value', movesHandler);
+      off(stateRef, 'value', stateHandler);
     };
   }, [roomId]);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
@@ -160,6 +172,47 @@ export default function GameRoom() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [now, room?.turnStartedAt, room?.turnSymbol, room?.turnTimeLimitSec, room?.status, forfeitTriggered, isSpectator]);
+
+  // IMPROVEMENTS #9：AI 自動下棋
+  // 條件：房間進行中 + 當前玩家是 AI + AI 符號 = state 的 nextSymbol/currentTurn
+  // 延遲 500-1500ms 隨機，避免像外掛
+  useEffect(() => {
+    if (!room || room.status !== 'playing') return;
+    if (!rtGameState || !gameDef?.aiEngine) return;
+
+    const aiPlayer = room.players.find((p) => isAIPlayerUid(p.uid));
+    if (!aiPlayer) return;
+
+    // 不同遊戲用不同欄位表示「輪到誰」：tictactoe/gomoku 用 nextSymbol、reversi 用 currentTurn
+    const stateObj = rtGameState as Record<string, unknown>;
+    const turnSymbol = (stateObj.nextSymbol ?? stateObj.currentTurn) as string | null;
+    if (turnSymbol !== aiPlayer.symbol) return;
+
+    const aiMeta = parseAIPlayerUid(aiPlayer.uid);
+    if (!aiMeta) return;
+
+    const timer = setTimeout(() => {
+      // 雙重檢查：執行前再確認一次（避免 useEffect 競爭條件下重複觸發）
+      const currentRoom = room; // closure
+      if (currentRoom.status !== 'playing') return;
+      const move = gameDef.aiEngine!.selectMove(rtGameState, aiPlayer.symbol as 'X' | 'O', aiMeta.difficulty);
+      if (!move) return;
+      const promise =
+        currentRoom.gameType === 'tictactoe'
+          ? submitTictactoeMove(roomId!, aiPlayer.uid, aiPlayer.symbol, aiPlayer.displayName, move as { row: number; col: number })
+          : currentRoom.gameType === 'gomoku'
+            ? submitGomokuMove(roomId!, aiPlayer.uid, aiPlayer.symbol, aiPlayer.displayName, move as { row: number; col: number })
+            : currentRoom.gameType === 'reversi'
+              ? submitReversiMove(roomId!, aiPlayer.uid, aiPlayer.symbol, aiPlayer.displayName, move as { row: number; col: number; pass?: boolean })
+              : Promise.resolve({ applied: false, reason: '未知遊戲' });
+      promise.catch((err) => {
+        console.error('[AI] submitMove 失敗', err);
+      });
+    }, pickAIThinkDelayMs());
+
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rtGameState, room?.status, room?.gameType, room?.players, gameDef, roomId]);
 
   // 計算目前這回合剩餘秒數（給 UI 顯示）
   const turnTimeLimitSec = room?.turnTimeLimitSec ?? TURN_TIME_LIMIT_SEC_FALLBACK;

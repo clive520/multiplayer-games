@@ -14,6 +14,12 @@ import { TURN_TIME_LIMITS, type GameType, type RoomSummary, type TurnTimeLimit }
 import { RoomPreviewCard } from '../core/components/RoomPreviewCard';
 import { rtdb } from '../core/firebase/rtdb';
 import { ref, onValue, off } from 'firebase/database';
+import {
+  AI_DIFFICULTIES,
+  AI_DIFFICULTY_DESCRIPTION,
+  AI_DIFFICULTY_LABEL,
+  type AIDifficulty,
+} from '../core/types/ai';
 
 const GAME_LABELS: Record<string, string> = Object.fromEntries(
   gameRegistry.map((g) => [g.id, g.name])
@@ -35,6 +41,9 @@ export default function Lobby() {
   const [createPassword, setCreatePassword] = useState('');
   const [usePassword, setUsePassword] = useState(false);
   const [turnTimeLimitSec, setTurnTimeLimitSec] = useState<TurnTimeLimit>(30);
+  // IMPROVEMENTS #9：對戰電腦模式
+  const [createMode, setCreateMode] = useState<'pvp' | 'ai'>('pvp');
+  const [aiDifficulty, setAIDifficulty] = useState<AIDifficulty>('normal');
 
   const [creating, setCreating] = useState(false);
   const [joinCode, setJoinCode] = useState('');
@@ -102,11 +111,12 @@ export default function Lobby() {
 
     setCreating(true);
     try {
-      const roomId = await createRoom(selectedGame, {
-        password,
-        nickname,
-        turnTimeLimitSec,
-      });
+      const roomId = await createRoom(
+        selectedGame,
+        createMode === 'ai'
+          ? { nickname, aiDifficulty }
+          : { password, nickname, turnTimeLimitSec }
+      );
       navigate(`/rooms/${roomId}`);
     } catch (err) {
       setActionError(err instanceof Error ? err.message : '建立房間失敗');
@@ -256,96 +266,171 @@ export default function Lobby() {
 
       <section className="mb-6 space-y-3">
         <div className="rounded-lg border border-slate-700 bg-slate-800 p-4">
-          <p className="mb-2 text-sm text-slate-400">選擇遊戲</p>
+          <p className="mb-2 text-sm text-slate-400">
+            選擇遊戲
+            {createMode === 'ai' && (
+              <span className="ml-2 text-xs text-slate-500">
+                （僅顯示有 AI 對手的遊戲）
+              </span>
+            )}
+          </p>
           <div className="flex flex-wrap gap-2">
-            {gameRegistry.map((g) => {
-              const Icon = g.icon;
-              return (
-                <button
-                  key={g.id}
-                  onClick={() => setSelectedGame(g.id as GameType)}
-                  className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition ${
-                    selectedGame === g.id
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-                  }`}
-                >
-                  <Icon
-                    className={`h-5 w-5 ${
-                      selectedGame === g.id ? 'text-white' : 'text-slate-300'
+            {gameRegistry
+              .filter((g) => (createMode === 'ai' ? !!g.aiEngine : true))
+              .map((g) => {
+                const Icon = g.icon;
+                return (
+                  <button
+                    key={g.id}
+                    onClick={() => setSelectedGame(g.id as GameType)}
+                    className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition ${
+                      selectedGame === g.id
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
                     }`}
-                  />
-                  {g.name}
-                  <span className="text-xs opacity-70">
-                    ({g.minPlayers}-{g.maxPlayers} 人)
-                  </span>
-                </button>
-              );
-            })}
+                  >
+                    <Icon
+                      className={`h-5 w-5 ${
+                        selectedGame === g.id ? 'text-white' : 'text-slate-300'
+                      }`}
+                    />
+                    {g.name}
+                    <span className="text-xs opacity-70">
+                      ({g.minPlayers}-{g.maxPlayers} 人)
+                    </span>
+                  </button>
+                );
+              })}
           </div>
         </div>
 
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="rounded-lg border border-slate-700 bg-slate-800 p-4">
-            <p className="mb-2 text-sm font-medium text-slate-300">
-              建立新房間
-            </p>
-            <div className="mb-2">
-              <p className="mb-1 text-xs text-slate-400">每回合思考時間</p>
-              <div className="flex flex-wrap gap-1">
-                {TURN_TIME_LIMITS.map((sec) => (
-                  <button
-                    key={sec}
-                    type="button"
-                    onClick={() => setTurnTimeLimitSec(sec)}
-                    className={`flex-1 rounded px-2 py-1 text-xs font-medium transition ${
-                      turnTimeLimitSec === sec
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-                    }`}
-                  >
-                    {sec} 秒
-                  </button>
-                ))}
+            <div className="mb-3 flex items-center justify-between">
+              <p className="text-sm font-medium text-slate-300">
+                建立新房間
+              </p>
+              <div className="flex rounded-md border border-slate-600 p-0.5">
+                <button
+                  type="button"
+                  onClick={() => setCreateMode('pvp')}
+                  className={`rounded px-2 py-1 text-xs font-medium transition ${
+                    createMode === 'pvp'
+                      ? 'bg-blue-600 text-white'
+                      : 'text-slate-300 hover:bg-slate-700'
+                  }`}
+                >
+                  對戰玩家
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCreateMode('ai')}
+                  className={`rounded px-2 py-1 text-xs font-medium transition ${
+                    createMode === 'ai'
+                      ? 'bg-purple-600 text-white'
+                      : 'text-slate-300 hover:bg-slate-700'
+                  }`}
+                >
+                  對戰電腦
+                </button>
               </div>
             </div>
-            <label className="mb-3 flex cursor-pointer items-center gap-2 text-sm text-slate-300">
-              <input
-                type="checkbox"
-                checked={usePassword}
-                onChange={(e) => {
-                  setUsePassword(e.target.checked);
-                  if (!e.target.checked) setCreatePassword('');
-                }}
-                className="h-4 w-4 rounded border-slate-600"
-              />
-              <span>設定 6 位數字密碼</span>
-            </label>
-            {usePassword && (
-              <input
-                type="text"
-                inputMode="numeric"
-                pattern="\d{6}"
-                value={createPassword}
-                onChange={(e) => {
-                  const v = e.target.value.replace(/\D/g, '').slice(0, 6);
-                  setCreatePassword(v);
-                }}
-                placeholder="6 位數字"
-                maxLength={6}
-                className="mb-2 w-full rounded border border-slate-600 bg-slate-900 px-3 py-2 text-center text-lg tracking-widest"
-              />
+
+            {createMode === 'pvp' && (
+              <>
+                <div className="mb-2">
+                  <p className="mb-1 text-xs text-slate-400">每回合思考時間</p>
+                  <div className="flex flex-wrap gap-1">
+                    {TURN_TIME_LIMITS.map((sec) => (
+                      <button
+                        key={sec}
+                        type="button"
+                        onClick={() => setTurnTimeLimitSec(sec)}
+                        className={`flex-1 rounded px-2 py-1 text-xs font-medium transition ${
+                          turnTimeLimitSec === sec
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                        }`}
+                      >
+                        {sec} 秒
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <label className="mb-3 flex cursor-pointer items-center gap-2 text-sm text-slate-300">
+                  <input
+                    type="checkbox"
+                    checked={usePassword}
+                    onChange={(e) => {
+                      setUsePassword(e.target.checked);
+                      if (!e.target.checked) setCreatePassword('');
+                    }}
+                    className="h-4 w-4 rounded border-slate-600"
+                  />
+                  <span>設定 6 位數字密碼</span>
+                </label>
+                {usePassword && (
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    pattern="\d{6}"
+                    value={createPassword}
+                    onChange={(e) => {
+                      const v = e.target.value.replace(/\D/g, '').slice(0, 6);
+                      setCreatePassword(v);
+                    }}
+                    placeholder="6 位數字"
+                    maxLength={6}
+                    className="mb-2 w-full rounded border border-slate-600 bg-slate-900 px-3 py-2 text-center text-lg tracking-widest"
+                  />
+                )}
+              </>
             )}
+
+            {createMode === 'ai' && (
+              <div className="mb-3">
+                <p className="mb-1 text-xs text-slate-400">AI 難度</p>
+                <div className="flex flex-wrap gap-1">
+                  {AI_DIFFICULTIES.map((diff) => (
+                    <button
+                      key={diff}
+                      type="button"
+                      onClick={() => setAIDifficulty(diff)}
+                      className={`flex-1 rounded px-2 py-1 text-xs font-medium transition ${
+                        aiDifficulty === diff
+                          ? 'bg-purple-600 text-white'
+                          : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                      }`}
+                    >
+                      {AI_DIFFICULTY_LABEL[diff]}
+                    </button>
+                  ))}
+                </div>
+                <p className="mt-1 text-xs text-slate-500">
+                  {AI_DIFFICULTY_DESCRIPTION[aiDifficulty]}
+                </p>
+                <p className="mt-2 text-xs text-slate-500">
+                  💡 與電腦對戰，AI 會自動加入並開始對局
+                </p>
+              </div>
+            )}
+
             <button
               onClick={handleCreate}
               disabled={creating || !nickname}
-              className="w-full rounded-lg bg-blue-600 px-4 py-3 font-medium text-white hover:bg-blue-500 disabled:opacity-50"
+              className={`w-full rounded-lg px-4 py-3 font-medium text-white disabled:opacity-50 ${
+                createMode === 'ai'
+                  ? 'bg-purple-600 hover:bg-purple-500'
+                  : 'bg-blue-600 hover:bg-blue-500'
+              }`}
             >
               {creating
                 ? '建立中...'
                 : !nickname
                   ? '暱稱載入中...'
-                  : `建立 ${usePassword ? '密碼' : ''}房間`}
+                  : createMode === 'ai'
+                    ? '🤖 對戰電腦'
+                    : `建立 ${usePassword ? '密碼' : ''}房間`}
             </button>
           </div>
 

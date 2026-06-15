@@ -96,6 +96,11 @@ export interface GameDefinition<TState = unknown> {
    * MVP 沒遊戲使用，未來可在 Lobby 顯示變體選擇器
    */
   variants?: GameVariant[];
+  /**
+   * AI 對手引擎（IMPROVEMENTS #9）：選填；沒提供就無法對戰電腦
+   * 型別故意用寬鬆版本（unknown）避免循環依賴，runtime 由 AIEngineCreator 判斷
+   */
+  aiEngine?: import('./ai').AIEngineCreator;
 }
 
 /**
