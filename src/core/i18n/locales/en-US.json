@@ -336,5 +336,20 @@
     "cancel": "Cancel request",
     "quotaUsed": "No undos left this game",
     "yourLastMove": "Your last move can be undone"
+  },
+  "replay": {
+    "title": "Replay",
+    "showReplay": "Show replay",
+    "hideReplay": "Hide replay",
+    "step": "Step {current} / {total}",
+    "moveNumber": "Move #{n}",
+    "prev": "Previous",
+    "next": "Next",
+    "play": "Play",
+    "pause": "Pause",
+    "sliderLabel": "Timeline",
+    "boardLabel": "Board snapshot",
+    "flipped": "Flipped {count}",
+    "dataMissing": "This game is too old and has no board snapshots — replay unavailable."
   }
 }

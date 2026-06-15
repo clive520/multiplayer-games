@@ -16,6 +16,9 @@ export interface GameMove {
  * - uid, displayName：下棋者（snapshot，避免日後改名影響棋譜）
  * - timestamp：時間戳
  * - flipped（選填，reversi 用）：這步翻的棋子座標列表
+ * - boardAfter（IMPROVEMENTS #12 Phase B 復盤）：這步下完後的完整棋盤快照
+ *   - 為存儲效率，用字串陣列（'X' / 'O' / ''）而非二維陣列
+ *   - 缺失時 ReplayBoard 會 fallback 顯示「資料過舊」訊息
  */
 export interface MoveRecord {
   row: number;
@@ -25,6 +28,7 @@ export interface MoveRecord {
   displayName: string;
   timestamp: number;
   flipped?: ReadonlyArray<{ row: number; col: number }>;
+  boardAfter?: ReadonlyArray<string>;
 }
 
 export interface GameResult {

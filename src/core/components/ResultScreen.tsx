@@ -1,8 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Room } from '../types/room';
+import type { MoveRecord } from '../types/game';
 import { sendReaction, subscribeReactions, type RoomReaction } from '../services/reactionsService';
 import { REACTION_SOUNDS } from '../utils/sound';
+import { getInitialBoard } from '../utils/board';
+import { getReplayRenderers } from '../utils/replayRenderers';
+import { ReplayBoard } from './ReplayBoard';
 
 interface ResultScreenProps {
   room: Room;
@@ -15,6 +19,8 @@ interface ResultScreenProps {
   onPlayAgain: () => void;
   /** 觀戰者身份（影響訊息文案與外框顏色） */
   isSpectator?: boolean;
+  /** 棋譜（IMPROVEMENTS #12 Phase B 復盤用） */
+  moves?: ReadonlyArray<MoveRecord>;
 }
 
 type Outcome = 'win' | 'lose' | 'draw' | 'observer';
@@ -90,8 +96,11 @@ export function ResultScreen({
   onLeave,
   onPlayAgain,
   isSpectator = false,
+  moves = [],
 }: ResultScreenProps) {
   const { t } = useTranslation();
+  // IMPROVEMENTS #12 Phase B 復盤：預設收合
+  const [showReplay, setShowReplay] = useState(false);
   // 廣播反應（IMPROVEMENTS #8 延伸）：點擊表情，RTDB 同步給所有玩家 + 觀戰者
   const [reactions, setReactions] = useState<RoomReaction[]>([]);
   useEffect(() => {
@@ -261,6 +270,40 @@ export function ResultScreen({
           {leaving ? t('resultScreen.leaving') : t('resultScreen.backToLobby')}
         </button>
       </div>
+
+      {/* IMPROVEMENTS #12 Phase B 復盤區塊（預設收合） */}
+      {moves.length > 0 && (
+        <div className="mt-6">
+          <button
+            type="button"
+            onClick={() => setShowReplay((v) => !v)}
+            className="flex w-full items-center justify-between rounded-lg dark:bg-slate-900 bg-slate-50/50 px-4 py-2 text-left hover:dark:bg-slate-800"
+            aria-expanded={showReplay}
+          >
+            <span className="text-sm font-semibold dark:text-slate-300 text-slate-700">
+              🎬 {t('replay.title')}
+            </span>
+            <span className="text-xs dark:text-slate-400 text-slate-600">
+              {showReplay ? t('replay.hideReplay') : t('replay.showReplay')} ▾
+            </span>
+          </button>
+          {showReplay && (() => {
+            const { boardSize, boardClassName, renderCell, maxCellPx } = getReplayRenderers(room.gameType);
+            return (
+              <div className="mt-2">
+                <ReplayBoard
+                  moves={moves}
+                  initialBoard={getInitialBoard(room.gameType)}
+                  boardSize={boardSize}
+                  boardClassName={boardClassName}
+                  renderCell={renderCell}
+                  maxCellPx={maxCellPx}
+                />
+              </div>
+            );
+          })()}
+        </div>
+      )}
     </section>
   );
 }

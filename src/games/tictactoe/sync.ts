@@ -61,6 +61,7 @@ export async function submitMove(
       uid: playerId,
       displayName,
       timestamp,
+      boardAfter: newState.board as ReadonlyArray<string>,
     };
     result = { applied: true };
     return { ...newState, moves: [...(state.moves ?? []), moveRecord] };

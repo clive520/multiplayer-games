@@ -9,11 +9,11 @@
 ## 進度總覽
 
 - **總項目**：26
-- **✅ 已完成**：16
+- **✅ 已完成**：17
 - **⏳ 進行中**：0
-- **⬜ 待辦**：10
-- **已完成優先項目**：1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 5a, 16（部分）, 10a（部分）, 17, 18, 18 補強, 20, 12 (Phase A)
-- **剩餘優先項目**：12 (Phase B 復盤), 13, 19, 21, 22, 15, 14, 24, 25, 26
+- **⬜ 待辦**：9
+- **已完成優先項目**：1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 5a, 16（部分）, 10a（部分）, 17, 18, 18 補強, 20, 12 (Phase A + B)
+- **剩餘優先項目**：13, 19, 21, 22, 15, 14, 24, 25, 26
 
 ### 階段紀錄
 - **階段一**（#1-#8）：結構面 + 觀戰體驗 ✅
@@ -383,18 +383,19 @@
 
 ---
 
-### 12. 悔棋 / 復盤請求 — ✅ Phase A 完成（悔棋）/ ⬜ Phase B 待辦（復盤）
+### 12. 悔棋 / 復盤請求 — ✅ 完成
 
 **類別**：玩家體驗
 
 **要做什麼**：
 - 點「悔棋」按鈕，對方彈出確認視窗
 - 確認後 RTDB game state 回到上一步
-- Firestore 規則禁止一方強制悔棋
+- 對局結束後可「復盤」時間軸檢視每步棋盤
 
 **為什麼值得做**：
 - 不小心下錯還能救
 - 提升玩家滿意度
+- 復盤讓精彩對局可被回顧（搭配 #22 棋譜分享）
 
 **完成紀錄 Phase A — 悔棋請求**（2025-01-15）：
 - ✅ i18n `undo.*` 15 個 keys（中英對齊）
@@ -402,31 +403,32 @@
 - ✅ 30 秒超時機制
 - ✅ Room type 加 `undoUsedByUids: Record<uid, number>`（悔棋限額 Firestore 欄位）
 - ✅ `roomService.incrementUndoQuota(roomId, uid)` 用 Firestore `increment` 原子操作
-- ✅ 3 個遊戲各加 `acceptUndo(roomId, requesterUid)`：
-  - 退回 state 到 moves 倒數第二步
-  - **重新 apply 前面所有步** 自動同步 board（黑白棋不用手動還原翻面）
-  - 換成被悔的玩家回合
-  - 增加 requester 的悔棋額度
-  - 清空 RTDB undoRequest
-  - 黑白棋額外重置 passCount = 0
-- ✅ `GameDefinition.acceptUndo` 欄位：3 個遊戲各自綁定，新遊戲不支援可省略
-- ✅ GameRoom UI：
-  - 棋盤上方加「↶ 悔棋」按鈕（橘色），只在「自己下最後一步 + 額度未用 + 沒待回應請求 + 遊戲支援」時顯示
-  - 點擊彈出確認對話框（「需對方同意、本場僅一次機會」）
-  - 等待回應：底部浮動膠囊 + 「取消請求」按鈕
-  - 收到請求：彈出同意/拒絕對話框
-  - 自動超時：30 秒後清空 + toast 通知
-  - 結果 toast：成功 / 拒絕 / 拒絕原因 / 對方同意
-- ✅ RTDB rules 加 `undoRequest` 路徑（read/write 需登入、驗證 4 個必填欄位）
-- ✅ resetRoom 順便清空 undoRequest
+- ✅ 3 個遊戲各加 `acceptUndo(roomId, requesterUid)`
+- ✅ `GameDefinition.acceptUndo` 欄位
+- ✅ GameRoom UI：悔棋按鈕 + 確認 + 等待 + 同意/拒絕 + 自動超時
+- ✅ RTDB rules 加 `undoRequest` 路徑
 - ✅ 5 個新 undoService 測試
-- ✅ 162/162 測試過、TS 0 錯誤、Vite build 成功
-- ✅ Firebase RTDB rules 部署完成
+- ✅ Firebase RTDB rules + Firestore rules 部署完成
 
-**未做 Phase B — 復盤**（之後可加）：
-- ❌ 棋盤快照存到 MoveRecord.boardAfter
-- ❌ ResultScreen 加時間軸 slider
-- ❌ 黑白棋翻面動畫 replay
+**完成紀錄 Phase B — 復盤**（2025-01-15）：
+- ✅ i18n `replay.*` 11 個 keys（中英對齊）
+- ✅ MoveRecord 加 `boardAfter?: ReadonlyArray<string>`（這步下完後的完整棋盤）
+- ✅ 3 個遊戲 submitMove 各自把 `newState.board` 寫入 boardAfter
+- ✅ `core/utils/board.ts`：`getInitialBoard(gameType)` 取得各遊戲的初始棋盤
+- ✅ `core/utils/replayRenderers.tsx`：依 gameType 注入 boardSize、boardClassName、renderCell、最大 cellPx
+  - tictactoe：純文字 X/O（藍/紅）
+  - gomoku：黑圓/白圓環
+  - reversi：黑圓/白圓環 + 翻面高亮
+- ✅ `core/components/ReplayBoard.tsx`：通用復盤元件
+  - 時間軸 slider（0..moves.length）
+  - 0 = 初始棋盤、1..N = 套用 moves[0..N-1]
+  - 上一步 / 下一步 / 自動播放按鈕
+  - 當前這步的座標 + 玩家 + 翻面數
+  - 自動偵測 boardAfter 缺失 → 顯示「資料過舊」訊息
+- ✅ ResultScreen 加「🎬 復盤」可收合區塊，預設收合
+- ✅ GameRoom 把 moves 傳給 ResultScreen
+- ✅ 4 個 board.test.ts 測試（井字/五子棋/黑白棋/未知）
+- ✅ 166/166 測試過、TS 0 錯誤、Vite build 成功
 
 ---
 

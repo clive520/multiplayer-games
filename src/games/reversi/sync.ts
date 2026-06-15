@@ -66,6 +66,7 @@ export async function submitMove(
       displayName,
       timestamp,
       flipped: newState.lastFlips,
+      boardAfter: newState.board as ReadonlyArray<string>,
     };
     result = { applied: true };
     return { ...newState, moves: [...(state.moves ?? []), moveRecord] };

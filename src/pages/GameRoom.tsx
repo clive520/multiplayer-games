@@ -776,6 +776,7 @@ export default function GameRoom() {
               onLeave={handleLeave}
               onPlayAgain={handleReset}
               isSpectator={isSpectator}
+              moves={moves}
             />
           </div>
           <aside className="flex min-h-[500px] flex-col gap-4 lg:col-span-1">

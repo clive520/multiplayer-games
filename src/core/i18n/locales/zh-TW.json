@@ -336,5 +336,20 @@
     "cancel": "取消請求",
     "quotaUsed": "本場悔棋額度已用完",
     "yourLastMove": "你下的最後一步可悔棋"
+  },
+  "replay": {
+    "title": "復盤",
+    "showReplay": "展開復盤",
+    "hideReplay": "收合復盤",
+    "step": "第 {current} / {total} 步",
+    "moveNumber": "第 {n} 步",
+    "prev": "上一步",
+    "next": "下一步",
+    "play": "自動播放",
+    "pause": "暫停",
+    "sliderLabel": "時間軸",
+    "boardLabel": "棋盤快照",
+    "flipped": "翻了 {count} 子",
+    "dataMissing": "這場對局棋譜太舊，沒有棋盤快照，無法復盤。"
   }
 }
