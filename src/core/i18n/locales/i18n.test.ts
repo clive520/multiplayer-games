@@ -63,4 +63,50 @@ describe('i18n locales parity', () => {
       expect(game.stateCorrupted, `${gt}.stateCorrupted`).toBeTruthy();
     }
   });
+
+  it('zh-TW 不允許單括號插值（i18next 預設用 {{name}}）', () => {
+    // IMPROVEMENTS #12 Phase B 踩坑：undo.* 和 replay.* 一開始用單括號，
+    // 結果在 UI 顯示「第 {n} 步」而不是「第 3 步」。
+    // 統一用 {{name}}，加這條測試防止再犯。
+    const keys = getKeys(zhTW as Record<string, unknown>);
+    const offenders: string[] = [];
+    for (const key of keys) {
+      const value = getValueByKeyPath(zhTW, key) as string;
+      if (typeof value !== 'string') continue;
+      // 排除雙括號干擾後，看是否還有單括號
+      const stripped = value.replace(/\{\{[^}]+\}\}/g, '');
+      if (/\{[a-zA-Z_][a-zA-Z0-9_]*\}/.test(stripped)) {
+        offenders.push(key);
+      }
+    }
+    expect(offenders, `Keys using single-brace interpolation: ${offenders.join(', ')}`).toEqual([]);
+  });
+
+  it('en-US 不允許單括號插值', () => {
+    const keys = getKeys(enUS as Record<string, unknown>);
+    const offenders: string[] = [];
+    for (const key of keys) {
+      const value = getValueByKeyPath(enUS, key) as string;
+      if (typeof value !== 'string') continue;
+      const stripped = value.replace(/\{\{[^}]+\}\}/g, '');
+      if (/\{[a-zA-Z_][a-zA-Z0-9_]*\}/.test(stripped)) {
+        offenders.push(key);
+      }
+    }
+    expect(offenders, `Keys using single-brace interpolation: ${offenders.join(', ')}`).toEqual([]);
+  });
 });
+
+/** 用點分路徑取 nested object 裡的字串值 */
+function getValueByKeyPath(obj: Record<string, unknown>, path: string): unknown {
+  const parts = path.split('.');
+  let current: unknown = obj;
+  for (const p of parts) {
+    if (current && typeof current === 'object' && p in (current as Record<string, unknown>)) {
+      current = (current as Record<string, unknown>)[p];
+    } else {
+      return undefined;
+    }
+  }
+  return current;
+}

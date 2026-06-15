@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import type { Room } from '../types/room';
 import type { MoveRecord } from '../types/game';
 import { sendReaction, subscribeReactions, type RoomReaction } from '../services/reactionsService';
@@ -99,6 +100,7 @@ export function ResultScreen({
   moves = [],
 }: ResultScreenProps) {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   // IMPROVEMENTS #12 Phase B 復盤：預設收合
   const [showReplay, setShowReplay] = useState(false);
   // 廣播反應（IMPROVEMENTS #8 延伸）：點擊表情，RTDB 同步給所有玩家 + 觀戰者
@@ -268,6 +270,15 @@ export function ResultScreen({
           className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium dark:text-white text-slate-900 hover:bg-blue-500 disabled:opacity-50"
         >
           {leaving ? t('resultScreen.leaving') : t('resultScreen.backToLobby')}
+        </button>
+
+        {/* IMPROVEMENTS #22 Phase 2：跳到 Profile「我的棋譜」看完整記錄 */}
+        <button
+          onClick={() => navigate('/profile')}
+          disabled={leaving}
+          className="rounded-lg dark:bg-slate-700 bg-app-hover px-4 py-2 text-sm font-medium dark:text-white text-slate-900 hover:dark:bg-slate-600 bg-app-border-strong disabled:opacity-50"
+        >
+          🎬 {t('resultScreen.viewInHistory')}
         </button>
       </div>
 

@@ -3,13 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../core/auth/useAuth';
 import { useUserHistory } from '../core/hooks/useUserHistory';
+import { useUserFavorites } from '../core/hooks/useUserFavorites';
 import { useUserStats } from '../core/hooks/useUserStats';
 import { signOut } from '../core/auth/googleSignIn';
 import { calculateWinRate, getGameStats } from '../core/services/statsService';
 import { updateNickname, validateNickname } from '../core/services/profileService';
 import { isDefaultNicknameFormat } from '../core/types/user';
 import { gameRegistry } from '@/registry';
-import type { GameHistoryEntry } from '../core/services/historyService';
+import type { GameHistoryEntry } from '../core/types/history';
 import type { GameType } from '../core/types/room';
 
 const GAME_LABELS: Record<GameType, string> = {
@@ -36,10 +37,67 @@ function formatTime(ms: number): string {
   });
 }
 
-function describeResult(entry: GameHistoryEntry, uid: string, t: (k: string) => string): { text: string; color: string } {
+// TFunction from i18next — accepts key + optional interpolation object
+type TFunction = (key: string, options?: Record<string, unknown>) => string;
+
+function describeResult(entry: GameHistoryEntry, uid: string, t: TFunction): { text: string; color: string } {
   if (entry.isDraw) return { text: t('profile.resultDraw'), color: 'dark:text-slate-400 text-slate-600' };
   if (entry.winnerId === uid) return { text: t('profile.resultWin'), color: 'text-yellow-400' };
   return { text: t('profile.resultLose'), color: 'text-red-400' };
+}
+
+/** 棋譜列表（複用於「我的棋譜」和「我的最愛」分頁，IMPROVEMENTS #22） */
+function HistoryList({
+  entries,
+  currentUid,
+  navigate,
+  t,
+}: {
+  entries: GameHistoryEntry[];
+  currentUid: string;
+  navigate: (path: string) => void;
+  t: TFunction;
+}) {
+  return (
+    <ul className="space-y-2">
+      {entries.map((e) => {
+        const r = describeResult(e, currentUid, t);
+        // 找對手（排除自己）
+        const otherUids = e.playerUids.filter((u) => u !== currentUid);
+        const opponentName = otherUids.length > 0
+          ? otherUids.map((u) => e.playerNames[u] ?? '?').join('、')
+          : t('profile.youWatched');
+        const Icon = GAME_ICONS[e.gameType as GameType];
+        return (
+          <li
+            key={e.id}
+            data-testid="history-row"
+            onClick={() => navigate(`/history/${e.id}`)}
+            className="flex cursor-pointer items-center gap-3 rounded-lg border dark:border-slate-700 border-app-border dark:bg-slate-800 bg-app-card p-3 transition hover:dark:border-slate-500 hover:border-app-border-strong"
+          >
+            {Icon && <Icon className="h-8 w-8 dark:text-slate-200 text-slate-800" />}
+            <span className={`w-12 text-center text-sm font-bold ${r.color}`}>
+              {r.text}
+            </span>
+            <div className="flex-1">
+              <p className="text-sm font-medium">
+                {t(GAME_LABELS[e.gameType as GameType] ?? 'common.unknown')} · {opponentName}
+              </p>
+              <p className="text-xs text-slate-500">
+                {formatTime(e.endedAt)} · {t('profile.totalMoves', { count: e.totalMoves })}
+                {e.truncated && <span className="ml-1 text-yellow-400">（{t('profile.truncated')}）</span>}
+              </p>
+            </div>
+            {e.hasAI && (
+              <span className="rounded bg-purple-900/40 px-1.5 py-0.5 text-xs text-purple-200">
+                AI
+              </span>
+            )}
+          </li>
+        );
+      })}
+    </ul>
+  );
 }
 
 export default function Profile() {
@@ -47,6 +105,8 @@ export default function Profile() {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { entries, loading: historyLoading } = useUserHistory(user?.uid ?? null, 50);
+  const { favorites, loading: favoritesLoading } = useUserFavorites(user?.uid ?? null);
+  const [historyTab, setHistoryTab] = useState<'saved' | 'favorites'>('saved');
   const { stats, loading: statsLoading } = useUserStats(user?.uid ?? null);
 
   const [editing, setEditing] = useState(false);
@@ -298,40 +358,51 @@ export default function Profile() {
 
       <section>
         <h2 className="mb-3 text-lg font-semibold">{t('profile.history')}</h2>
-        {historyLoading ? (
+
+        {/* 分頁切換（IMPROVEMENTS #22 Phase 3） */}
+        <div className="mb-3 flex gap-2 border-b dark:border-slate-700 border-app-border">
+          <button
+            type="button"
+            onClick={() => setHistoryTab('saved')}
+            className={`border-b-2 px-3 py-1.5 text-sm font-medium transition ${
+              historyTab === 'saved'
+                ? 'border-blue-500 text-blue-400'
+                : 'border-transparent dark:text-slate-400 text-slate-600 hover:dark:text-slate-200 hover:text-slate-900'
+            }`}
+          >
+            {t('profile.historyTabSaved')} ({entries.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setHistoryTab('favorites')}
+            className={`border-b-2 px-3 py-1.5 text-sm font-medium transition ${
+              historyTab === 'favorites'
+                ? 'border-blue-500 text-blue-400'
+                : 'border-transparent dark:text-slate-400 text-slate-600 hover:dark:text-slate-200 hover:text-slate-900'
+            }`}
+          >
+            {t('profile.historyTabFavorites')} ({favorites.length})
+          </button>
+        </div>
+
+        {historyTab === 'saved' ? (
+          historyLoading ? (
+            <p className="dark:text-slate-400 text-slate-600">{t('common.loading')}</p>
+          ) : entries.length === 0 ? (
+            <div className="rounded-lg border border-dashed dark:border-slate-700 border-app-border p-8 text-center text-slate-500">
+              {t('profile.historyEmpty')}
+            </div>
+          ) : (
+            <HistoryList entries={entries} currentUid={user.uid} navigate={navigate} t={t} />
+          )
+        ) : favoritesLoading ? (
           <p className="dark:text-slate-400 text-slate-600">{t('common.loading')}</p>
-        ) : entries.length === 0 ? (
+        ) : favorites.length === 0 ? (
           <div className="rounded-lg border border-dashed dark:border-slate-700 border-app-border p-8 text-center text-slate-500">
-            {t('profile.historyEmpty')}
+            {t('profile.favoritesEmpty')}
           </div>
         ) : (
-          <ul className="space-y-2">
-            {entries.map((e) => {
-              const r = describeResult(e, user.uid, t);
-              const opponent = e.players.find((p) => p.uid !== user.uid);
-              return (
-                <li
-                  key={e.id}
-                  className="flex items-center gap-3 rounded-lg border dark:border-slate-700 border-app-border dark:bg-slate-800 bg-app-card p-3"
-                >
-                  <span
-                    className={`w-8 text-center text-sm font-bold ${r.color}`}
-                  >
-                    {r.text}
-                  </span>
-                  <div className="flex-1">
-                    <p className="text-sm">
-                      vs {opponent?.displayName ?? '?'}（{opponent?.symbol ?? '?'}）
-                    </p>
-                    <p className="text-xs text-slate-500">{formatTime(e.endedAt)}</p>
-                  </div>
-                  <span className="text-xs text-slate-500">
-                    {GAME_LABELS[e.gameType as GameType] ?? e.gameType}
-                  </span>
-                </li>
-              );
-            })}
-          </ul>
+          <HistoryList entries={favorites} currentUid={user.uid} navigate={navigate} t={t} />
         )}
       </section>
     </div>

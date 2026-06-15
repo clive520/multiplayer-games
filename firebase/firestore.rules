@@ -114,13 +114,38 @@ service cloud.firestore {
           get(/databases/$(database)/documents/rooms/$(roomId)).data.hostId == request.auth.uid;
       }
 
-      // 對戰歷史子集合
-      match /history/{moveId} {
-        allow read: if isSignedIn();
-        allow create: if isSignedIn();
-        allow update, delete: if false;
-      }
+    // 對戰歷史子集合
+    match /history/{moveId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update, delete: if false;
     }
+
+    // IMPROVEMENTS #22 棋譜分享
+    // gameHistory：公開棋譜本體（任何登入者可讀、參與者可建、不能改/刪）
+    match /gameHistory/{entryId} {
+      allow read: if isSignedIn();
+      // 只能由玩家/觀戰者建立（看 playerUids 或 spectatorUids）
+      allow create: if isSignedIn() &&
+        request.auth.uid in request.resource.data.playerUids;
+      allow update, delete: if false;
+    }
+
+    // 個人子集合：saved / favorite（IMPROVEMENTS #22）
+    // - savedGameHistory：連結到自己儲存的棋譜
+    // - favoriteGameHistory：連結到自己加到最愛的棋譜
+    // 兩者都只能操作自己的，刪除 = 軟刪除連結，棋譜本體不受影響
+    match /users/{uid}/savedGameHistory/{entryId} {
+      allow read: if isSelf(uid);
+      allow create, delete: if isSelf(uid);
+      allow update: if false;
+    }
+    match /users/{uid}/favoriteGameHistory/{entryId} {
+      allow read: if isSelf(uid);
+      allow create, delete: if isSelf(uid);
+      allow update: if false;
+    }
+  }
 
     // 密碼唯一性索引：用密碼 hash 當 document ID
     // 建立後不可修改（強制使用 create），避免覆蓋

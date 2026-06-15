@@ -5,6 +5,8 @@ import GameRoom from './pages/GameRoom';
 import Leaderboard from './pages/Leaderboard';
 import Profile from './pages/Profile';
 import Settings from './pages/Settings';
+import PublicReplay from './pages/PublicReplay';
+import Explore from './pages/Explore';
 import { RequireAuth } from './core/components/RequireAuth';
 import { useAuth } from './core/auth/useAuth';
 
@@ -61,6 +63,12 @@ function HomePage() {
           >
             設定
           </button>
+          <button
+            onClick={() => navigate('/explore')}
+            className="rounded-lg dark:bg-slate-700 bg-app-hover dark:bg-slate-700 bg-app-hover px-6 py-3 font-medium dark:text-white text-slate-900 hover:dark:bg-slate-600 bg-app-border-strong dark:hover:dark:bg-slate-600 bg-app-border-strong hover:bg-app-border-strong"
+          >
+            探索棋譜
+          </button>
         </div>
       </div>
     );
@@ -110,6 +118,22 @@ export default function App() {
         element={
           <RequireAuth>
             <Settings />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/explore"
+        element={
+          <RequireAuth>
+            <Explore />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/history/:entryId"
+        element={
+          <RequireAuth>
+            <PublicReplay />
           </RequireAuth>
         }
       />

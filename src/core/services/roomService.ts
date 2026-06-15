@@ -23,7 +23,7 @@ import { generateRoomCode, normalizeRoomCode } from '../utils/roomCode';
 import { hashPassword, isValidPasswordFormat, normalizePassword } from '../utils/password';
 import { getGameDefinition } from '@/registry';
 import { recordGameResult } from './statsService';
-import { recordGameHistory } from './historyService';
+import { archiveFinishedRoomToHistory } from './historyService';
 import type { GameType, Room, RoomPlayer, RoomStatus, RoomSummary, Spectator, TurnTimeLimit } from '../types/room';
 import { DEFAULT_TURN_TIME_LIMIT, isValidTurnTimeLimit } from '../types/room';
 import { aiPlayerDisplayName, isAIPlayerUid, makeAIPlayerUid, type AIDifficulty } from '../types/ai';
@@ -504,7 +504,8 @@ export async function leaveRoom(roomId: string): Promise<void> {
   // 如果是 forfeit，補上 stats 與歷史記錄
   // IMPROVEMENTS #9：AI 玩家沒有真實 user doc，過濾掉避免權限錯誤
   // IMPROVEMENTS #10：isAIRoom 決定要不要算 ELO（AI 房只動 wins/losses）
-  if (winnerUidAfterForfeit) {
+  // IMPROVEMENTS #22：forfeit 結束時也存棋譜（讓退出的人也能看到自己下過的）
+  if (updates.status === 'finished') {
     const isAIRoom = room.players.some((p) => isAIPlayerUid(p.uid));
     const realPlayers = room.players.filter((p) => !isAIPlayerUid(p.uid));
     const playersForStats = realPlayers.map((p) => ({
@@ -512,31 +513,30 @@ export async function leaveRoom(roomId: string): Promise<void> {
       nickname: p.displayName,
       photoURL: p.photoURL,
     }));
-    const realWinnerId = isAIPlayerUid(winnerUidAfterForfeit) ? null : winnerUidAfterForfeit;
+    const realWinnerId = winnerUidAfterForfeit && !isAIPlayerUid(winnerUidAfterForfeit) ? winnerUidAfterForfeit : null;
+    const isDraw = updates.isDraw === true;
     await Promise.all([
       recordGameResult({
         gameType: room.gameType,
         winnerId: realWinnerId,
-        isDraw: false,
+        isDraw,
         players: playersForStats,
         isAIRoom,
       }).catch((err) => {
         console.error('更新使用者 stats 失敗', err);
       }),
-      recordGameHistory({
-        roomId,
-        gameType: room.gameType,
+      // IMPROVEMENTS #22：用新版 archiveFinishedRoomToHistory（含 moves + initialBoard + 自動 link）
+      // 從剛剛 updateDoc 完的 updates 反推一個「更新過的 room」傳給 archive
+      archiveFinishedRoomToHistory({
+        ...room,
+        status: 'finished',
+        endedAt: Date.now(),
         winnerId: realWinnerId,
-        isDraw: false,
-        players: realPlayers.map((p) => ({
-          uid: p.uid,
-          nickname: p.displayName,
-          displayName: p.displayName,
-          photoURL: p.photoURL,
-          symbol: p.symbol,
-        })),
+        isDraw,
+        turnStartedAt: null,
+        turnSymbol: null,
       }).catch((err) => {
-        console.error('寫入對戰歷史失敗', err);
+        console.error('存棋譜失敗', err);
       }),
     ]);
   }
@@ -614,20 +614,17 @@ export async function finishGame(
     }).catch((err) => {
       console.error('更新使用者 stats 失敗', err);
     }),
-    recordGameHistory({
-      roomId,
-      gameType: room.gameType,
+    // IMPROVEMENTS #22：用新版 archive（含 moves + 自動 link + 清 RTDB）
+    archiveFinishedRoomToHistory({
+      ...room,
+      status: 'finished',
+      endedAt: Date.now(),
       winnerId: realWinnerId,
       isDraw,
-      players: realPlayers.map((p) => ({
-        uid: p.uid,
-        nickname: p.displayName,
-        displayName: p.displayName,
-        photoURL: p.photoURL,
-        symbol: p.symbol,
-      })),
+      turnStartedAt: null,
+      turnSymbol: null,
     }).catch((err) => {
-      console.error('寫入對戰歷史失敗', err);
+      console.error('存棋譜失敗', err);
     }),
   ]);
 }
