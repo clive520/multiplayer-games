@@ -248,6 +248,15 @@ export default function GameRoom() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rtGameState, room?.status, room?.gameType, room?.players, gameDef, roomId]);
 
+  // IMPROVEMENTS #12 悔棋：自動清除超時的請求（必須在 early return 之前，遵守 React hooks 規則）
+  useEffect(() => {
+    if (!undoRequest || !roomId) return;
+    if (isUndoRequestTimedOut(undoRequest)) {
+      void clearUndoRequest(roomId);
+      toast.info(t('undo.timeout'));
+    }
+  }, [undoRequest, roomId, toast, t]);
+
   // 計算目前這回合剩餘秒數（給 UI 顯示）
   const turnTimeLimitSec = room?.turnTimeLimitSec ?? TURN_TIME_LIMIT_SEC_FALLBACK;
   const turnSecondsLeft =
@@ -447,15 +456,6 @@ export default function GameRoom() {
       setUndoBusy(false);
     }
   };
-
-  // IMPROVEMENTS #12 悔棋：自動清除超時的請求
-  useEffect(() => {
-    if (!undoRequest || !roomId) return;
-    if (isUndoRequestTimedOut(undoRequest)) {
-      void clearUndoRequest(roomId);
-      toast.info(t('undo.timeout'));
-    }
-  }, [undoRequest, roomId, toast, t]);
 
   return (
     <div className="mx-auto min-h-screen max-w-6xl p-6">
