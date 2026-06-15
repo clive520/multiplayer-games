@@ -140,6 +140,16 @@ git push origin main
 > 確認方式：到 Vercel Dashboard 對照「最新部署的 commit SHA」是否等於本機 `git rev-parse HEAD`。  
 > 備用解法：若 webhook 沒觸發，用 Vercel API 手動建立 deployment（POST `/v13/deployments`，body 帶 `gitSource` 指向 main branch）。
 
+> ⚠️ **更嚴重的陷阱**：Vercel **只會自動部署前端程式碼**，Firebase 規則（Firestore + RTDB）**不會自動部署**！  
+> 改了 `firebase/firestore.rules` 或 `firebase/database.rules.json` 之後，**必須手動跑**：
+> ```bash
+> firebase deploy --only firestore:rules,database
+> ```
+> 否則前端會出現 `PERMISSION_DENIED` 錯誤（本地測試看不到，因為 emulator 沒開）。  
+> 症狀：Console 一直噴 `FIREBASE WARNING: ... failed: permission_denied`。  
+> 預防：每次改 rules 檔，先 `firebase deploy` 再 `git push`，或 commit message 寫 `[skip-vercel]` 提醒自己。  
+> 已發生在 2026-06-15 #20 聊天上線時。
+
 ### 3.4 部署後驗證清單
 - [ ] 網站可開啟（HTTP 200）
 - [ ] Google 登入按鈕可運作（已加 Authorized Domain）
