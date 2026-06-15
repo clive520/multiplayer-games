@@ -76,10 +76,11 @@ service cloud.firestore {
       // 3. 還未加入但正要加入（把自己加進 playerUids 與 players）
       // 4. 觀戰者加入或離開（把自己加進 / 移出 spectatorUids 與 spectators）
       // 允許的欄位含 hostId（房主離開時轉移給下一位）、spectators/spectatorUids（觀戰者）、
-      // turnStartedAt / turnSymbol（每回合計時器，由當前玩家下棋後更新）
+      // turnStartedAt / turnSymbol（每回合計時器，由當前玩家下棋後更新）、
+      // undoUsedByUids（IMPROVEMENTS #12 悔棋額度，悔棋成功時累加）
       allow update: if isSignedIn() &&
         request.resource.data.diff(resource.data).affectedKeys()
-          .hasOnly(['players', 'playerUids', 'hostId', 'status', 'startedAt', 'endedAt', 'winnerId', 'isDraw', 'lastActivityAt', 'spectators', 'spectatorUids', 'turnStartedAt', 'turnSymbol']) &&
+          .hasOnly(['players', 'playerUids', 'hostId', 'status', 'startedAt', 'endedAt', 'winnerId', 'isDraw', 'lastActivityAt', 'spectators', 'spectatorUids', 'turnStartedAt', 'turnSymbol', 'undoUsedByUids']) &&
         (
           isRoomPlayer() ||
           resource.data.hostId == request.auth.uid ||
