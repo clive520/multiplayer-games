@@ -324,8 +324,8 @@ export default function Lobby() {
                   onClick={() => setCreateMode('pvp')}
                   className={`rounded px-2 py-1 text-xs font-medium transition ${
                     createMode === 'pvp'
-                      ? 'bg-blue-600 dark:text-white text-slate-900'
-                      : 'dark:text-slate-300 text-slate-700 hover:dark:bg-slate-700 bg-coffee-200'
+                      ? 'bg-blue-600 text-white'
+                      : 'dark:bg-slate-700 bg-coffee-100 dark:text-slate-200 text-slate-800 hover:dark:bg-slate-600 hover:bg-coffee-200'
                   }`}
                 >
                   {t('lobby.createModePvp')}
@@ -335,8 +335,8 @@ export default function Lobby() {
                   onClick={() => setCreateMode('ai')}
                   className={`rounded px-2 py-1 text-xs font-medium transition ${
                     createMode === 'ai'
-                      ? 'bg-purple-600 dark:text-white text-slate-900'
-                      : 'dark:text-slate-300 text-slate-700 hover:dark:bg-slate-700 bg-coffee-200'
+                      ? 'bg-purple-600 text-white'
+                      : 'dark:bg-slate-700 bg-coffee-100 dark:text-slate-200 text-slate-800 hover:dark:bg-slate-600 hover:bg-coffee-200'
                   }`}
                 >
                   {t('lobby.createModeAi')}
