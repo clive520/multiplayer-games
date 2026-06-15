@@ -13,7 +13,6 @@ import {
 import { gameRegistry } from '@/registry';
 import { TURN_TIME_LIMITS, type GameType, type RoomSummary, type TurnTimeLimit } from '../core/types/room';
 import { RoomPreviewCard } from '../core/components/RoomPreviewCard';
-import { LanguageSwitcher } from '../core/components/LanguageSwitcher';
 import { rtdb } from '../core/firebase/rtdb';
 import { ref, onValue, off } from 'firebase/database';
 import {
@@ -233,8 +232,7 @@ export default function Lobby() {
             {t('lobby.welcome', { name: profileLoading ? t('common.loading') : (nickname ?? t('lobby.guest')) })}
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <LanguageSwitcher />
+        <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={() => navigate('/profile')}
             className="rounded bg-slate-700 px-3 py-1.5 text-sm hover:bg-slate-600"
@@ -246,6 +244,12 @@ export default function Lobby() {
             className="rounded bg-slate-700 px-3 py-1.5 text-sm hover:bg-slate-600"
           >
             {t('nav.leaderboard')}
+          </button>
+          <button
+            onClick={() => navigate('/settings')}
+            className="rounded bg-slate-700 px-3 py-1.5 text-sm hover:bg-slate-600"
+          >
+            {t('nav.settings')}
           </button>
           <button
             onClick={() => signOut()}

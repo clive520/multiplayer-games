@@ -24,7 +24,25 @@
     "leaderboard": "排行榜",
     "profile": "我的檔案",
     "signOut": "登出",
-    "editNickname": "編輯暱稱"
+    "editNickname": "編輯暱稱",
+    "settings": "設定"
+  },
+  "settings": {
+    "title": "設定",
+    "backToLobby": "返回大廳",
+    "sectionSound": "音效",
+    "sectionLanguage": "語言",
+    "sectionDisplay": "顯示",
+    "muted": "靜音",
+    "mutedHint": "關閉所有音效（反應按鈕等）",
+    "language": "介面語言",
+    "languageHint": "切換後立即生效",
+    "theme": "主題",
+    "themeDark": "深色（目前）",
+    "themeLight": "淺色（即將推出）",
+    "themeHint": "淺色模式即將推出（IMPROVEMENTS #18）",
+    "saved": "已儲存",
+    "autoSaved": "設定自動儲存"
   },
   "home": {
     "title": "多人線上棋類遊戲",

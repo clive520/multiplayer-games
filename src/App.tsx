@@ -4,6 +4,7 @@ import Lobby from './pages/Lobby';
 import GameRoom from './pages/GameRoom';
 import Leaderboard from './pages/Leaderboard';
 import Profile from './pages/Profile';
+import Settings from './pages/Settings';
 import { RequireAuth } from './core/components/RequireAuth';
 import { useAuth } from './core/auth/useAuth';
 
@@ -54,6 +55,12 @@ function HomePage() {
           >
             我的檔案
           </button>
+          <button
+            onClick={() => navigate('/settings')}
+            className="rounded-lg bg-slate-700 px-6 py-3 font-medium text-white hover:bg-slate-600"
+          >
+            設定
+          </button>
         </div>
       </div>
     );
@@ -95,6 +102,14 @@ export default function App() {
         element={
           <RequireAuth>
             <Profile />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/settings"
+        element={
+          <RequireAuth>
+            <Settings />
           </RequireAuth>
         }
       />

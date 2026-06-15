@@ -24,7 +24,25 @@
     "leaderboard": "Leaderboard",
     "profile": "My Profile",
     "signOut": "Sign out",
-    "editNickname": "Edit nickname"
+    "editNickname": "Edit nickname",
+    "settings": "Settings"
+  },
+  "settings": {
+    "title": "Settings",
+    "backToLobby": "Back to lobby",
+    "sectionSound": "Sound",
+    "sectionLanguage": "Language",
+    "sectionDisplay": "Display",
+    "muted": "Mute",
+    "mutedHint": "Disable all sound effects (reaction buttons, etc.)",
+    "language": "Interface language",
+    "languageHint": "Changes take effect immediately",
+    "theme": "Theme",
+    "themeDark": "Dark (current)",
+    "themeLight": "Light (coming soon)",
+    "themeHint": "Light mode coming soon (IMPROVEMENTS #18)",
+    "saved": "Saved",
+    "autoSaved": "Settings auto-saved"
   },
   "home": {
     "title": "Multiplayer Board Games",
