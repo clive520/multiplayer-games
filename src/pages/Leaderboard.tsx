@@ -1,5 +1,6 @@
 import { useState, type ComponentType } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../core/auth/useAuth';
 import { signOut } from '../core/auth/googleSignIn';
 import { useLeaderboard, type LeaderboardScope } from '../core/hooks/useLeaderboard';
@@ -8,48 +9,35 @@ import type { LeaderboardEntry } from '../core/services/statsService';
 import { gameRegistry } from '@/registry';
 
 type IconComponent = ComponentType<{ className?: string }>;
-const TABS: Array<{ value: LeaderboardScope; label: string; Icon?: IconComponent }> = [
-  { value: 'overall', label: '綜合' },
-  {
-    value: 'tictactoe',
-    label: '井字遊戲',
-    Icon: gameRegistry.find((g) => g.id === 'tictactoe')!.icon,
-  },
-  {
-    value: 'gomoku',
-    label: '五子棋',
-    Icon: gameRegistry.find((g) => g.id === 'gomoku')!.icon,
-  },
-  {
-    value: 'reversi',
-    label: '黑白棋',
-    Icon: gameRegistry.find((g) => g.id === 'reversi')!.icon,
-  },
-];
 
-const SCOPE_LABEL: Record<LeaderboardScope, string> = {
-  overall: '綜合',
-  tictactoe: '井字遊戲',
-  gomoku: '五子棋',
-  reversi: '黑白棋',
+const SCOPE_I18N_KEY: Record<LeaderboardScope, string> = {
+  overall: 'leaderboard.scopeOverall',
+  tictactoe: 'leaderboard.scopeTictactoe',
+  gomoku: 'leaderboard.scopeGomoku',
+  reversi: 'leaderboard.scopeReversi',
 };
 
 export default function Leaderboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [scope, setScope] = useState<LeaderboardScope>('overall');
   const { entries, loading, error } = useLeaderboard(scope);
 
-  const gameLabel = SCOPE_LABEL[scope];
+  const gameLabel = t(SCOPE_I18N_KEY[scope]);
+  const tabs: Array<{ value: LeaderboardScope; icon?: IconComponent }> = [
+    { value: 'overall' },
+    { value: 'tictactoe', icon: gameRegistry.find((g) => g.id === 'tictactoe')!.icon },
+    { value: 'gomoku', icon: gameRegistry.find((g) => g.id === 'gomoku')!.icon },
+    { value: 'reversi', icon: gameRegistry.find((g) => g.id === 'reversi')!.icon },
+  ];
 
   return (
     <div className="mx-auto min-h-screen max-w-3xl p-6">
       <header className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">排行榜</h1>
-          <p className="text-sm text-slate-400">
-            依勝場數排序，前 20 名
-          </p>
+          <h1 className="text-2xl font-bold">{t('leaderboard.title')}</h1>
+          <p className="text-sm text-slate-400">ELO 評分排序 · 前 20 名</p>
         </div>
         <div className="flex items-center gap-2">
           {user && (
@@ -57,41 +45,41 @@ export default function Leaderboard() {
               onClick={() => navigate('/profile')}
               className="rounded bg-slate-700 px-3 py-1.5 text-sm hover:bg-slate-600"
             >
-              我的檔案
+              {t('nav.profile')}
             </button>
           )}
           <button
             onClick={() => navigate('/lobby')}
             className="rounded bg-slate-700 px-3 py-1.5 text-sm hover:bg-slate-600"
           >
-            遊戲大廳
+            {t('nav.lobby')}
           </button>
           {user ? (
             <button
               onClick={() => signOut()}
               className="rounded bg-slate-700 px-3 py-1.5 text-sm hover:bg-slate-600"
             >
-              登出
+              {t('nav.signOut')}
             </button>
           ) : null}
         </div>
       </header>
 
       <div className="mb-4 flex flex-wrap gap-2">
-        {TABS.map((t) => {
-          const Icon = t.Icon;
+        {tabs.map((tab) => {
+          const Icon = tab.icon;
           return (
             <button
-              key={t.value}
-              onClick={() => setScope(t.value)}
+              key={tab.value}
+              onClick={() => setScope(tab.value)}
               className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition ${
-                scope === t.value
+                scope === tab.value
                   ? 'bg-blue-600 text-white'
                   : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
               }`}
             >
               {Icon && <Icon className="h-5 w-5" />}
-              {t.label}
+              {t(SCOPE_I18N_KEY[tab.value])}
             </button>
           );
         })}
@@ -99,35 +87,32 @@ export default function Leaderboard() {
 
       {error && (
         <div className="mb-4 rounded-lg border border-red-700 bg-red-900/30 p-3 text-sm text-red-300">
-          載入排行榜失敗：{error.message}
+          {t('lobby.loadRoomsFailed', { message: error.message })}
         </div>
       )}
 
       {loading ? (
-        <p className="text-slate-400">載入中...</p>
+        <p className="text-slate-400">{t('common.loading')}</p>
       ) : entries.length === 0 ? (
         <div className="rounded-lg border border-dashed border-slate-700 p-8 text-center text-slate-500">
-          目前還沒有任何「{gameLabel}」的對戰紀錄
-          <br />
-          <span className="text-xs text-slate-600">
-            完成一場 {gameLabel} 對戰後就會出現在這裡
-          </span>
+          {t('leaderboard.empty')}
         </div>
       ) : (
         <div className="overflow-hidden rounded-lg border border-slate-700">
           <div className="border-b border-slate-700 bg-slate-800 px-4 py-2 text-xs text-slate-400">
-            目前顯示：{gameLabel}（{entries.length} 筆）
+            {t('common.loading')}：{gameLabel}（{entries.length}）
           </div>
           <table className="w-full">
             <thead className="bg-slate-800 text-xs text-slate-400">
               <tr>
                 <th className="px-3 py-2 text-left">#</th>
-                <th className="px-3 py-2 text-left">玩家</th>
-                <th className="px-3 py-2 text-right">勝</th>
-                <th className="px-3 py-2 text-right">敗</th>
-                <th className="px-3 py-2 text-right">和</th>
-                <th className="px-3 py-2 text-right">勝率</th>
-                <th className="px-3 py-2 text-right">總場</th>
+                <th className="px-3 py-2 text-left">{t('leaderboard.player')}</th>
+                <th className="px-3 py-2 text-right">{t('leaderboard.elo')}</th>
+                <th className="px-3 py-2 text-right">{t('leaderboard.wins')}</th>
+                <th className="px-3 py-2 text-right">{t('leaderboard.losses')}</th>
+                <th className="px-3 py-2 text-right">{t('leaderboard.draws')}</th>
+                <th className="px-3 py-2 text-right">{t('leaderboard.winRate')}</th>
+                <th className="px-3 py-2 text-right">{t('profile.games')}</th>
               </tr>
             </thead>
             <tbody>
@@ -158,10 +143,13 @@ export default function Leaderboard() {
                         <span className="text-sm font-medium text-white">
                           {entry.displayName}
                           {isMe && (
-                            <span className="ml-1 text-xs text-slate-400">（你）</span>
+                            <span className="ml-1 text-xs text-slate-400">{t('common.you')}</span>
                           )}
                         </span>
                       </div>
+                    </td>
+                    <td className="px-3 py-2 text-right text-sm text-purple-400">
+                      {stats.elo}
                     </td>
                     <td className="px-3 py-2 text-right text-sm text-yellow-400">
                       {stats.wins}

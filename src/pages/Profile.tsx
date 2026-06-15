@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent, type ComponentType } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../core/auth/useAuth';
 import { useUserHistory } from '../core/hooks/useUserHistory';
 import { useUserStats } from '../core/hooks/useUserStats';
@@ -12,9 +13,9 @@ import type { GameHistoryEntry } from '../core/services/historyService';
 import type { GameType } from '../core/types/room';
 
 const GAME_LABELS: Record<GameType, string> = {
-  tictactoe: '井字遊戲',
-  gomoku: '五子棋',
-  reversi: '黑白棋',
+  tictactoe: 'games.tictactoe.name',
+  gomoku: 'games.gomoku.name',
+  reversi: 'games.reversi.name',
 };
 
 type IconComponent = ComponentType<{ className?: string }>;
@@ -35,15 +36,16 @@ function formatTime(ms: number): string {
   });
 }
 
-function describeResult(entry: GameHistoryEntry, uid: string): { text: string; color: string } {
-  if (entry.isDraw) return { text: '平手', color: 'text-slate-400' };
-  if (entry.winnerId === uid) return { text: '勝', color: 'text-yellow-400' };
-  return { text: '敗', color: 'text-red-400' };
+function describeResult(entry: GameHistoryEntry, uid: string, t: (k: string) => string): { text: string; color: string } {
+  if (entry.isDraw) return { text: t('profile.resultDraw'), color: 'text-slate-400' };
+  if (entry.winnerId === uid) return { text: t('profile.resultWin'), color: 'text-yellow-400' };
+  return { text: t('profile.resultLose'), color: 'text-red-400' };
 }
 
 export default function Profile() {
   const { user, profile, profileLoading, setProfile } = useAuth();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { entries, loading: historyLoading } = useUserHistory(user?.uid ?? null, 50);
   const { stats, loading: statsLoading } = useUserStats(user?.uid ?? null);
 
@@ -110,19 +112,19 @@ export default function Profile() {
   return (
     <div className="mx-auto min-h-screen max-w-3xl p-6">
       <header className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold">我的檔案</h1>
+        <h1 className="text-2xl font-bold">{t('profile.title')}</h1>
         <div className="flex gap-2">
           <button
             onClick={() => navigate('/lobby')}
             className="rounded bg-slate-700 px-3 py-1.5 text-sm hover:bg-slate-600"
           >
-            遊戲大廳
+            {t('profile.backToLobby')}
           </button>
           <button
             onClick={() => signOut()}
             className="rounded bg-slate-700 px-3 py-1.5 text-sm hover:bg-slate-600"
           >
-            登出
+            {t('nav.signOut')}
           </button>
         </div>
       </header>
@@ -156,7 +158,7 @@ export default function Profile() {
                   disabled={saving}
                   className="rounded bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-500 disabled:opacity-50"
                 >
-                  {saving ? '儲存中...' : '儲存'}
+                  {saving ? t('profile.saving') : t('profile.save')}
                 </button>
                 <button
                   type="button"
@@ -164,7 +166,7 @@ export default function Profile() {
                   disabled={saving}
                   className="rounded bg-slate-700 px-3 py-1.5 text-sm text-slate-200 hover:bg-slate-600 disabled:opacity-50"
                 >
-                  取消
+                  {t('common.cancel')}
                 </button>
               </div>
             </form>
@@ -174,7 +176,7 @@ export default function Profile() {
                 <h2 className="text-xl font-bold">{nickname}</h2>
                 {isDefault && (
                   <span className="rounded bg-yellow-900/50 px-1.5 py-0.5 text-xs text-yellow-300">
-                    預設
+                    {t('common.default')}
                   </span>
                 )}
                 <button
@@ -182,19 +184,19 @@ export default function Profile() {
                   disabled={profileLoading}
                   className="rounded text-xs text-blue-400 hover:text-blue-300"
                 >
-                  編輯
+                  {t('common.edit')}
                 </button>
               </div>
               <p className="text-xs text-slate-500">
                 {profile?.googleDisplayName
-                  ? `Google 帳號：${user.email}`
+                  ? t('profile.googleAccount', { email: user.email ?? '' })
                   : user.email ?? ''}
               </p>
             </>
           )}
         </div>
         <div className="text-right">
-          <p className="text-xs text-slate-500">總勝場</p>
+          <p className="text-xs text-slate-500">{t('profile.totalWins')}</p>
           <p className="text-3xl font-bold text-yellow-400">
             {showStats ? overallStats.wins : '—'}
           </p>
@@ -203,42 +205,42 @@ export default function Profile() {
 
       {isDefault && !editing && (
         <section className="mb-6 rounded-lg border border-blue-700 bg-blue-900/20 p-3 text-sm text-blue-200">
-          目前使用預設暱稱（流水號），點上方「編輯」改成你喜歡的名稱。
+          {t('profile.defaultNicknameNotice')}
         </section>
       )}
 
       <section className="mb-6">
-        <h2 className="mb-3 text-sm font-semibold text-slate-300">綜合戰績</h2>
+        <h2 className="mb-3 text-sm font-semibold text-slate-300">{t('profile.overallStats')}</h2>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
           <div className="rounded-lg border border-slate-700 bg-slate-800 p-4 text-center">
             <p className="text-2xl font-bold text-yellow-400">{overallStats.wins}</p>
-            <p className="text-xs text-slate-500">勝場</p>
+            <p className="text-xs text-slate-500">{t('profile.wins')}</p>
           </div>
           <div className="rounded-lg border border-slate-700 bg-slate-800 p-4 text-center">
             <p className="text-2xl font-bold text-red-400">{overallStats.losses}</p>
-            <p className="text-xs text-slate-500">敗場</p>
+            <p className="text-xs text-slate-500">{t('profile.losses')}</p>
           </div>
           <div className="rounded-lg border border-slate-700 bg-slate-800 p-4 text-center">
             <p className="text-2xl font-bold text-slate-400">{overallStats.draws}</p>
-            <p className="text-xs text-slate-500">和局</p>
+            <p className="text-xs text-slate-500">{t('profile.draws')}</p>
           </div>
           <div className="rounded-lg border border-slate-700 bg-slate-800 p-4 text-center">
             <p className="text-2xl font-bold text-blue-400">{overallWinRate}%</p>
-            <p className="text-xs text-slate-500">勝率</p>
+            <p className="text-xs text-slate-500">{t('profile.winRate')}</p>
           </div>
           <div
             className="rounded-lg border border-purple-700 bg-purple-900/20 p-4 text-center sm:col-span-1 col-span-2"
-            title="ELO 評分：基於 PvP 對戰的相對強度（AI 房不計入）"
+            title={t('profile.eloTooltip')}
           >
             <p className="text-2xl font-bold text-purple-300">{overallStats.elo}</p>
-            <p className="text-xs text-slate-500">ELO 評分</p>
+            <p className="text-xs text-slate-500">{t('profile.eloRating')}</p>
           </div>
         </div>
       </section>
 
       {showStats && (
         <section className="mb-6">
-          <h2 className="mb-3 text-sm font-semibold text-slate-300">分遊戲戰績</h2>
+          <h2 className="mb-3 text-sm font-semibold text-slate-300">{t('profile.perGameStats')}</h2>
           <div className="grid gap-3 sm:grid-cols-2">
             {(Object.keys(GAME_LABELS) as GameType[]).map((gt) => {
               const gs = getGameStats(showStats, gt);
@@ -253,30 +255,30 @@ export default function Profile() {
                     <div className="flex items-center gap-2">
                       {Icon && <Icon className="h-5 w-5 text-slate-300" />}
                       <p className="text-sm font-medium text-white">
-                        {GAME_LABELS[gt]}
+                        {t(GAME_LABELS[gt])}
                       </p>
                     </div>
-                    <p className="text-xs text-slate-500">{gs.totalGames} 場</p>
+                    <p className="text-xs text-slate-500">{gs.totalGames} {t('profile.games')}</p>
                   </div>
                   <div className="grid grid-cols-5 gap-2 text-center text-sm">
                     <div>
                       <p className="text-base font-bold text-yellow-400">{gs.wins}</p>
-                      <p className="text-xs text-slate-500">勝</p>
+                      <p className="text-xs text-slate-500">{t('profile.wins')}</p>
                     </div>
                     <div>
                       <p className="text-base font-bold text-red-400">{gs.losses}</p>
-                      <p className="text-xs text-slate-500">敗</p>
+                      <p className="text-xs text-slate-500">{t('profile.losses')}</p>
                     </div>
                     <div>
                       <p className="text-base font-bold text-slate-400">{gs.draws}</p>
-                      <p className="text-xs text-slate-500">和</p>
+                      <p className="text-xs text-slate-500">{t('profile.draws')}</p>
                     </div>
                     <div>
                       <p className="text-base font-bold text-blue-400">{rate}%</p>
-                      <p className="text-xs text-slate-500">勝率</p>
+                      <p className="text-xs text-slate-500">{t('profile.winRate')}</p>
                     </div>
                     <div
-                      title="此遊戲的 ELO 評分"
+                      title={t('profile.eloGameTooltip')}
                       className="rounded bg-purple-900/30 py-0.5"
                     >
                       <p className="text-base font-bold text-purple-300">{gs.elo}</p>
@@ -291,21 +293,21 @@ export default function Profile() {
       )}
 
       {statsLoading && !showStats && (
-        <p className="mb-4 text-sm text-slate-400">載入 stats 中...</p>
+        <p className="mb-4 text-sm text-slate-400">{t('profile.statsLoading')}</p>
       )}
 
       <section>
-        <h2 className="mb-3 text-lg font-semibold">對戰紀錄</h2>
+        <h2 className="mb-3 text-lg font-semibold">{t('profile.history')}</h2>
         {historyLoading ? (
-          <p className="text-slate-400">載入中...</p>
+          <p className="text-slate-400">{t('common.loading')}</p>
         ) : entries.length === 0 ? (
           <div className="rounded-lg border border-dashed border-slate-700 p-8 text-center text-slate-500">
-            還沒有對戰紀錄
+            {t('profile.historyEmpty')}
           </div>
         ) : (
           <ul className="space-y-2">
             {entries.map((e) => {
-              const r = describeResult(e, user.uid);
+              const r = describeResult(e, user.uid, t);
               const opponent = e.players.find((p) => p.uid !== user.uid);
               return (
                 <li

@@ -1,4 +1,5 @@
 import { useParams, useNavigate, Navigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../core/auth/useAuth';
 import { useRoom } from '../core/hooks/useRoom';
 import { usePresence } from '../core/hooks/usePresence';
@@ -26,6 +27,7 @@ const TURN_TIME_LIMIT_SEC_FALLBACK = 30;
 export default function GameRoom() {
   const { roomId } = useParams<{ roomId: string }>();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { user, profile } = useAuth();
   const { room, loading, error: roomError } = useRoom(roomId ?? null);
   // 動態載入遊戲元件：進入房間且 status=playing 時才 fetch 對應 chunk
@@ -233,7 +235,7 @@ export default function GameRoom() {
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <p className="text-slate-400">載入房間中...</p>
+        <p className="text-slate-400">{t('gameRoom.loadingRoom')}</p>
       </div>
     );
   }
@@ -241,17 +243,17 @@ export default function GameRoom() {
     return (
       <div className="mx-auto flex min-h-screen max-w-md flex-col items-center justify-center gap-4 p-6">
         <div className="rounded-lg border border-red-700 bg-red-900/30 p-4 text-sm text-red-300">
-          載入房間失敗：{roomError.message}
+          {t('gameRoom.loadRoomFailed', { message: roomError.message })}
           <br />
           <span className="text-xs text-red-400">
-            請確認 Firebase Console 中的 Firestore 規則是否允許讀取
+            {t('gameRoom.firebaseRulesHint')}
           </span>
         </div>
         <button
           onClick={() => navigate('/lobby')}
           className="rounded bg-slate-700 px-4 py-2 hover:bg-slate-600"
         >
-          回到大廳
+          {t('gameRoom.backToLobby')}
         </button>
       </div>
     );
@@ -259,12 +261,12 @@ export default function GameRoom() {
   if (!room) {
     return (
       <div className="mx-auto flex min-h-screen max-w-md flex-col items-center justify-center gap-4 p-6">
-        <p className="text-slate-300">找不到此房間</p>
+        <p className="text-slate-300">{t('gameRoom.roomNotFound')}</p>
         <button
           onClick={() => navigate('/lobby')}
           className="rounded bg-slate-700 px-4 py-2 hover:bg-slate-600"
         >
-          回到大廳
+          {t('gameRoom.backToLobby')}
         </button>
       </div>
     );
@@ -346,8 +348,8 @@ export default function GameRoom() {
           <div>
             <h1 className="text-xl font-bold">{gameDef?.name ?? room.gameType}</h1>
             <p className="text-sm text-slate-400">
-              狀態：
-              {room.status === 'waiting' ? '等待中' : isPlaying ? '進行中' : '已結束'}
+              {t('gameRoom.status')}
+              {room.status === 'waiting' ? t('gameRoom.statusWaiting') : isPlaying ? t('gameRoom.statusPlaying') : t('gameRoom.statusFinished')}
             </p>
           </div>
         </div>
@@ -356,13 +358,13 @@ export default function GameRoom() {
           disabled={actionPending}
           className="rounded bg-slate-700 px-3 py-1.5 text-sm hover:bg-slate-600 disabled:opacity-50"
         >
-          離開房間
+          {t('gameRoom.leaveRoom')}
         </button>
       </header>
 
       {room.status === 'waiting' && (
         <section className="mb-6 rounded-lg border border-yellow-700 bg-yellow-900/20 p-4">
-          <p className="mb-1 text-xs text-yellow-300">邀請朋友加入此房間</p>
+          <p className="mb-1 text-xs text-yellow-300">{t('gameRoom.inviteHint')}</p>
           <div className="flex items-center gap-3">
             <span className="font-mono text-3xl font-bold tracking-widest text-yellow-400">
               {room.code}
@@ -371,7 +373,7 @@ export default function GameRoom() {
               onClick={handleCopyCode}
               className="rounded bg-yellow-700 px-3 py-1 text-sm text-white hover:bg-yellow-600"
             >
-              {copied ? '已複製' : '複製房號'}
+              {copied ? t('gameRoom.copied') : t('gameRoom.copyCode')}
             </button>
           </div>
         </section>
@@ -387,28 +389,28 @@ export default function GameRoom() {
       {showLeaveConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
           <div className="w-full max-w-md rounded-lg border border-red-700 bg-slate-800 p-6 shadow-2xl">
-            <h3 className="mb-2 text-lg font-bold text-red-300">確定要離開房間？</h3>
+            <h3 className="mb-2 text-lg font-bold text-red-300">{t('gameRoom.leaveConfirmTitle')}</h3>
             <p className="mb-2 text-sm leading-relaxed text-slate-300">
-              遊戲正在進行中，主動離開將直接判定你方
-              <span className="mx-1 font-bold text-red-400">落敗</span>
-              ，對方獲勝。
+              {t('gameRoom.leaveConfirmBody')}
+              <span className="mx-1 font-bold text-red-400">{t('gameRoom.leaveConfirmLose')}</span>
+              {t('gameRoom.leaveConfirmAfter')}
             </p>
             <p className="mb-6 text-xs text-slate-500">
-              如果只是暫時離開，建議等對方回合逾時自動判定，或繼續完成這一局。
+              {t('gameRoom.leaveConfirmHint')}
             </p>
             <div className="flex justify-end gap-2">
               <button
                 onClick={() => setShowLeaveConfirm(false)}
                 className="rounded-lg border border-slate-600 bg-slate-700 px-4 py-2 text-sm font-medium text-slate-200 hover:bg-slate-600"
               >
-                取消
+                {t('common.cancel')}
               </button>
               <button
                 onClick={confirmLeave}
                 disabled={actionPending}
                 className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-500 disabled:opacity-50"
               >
-                {actionPending ? '離開中...' : '確認離開（落敗）'}
+                {actionPending ? t('gameRoom.leaving') : t('gameRoom.leaveConfirmSubmit')}
               </button>
             </div>
           </div>
@@ -417,17 +419,17 @@ export default function GameRoom() {
 
       {isSpectator && (
         <section className="mb-4 rounded-lg border border-blue-700 bg-blue-900/20 p-3 text-sm text-blue-200">
-          您正在觀戰這場比賽，無法進行任何操作。
+          {t('gameRoom.spectatorHint')}
         </section>
       )}
 
       <section className="mb-4 rounded-lg border border-slate-700 bg-slate-800 p-4">
         <h2 className="mb-3 text-sm font-semibold text-slate-300">
-          玩家（{room.players.length}/{gameDef?.maxPlayers ?? 2}）
+          {t('gameRoom.players', { count: room.players.length, max: gameDef?.maxPlayers ?? 2 })}
         </h2>
         <ul className="space-y-2">
           {room.players.length === 0 ? (
-            <li className="text-slate-500">房間沒有玩家</li>
+            <li className="text-slate-500">{t('gameRoom.noPlayers')}</li>
           ) : (
             room.players.map((p) => {
               const isOnline = presence[p.uid]?.online === true;
@@ -469,12 +471,12 @@ export default function GameRoom() {
                       {p.displayName}
                       {p.isHost && (
                         <span className="rounded bg-yellow-900/50 px-1.5 py-0.5 text-xs text-yellow-300">
-                          房主
+                          {t('common.host')}
                         </span>
                       )}
                       <span
                         className={`rounded px-1.5 py-0.5 text-xs ${symbolBadgeClass}`}
-                        title={room.gameType === 'tictactoe' ? '棋子符號' : '隊伍'}
+                        title={room.gameType === 'tictactoe' ? t('gameRoom.symbolLabel_tictactoe') : t('gameRoom.symbolLabel_other')}
                       >
                         {symbolLabel}
                       </span>
@@ -487,7 +489,7 @@ export default function GameRoom() {
                         : 'bg-slate-700 text-slate-400'
                     }`}
                   >
-                    {p.ready ? '準備' : '未準備'}
+                    {p.ready ? t('common.ready') : t('common.notReady')}
                   </span>
                 </li>
               );
@@ -499,7 +501,7 @@ export default function GameRoom() {
       {room.spectators.length > 0 && (
         <section className="mb-6 rounded-lg border border-slate-700 bg-slate-800 p-4">
           <h2 className="mb-3 text-sm font-semibold text-slate-300">
-            觀戰者（{room.spectators.length}）
+            {t('gameRoom.spectators', { count: room.spectators.length })}
           </h2>
           <ul className="space-y-2">
             {room.spectators.map((s) => {
@@ -523,12 +525,12 @@ export default function GameRoom() {
                       className={`absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-slate-900 ${
                         isOnline ? 'bg-green-500' : 'bg-slate-500'
                       }`}
-                      title={isOnline ? '在線' : '離線'}
+                      title={isOnline ? t('common.online') : t('common.offline')}
                     />
                   </div>
                   <div className="flex-1">
                     <p className="text-sm font-medium">{s.nickname}</p>
-                    <p className="text-xs text-slate-500">觀戰中</p>
+                    <p className="text-xs text-slate-500">{t('common.spectating')}</p>
                   </div>
                 </li>
               );
@@ -544,7 +546,7 @@ export default function GameRoom() {
             disabled={actionPending}
             className="rounded-lg bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-500 disabled:opacity-50"
           >
-            {currentPlayer.ready ? '取消準備' : '準備'}
+            {currentPlayer.ready ? t('gameRoom.cancelReadyButton') : t('gameRoom.readyButton')}
           </button>
           {isHost && (
             <button
@@ -556,7 +558,7 @@ export default function GameRoom() {
               }
               className="rounded-lg bg-green-600 px-4 py-2 font-medium text-white hover:bg-green-500 disabled:opacity-50"
             >
-              開始遊戲
+              {t('gameRoom.startGame')}
             </button>
           )}
         </div>
@@ -599,7 +601,7 @@ export default function GameRoom() {
       {isPlaying && gameDef && (currentPlayer || isSpectator) && !GameComp && (
         <div className="rounded-lg border border-slate-700 bg-slate-800 p-6 text-center">
           <p className="text-slate-400">
-            {gameCompLoading ? '載入遊戲中...' : '遊戲元件準備中...'}
+            {gameCompLoading ? t('gameRoom.loadingGame') : t('gameRoom.loadGameComponent')}
           </p>
         </div>
       )}
@@ -626,7 +628,7 @@ export default function GameRoom() {
             />
             {isSpectator && (
               <p className="mt-2 text-xs text-slate-400">
-                完整棋譜請看上方。觀戰者可自由留下觀看結果，按「返回大廳」手動離開。
+                {t('moveHistory.spectatorNote')}
               </p>
             )}
           </aside>
