@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { GameComponentProps } from '../../core/types/game';
 import { reversiEngine, hasValidMove } from './engine';
 import {
@@ -24,6 +25,7 @@ export default function Reversi({
   onGameFinished,
   onActivity,
 }: GameComponentProps) {
+  const { t } = useTranslation();
   const [state, setState] = useState<ReversiState | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [hintMode, setHintMode] = useState(false);
@@ -80,7 +82,7 @@ export default function Reversi({
       { row, col }
     );
     if (!res.applied) {
-      setError(res.reason ?? '落子失敗');
+      setError(res.reason ?? t('games.reversi.moveFailed'));
     }
   };
 
@@ -89,14 +91,14 @@ export default function Reversi({
     setError(null);
     const res = await passTurn(roomId, currentUserId, currentPlayer.symbol);
     if (!res.applied) {
-      setError(res.reason ?? 'Pass 失敗');
+      setError(res.reason ?? t('games.reversi.passFailed'));
     }
   };
 
   if (!state) {
     return (
       <div className="rounded-lg border border-slate-700 bg-slate-800 p-6 text-center">
-        <p className="text-slate-400">遊戲載入中...</p>
+        <p className="text-slate-400">{t('games.reversi.loading')}</p>
       </div>
     );
   }
@@ -104,7 +106,7 @@ export default function Reversi({
   if (!Array.isArray(state.board) || state.board.length !== BOARD_SIZE * BOARD_SIZE) {
     return (
       <div className="rounded-lg border border-red-700 bg-red-900/30 p-4 text-center text-sm text-red-300">
-        遊戲狀態損壞，請重新整理或重置房間
+        {t('games.reversi.stateCorrupted')}
       </div>
     );
   }
@@ -149,13 +151,13 @@ export default function Reversi({
     state.board.filter((c) => c !== '').length >= BOARD_SIZE * BOARD_SIZE;
   if (isFinished) {
     // 簡化：因為 finished 時由 GameRoom 顯示 ResultScreen，這裡只處理未完狀態
-    headerStatus = { kind: 'spectating', symbol: state.currentTurn, verb: '落子' };
+    headerStatus = { kind: 'spectating', symbol: state.currentTurn, gameType: 'reversi' };
   } else if (isSpectator) {
-    headerStatus = { kind: 'spectating', symbol: state.currentTurn, verb: '落子' };
+    headerStatus = { kind: 'spectating', symbol: state.currentTurn, gameType: 'reversi' };
   } else if (isMyTurn && mySymbol) {
-    headerStatus = { kind: 'myTurn', symbol: mySymbol };
+    headerStatus = { kind: 'myTurn', symbol: mySymbol, gameType: 'reversi' };
   } else {
-    headerStatus = { kind: 'opponentTurn', symbol: state.currentTurn, verb: '落子' };
+    headerStatus = { kind: 'opponentTurn', symbol: state.currentTurn, gameType: 'reversi' };
   }
 
   // 附加提示：觀戰者看到連續 Pass、輪到自己但無合法步
@@ -163,13 +165,13 @@ export default function Reversi({
     if (state.passCount > 0 && isSpectator) {
       return (
         <span className="ml-2 text-sm text-yellow-400">
-          （已連續 Pass {state.passCount} 次）
+          {t('games.reversi.passCount', { count: state.passCount })}
         </span>
       );
     }
     if (isMyTurn && !playerCanMove) {
       return (
-        <span className="ml-2 text-sm text-yellow-400">（無合法步，需 Pass）</span>
+        <span className="ml-2 text-sm text-yellow-400">{t('games.reversi.noValidMove')}</span>
       );
     }
     return null;
@@ -204,7 +206,7 @@ export default function Reversi({
                       : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
                   }`}
                 >
-                  {hintMode ? '隱藏提示' : '顯示提示'}
+                  {hintMode ? t('games.reversi.hideHints') : t('games.reversi.showHints')}
                 </button>
               )}
               {isMyTurn && !playerCanMove && (
@@ -212,7 +214,7 @@ export default function Reversi({
                   onClick={handlePass}
                   className="rounded bg-yellow-600 px-3 py-1 text-xs font-medium text-white hover:bg-yellow-500"
                 >
-                  Pass（讓對方下）
+                  {t('games.reversi.pass')}
                 </button>
               )}
             </div>
@@ -286,7 +288,7 @@ export default function Reversi({
 
       {isHost && (
         <p className="text-center text-xs text-slate-500">
-          房主可在房間頁面按「再來一局」重置棋盤
+          {t('games.reversi.playAgainHint')}
         </p>
       )}
     </div>

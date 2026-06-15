@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { GameComponentProps } from '../../core/types/game';
 import { gomokuEngine } from './engine';
 import { ensureGameState, submitMove, subscribeGameState } from './sync';
@@ -19,6 +20,7 @@ export default function Gomoku({
   onGameFinished,
   onActivity,
 }: GameComponentProps) {
+  const { t } = useTranslation();
   const [state, setState] = useState<GomokuState | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [hoveredCell, setHoveredCell] = useState<{ row: number; col: number } | null>(null);
@@ -74,14 +76,14 @@ export default function Gomoku({
       { row, col }
     );
     if (!res.applied) {
-      setError(res.reason ?? '移動失敗');
+      setError(res.reason ?? t('games.gomoku.moveFailed'));
     }
   };
 
   if (!state) {
     return (
       <div className="rounded-lg border border-slate-700 bg-slate-800 p-6 text-center">
-        <p className="text-slate-400">遊戲載入中...</p>
+        <p className="text-slate-400">{t('games.gomoku.loading')}</p>
       </div>
     );
   }
@@ -89,7 +91,7 @@ export default function Gomoku({
   if (!Array.isArray(state.board) || state.board.length !== BOARD_SIZE * BOARD_SIZE) {
     return (
       <div className="rounded-lg border border-red-700 bg-red-900/30 p-4 text-center text-sm text-red-300">
-        遊戲狀態損壞，請重新整理或重置房間
+        {t('games.gomoku.stateCorrupted')}
       </div>
     );
   }
@@ -109,11 +111,11 @@ export default function Gomoku({
   } else if (state.moveCount >= BOARD_SIZE * BOARD_SIZE) {
     headerStatus = { kind: 'draw' };
   } else if (isSpectator) {
-    headerStatus = { kind: 'spectating', symbol: state.nextSymbol, verb: '落子' };
+    headerStatus = { kind: 'spectating', symbol: state.nextSymbol, gameType: 'gomoku' };
   } else if (isMyTurn && mySymbol) {
-    headerStatus = { kind: 'myTurn', symbol: mySymbol };
+    headerStatus = { kind: 'myTurn', symbol: mySymbol, gameType: 'gomoku' };
   } else {
-    headerStatus = { kind: 'opponentTurn', symbol: state.nextSymbol, verb: '落子' };
+    headerStatus = { kind: 'opponentTurn', symbol: state.nextSymbol, gameType: 'gomoku' };
   }
 
   return (
@@ -191,7 +193,7 @@ export default function Gomoku({
 
       {isHost && (
         <p className="text-center text-xs text-slate-500">
-          房主可在房間頁面按「再來一局」重置棋盤
+          {t('games.gomoku.playAgainHint')}
         </p>
       )}
     </div>

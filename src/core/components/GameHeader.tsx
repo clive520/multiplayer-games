@@ -1,16 +1,19 @@
 import type { ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 import { TurnCountdown } from './TurnCountdown';
 import { PlayerBadge } from './PlayerBadge';
+import type { GameType } from '../types/room';
 
 /**
  * 遊戲狀態（discriminated union）— 各遊戲用來描述當前 header 該顯示什麼訊息
+ * 用 gameType 取代原本的 verb 字串，由 GameHeader 內部用 i18n 翻譯
  */
 export type GameHeaderStatus =
   | { kind: 'won'; winnerName: string }
   | { kind: 'draw' }
-  | { kind: 'myTurn'; symbol: string }
-  | { kind: 'opponentTurn'; symbol: string; verb: '下棋' | '落子' }
-  | { kind: 'spectating'; symbol: string; verb: '下棋' | '落子' };
+  | { kind: 'myTurn'; symbol: string; gameType: GameType }
+  | { kind: 'opponentTurn'; symbol: string; gameType: GameType }
+  | { kind: 'spectating'; symbol: string; gameType: GameType };
 
 interface GameHeaderProps {
   /** 遊戲狀態（決定標題文字 + 顏色） */
@@ -45,6 +48,7 @@ export function GameHeader({
   rightContent,
   extraHint,
 }: GameHeaderProps) {
+  const { t } = useTranslation();
   const f = formatSymbol ?? ((s: string) => s);
 
   let statusNode: ReactNode;
@@ -52,19 +56,19 @@ export function GameHeader({
     case 'won':
       statusNode = (
         <p className="text-lg font-semibold text-yellow-400">
-          {status.winnerName} 獲勝！
+          {t('games.headerStatus.wonBy', { name: status.winnerName })}
         </p>
       );
       break;
     case 'draw':
       statusNode = (
-        <p className="text-lg font-semibold text-slate-300">平手！</p>
+        <p className="text-lg font-semibold text-slate-300">{t('games.headerStatus.draw')}</p>
       );
       break;
-    case 'myTurn':
+    case 'myTurn': {
       statusNode = (
         <p className="text-lg font-semibold text-green-400">
-          輪到你（{f(status.symbol)}）
+          {t(`games.headerStatus.myTurn_${status.gameType}`, { symbol: f(status.symbol) })}
           {extraHint}
           <TurnCountdown
             secondsLeft={turnSecondsLeft}
@@ -73,10 +77,15 @@ export function GameHeader({
         </p>
       );
       break;
-    case 'opponentTurn':
+    }
+    case 'opponentTurn': {
+      const verb = t(`games.verb.${status.gameType}`);
       statusNode = (
         <p className="text-lg text-slate-400">
-          等待對方{status.verb}（{f(status.symbol)}）
+          {t(`games.headerStatus.opponentTurn_${status.gameType}`, {
+            symbol: f(status.symbol),
+            verb,
+          })}
           {extraHint}
           <TurnCountdown
             secondsLeft={turnSecondsLeft}
@@ -85,10 +94,15 @@ export function GameHeader({
         </p>
       );
       break;
-    case 'spectating':
+    }
+    case 'spectating': {
+      const verb = t(`games.verb.${status.gameType}`);
       statusNode = (
         <p className="text-lg text-slate-400">
-          觀戰中（{f(status.symbol)} {status.verb}）
+          {t(`games.headerStatus.spectating_${status.gameType}`, {
+            symbol: f(status.symbol),
+            verb,
+          })}
           {extraHint}
           <TurnCountdown
             secondsLeft={turnSecondsLeft}
@@ -97,6 +111,7 @@ export function GameHeader({
         </p>
       );
       break;
+    }
   }
 
   const showRightSide = players || rightContent;

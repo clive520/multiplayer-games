@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { Room } from '../types/room';
 import { sendReaction, subscribeReactions, type RoomReaction } from '../services/reactionsService';
 
@@ -20,18 +21,20 @@ type Outcome = 'win' | 'lose' | 'draw' | 'observer';
 interface ReactionStyle {
   border: string;
   bg: string;
-  title: string;
   subtitle: string;
   accent: string;
 }
 
-const REACTION_OPTIONS: ReadonlyArray<{ emoji: string; label: string }> = [
-  { emoji: '👏', label: '加油' },
-  { emoji: '🎉', label: '祝賀' },
-  { emoji: '😱', label: '驚訝' },
-  { emoji: '👍', label: '佩服' },
-  { emoji: '💪', label: '鼓勵' },
-];
+const REACTION_KEYS = ['cheer', 'congrats', 'surprise', 'respect', 'encourage'] as const;
+type ReactionKey = (typeof REACTION_KEYS)[number];
+
+const REACTION_EMOJI: Record<ReactionKey, string> = {
+  cheer: '👏',
+  congrats: '🎉',
+  surprise: '😱',
+  respect: '👍',
+  encourage: '💪',
+};
 
 function getOutcome(room: Room, currentUserId: string, isSpectator: boolean): Outcome {
   if (isSpectator) return 'observer';
@@ -44,28 +47,24 @@ const OUTCOME_STYLE: Record<Outcome, ReactionStyle> = {
   win: {
     border: 'border-yellow-500',
     bg: 'bg-gradient-to-b from-yellow-900/30 to-slate-800',
-    title: '你贏了！',
     subtitle: 'text-yellow-300',
     accent: 'text-yellow-400',
   },
   lose: {
     border: 'border-red-700',
     bg: 'bg-gradient-to-b from-red-900/20 to-slate-800',
-    title: '你輸了',
     subtitle: 'text-red-300',
     accent: 'text-red-400',
   },
   draw: {
     border: 'border-slate-500',
     bg: 'bg-gradient-to-b from-slate-700/40 to-slate-800',
-    title: '平手！',
     subtitle: 'text-slate-300',
     accent: 'text-slate-300',
   },
   observer: {
     border: 'border-blue-700',
     bg: 'bg-gradient-to-b from-blue-900/20 to-slate-800',
-    title: '對戰結束',
     subtitle: 'text-blue-300',
     accent: 'text-blue-400',
   },
@@ -81,6 +80,7 @@ export function ResultScreen({
   onPlayAgain,
   isSpectator = false,
 }: ResultScreenProps) {
+  const { t } = useTranslation();
   // 廣播反應（IMPROVEMENTS #8 延伸）：點擊表情，RTDB 同步給所有玩家 + 觀戰者
   const [reactions, setReactions] = useState<RoomReaction[]>([]);
   useEffect(() => {
@@ -100,6 +100,12 @@ export function ResultScreen({
   const outcome = getOutcome(room, currentUserId, isSpectator);
   const style = OUTCOME_STYLE[outcome];
   const winner = room.players.find((p) => p.uid === room.winnerId) ?? null;
+  const outcomeTitle: Record<Outcome, string> = {
+    win: t('resultScreen.youWin'),
+    lose: t('resultScreen.youLose'),
+    draw: t('resultScreen.draw'),
+    observer: t('resultScreen.spectating'),
+  };
 
   return (
     <section
@@ -131,20 +137,20 @@ export function ResultScreen({
 
       <div className="text-center">
         <p className={`text-xs font-semibold uppercase tracking-widest ${style.subtitle}`}>
-          遊戲結束
+          {t('resultScreen.gameOver')}
         </p>
-        <h2 className={`mt-2 text-4xl font-bold ${style.accent}`}>{style.title}</h2>
+        <h2 className={`mt-2 text-4xl font-bold ${style.accent}`}>{outcomeTitle[outcome]}</h2>
 
         {!room.isDraw && winner && (
           <p className="mt-3 text-slate-300">
-            獲勝者：
+            {t('resultScreen.winnerLabel')}
             <span className="font-semibold text-white">{winner.displayName}</span>
             <span className="ml-2 text-slate-500">（{winner.symbol}）</span>
           </p>
         )}
 
         {room.isDraw && (
-          <p className="mt-3 text-slate-400">雙方勢均力敵，棋逢敵手</p>
+          <p className="mt-3 text-slate-400">{t('resultScreen.drawDescription')}</p>
         )}
       </div>
 
@@ -177,7 +183,7 @@ export function ResultScreen({
                   <p className="truncate text-sm font-medium text-white">
                     {p.displayName}
                     {isMe && (
-                      <span className="ml-1 text-xs text-slate-400">（你）</span>
+                      <span className="ml-1 text-xs text-slate-400">{t('common.you')}</span>
                     )}
                   </p>
                   <p className="text-xs text-slate-500">符號：{p.symbol}</p>
@@ -193,7 +199,7 @@ export function ResultScreen({
               <p className={`mt-2 text-center text-xs font-semibold ${
                 isDraw ? 'text-slate-300' : isWinner ? 'text-yellow-400' : 'text-slate-500'
               }`}>
-                {isDraw ? '平手' : isWinner ? '獲勝' : '落敗'}
+                {isDraw ? t('resultScreen.drawShort') : isWinner ? t('resultScreen.win') : t('resultScreen.lose')}
               </p>
             </div>
           );
@@ -202,17 +208,17 @@ export function ResultScreen({
 
       {/* 反應按鈕列：所有在房間的人（玩家 + 觀戰者）都可按，廣播給所有人 */}
       <div className="mt-6 flex flex-wrap justify-center gap-2">
-        {REACTION_OPTIONS.map((r) => (
+        {REACTION_KEYS.map((rk) => (
           <button
-            key={r.emoji}
+            key={rk}
             type="button"
-            onClick={() => handleSendReaction(r.emoji)}
+            onClick={() => handleSendReaction(REACTION_EMOJI[rk])}
             disabled={leaving}
             className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-600 bg-slate-800 text-xl hover:scale-110 hover:bg-slate-700 disabled:opacity-50"
-            title={r.label}
-            aria-label={`傳送反應：${r.label}`}
+            title={t(`resultScreen.reactions.${rk}`)}
+            aria-label={t('resultScreen.reactionsAria', { label: t(`resultScreen.reactions.${rk}`) })}
           >
-            {r.emoji}
+            {REACTION_EMOJI[rk]}
           </button>
         ))}
       </div>
@@ -225,7 +231,7 @@ export function ResultScreen({
             disabled={leaving}
             className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-500 disabled:opacity-50"
           >
-            {leaving ? '處理中...' : '再來一局'}
+            {leaving ? t('resultScreen.processing') : t('resultScreen.playAgain')}
           </button>
         )}
 
@@ -235,7 +241,7 @@ export function ResultScreen({
           disabled={leaving}
           className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500 disabled:opacity-50"
         >
-          {leaving ? '離開中...' : '返回大廳'}
+          {leaving ? t('resultScreen.leaving') : t('resultScreen.backToLobby')}
         </button>
       </div>
     </section>

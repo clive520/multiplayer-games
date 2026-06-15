@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { GameComponentProps } from '../../core/types/game';
 import { tictactoeEngine } from './engine';
 import { ensureGameState, submitMove, subscribeGameState } from './sync';
@@ -12,12 +13,13 @@ export default function TicTacToe({
   currentUserId,
   players,
   isHost,
-  isSpectator = false,
   turnSecondsLeft,
   turnTimeLimitSec,
   onGameFinished,
+  isSpectator = false,
   onActivity,
 }: GameComponentProps) {
+  const { t } = useTranslation();
   const [state, setState] = useState<TicTacToeState | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [hoveredCell, setHoveredCell] = useState<{ row: number; col: number } | null>(null);
@@ -75,14 +77,14 @@ export default function TicTacToe({
       { row, col }
     );
     if (!res.applied) {
-      setError(res.reason ?? '移動失敗');
+      setError(res.reason ?? t('games.tictactoe.moveFailed'));
     }
   };
 
   if (!state) {
     return (
       <div className="rounded-lg border border-slate-700 bg-slate-800 p-6 text-center">
-        <p className="text-slate-400">遊戲載入中...</p>
+        <p className="text-slate-400">{t('games.tictactoe.loading')}</p>
       </div>
     );
   }
@@ -90,7 +92,7 @@ export default function TicTacToe({
   if (!Array.isArray(state.board) || state.board.length !== BOARD_SIZE * BOARD_SIZE) {
     return (
       <div className="rounded-lg border border-red-700 bg-red-900/30 p-4 text-center text-sm text-red-300">
-        遊戲狀態損壞，請重新整理或重置房間
+        {t('games.tictactoe.stateCorrupted')}
       </div>
     );
   }
@@ -102,11 +104,11 @@ export default function TicTacToe({
   } else if (state.moveCount >= BOARD_SIZE * BOARD_SIZE) {
     headerStatus = { kind: 'draw' };
   } else if (isSpectator) {
-    headerStatus = { kind: 'spectating', symbol: state.nextSymbol, verb: '下棋' };
+    headerStatus = { kind: 'spectating', symbol: state.nextSymbol, gameType: 'tictactoe' };
   } else if (isMyTurn && mySymbol) {
-    headerStatus = { kind: 'myTurn', symbol: mySymbol };
+    headerStatus = { kind: 'myTurn', symbol: mySymbol, gameType: 'tictactoe' };
   } else {
-    headerStatus = { kind: 'opponentTurn', symbol: state.nextSymbol, verb: '下棋' };
+    headerStatus = { kind: 'opponentTurn', symbol: state.nextSymbol, gameType: 'tictactoe' };
   }
 
   return (
@@ -179,7 +181,7 @@ export default function TicTacToe({
 
       {isHost && (
         <p className="text-center text-xs text-slate-500">
-          房主可在房間頁面按「再來一局」重置棋盤
+          {t('games.tictactoe.playAgainHint')}
         </p>
       )}
     </div>
