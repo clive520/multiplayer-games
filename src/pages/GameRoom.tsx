@@ -11,7 +11,7 @@ import {
 } from '../core/services/roomService';
 import { resetGameState as resetTictactoeState, submitMove as submitTictactoeMove } from '@/games/tictactoe/sync';
 import { resetGameState as resetGomokuState, submitMove as submitGomokuMove } from '@/games/gomoku/sync';
-import { resetGameState as resetReversiState, submitMove as submitReversiMove } from '@/games/reversi/sync';
+import { resetGameState as resetReversiState, submitMove as submitReversiMove, passTurn as passReversiTurn } from '@/games/reversi/sync';
 import { ResultScreen } from '../core/components/ResultScreen';
 import { MoveHistory } from '../core/components/MoveHistory';
 import { getGameDefinition } from '@/registry';
@@ -196,7 +196,15 @@ export default function GameRoom() {
       const currentRoom = room; // closure
       if (currentRoom.status !== 'playing') return;
       const move = gameDef.aiEngine!.selectMove(rtGameState, aiPlayer.symbol as 'X' | 'O', aiMeta.difficulty);
-      if (!move) return;
+      // 黑白棋：AI 回傳 null 代表「無合法步 → pass」
+      if (!move) {
+        if (currentRoom.gameType === 'reversi') {
+          passReversiTurn(roomId!, aiPlayer.uid, aiPlayer.symbol).catch((err) => {
+            console.error('[AI] passTurn 失敗', err);
+          });
+        }
+        return;
+      }
       const promise =
         currentRoom.gameType === 'tictactoe'
           ? submitTictactoeMove(roomId!, aiPlayer.uid, aiPlayer.symbol, aiPlayer.displayName, move as { row: number; col: number })
