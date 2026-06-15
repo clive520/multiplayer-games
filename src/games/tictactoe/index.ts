@@ -6,7 +6,7 @@ import type { TicTacToeState } from './types';
 
 export const tictactoeDefinition: GameDefinition<TicTacToeState> = {
   id: 'tictactoe',
-  name: '井字遊戲',
+  name: 'games.tictactoe.name',
   description: '兩人輪流在 3×3 棋盤上放置 X 與 O，先連成一線者獲勝。',
   minPlayers: 2,
   maxPlayers: 2,

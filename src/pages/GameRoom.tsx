@@ -346,7 +346,7 @@ export default function GameRoom() {
             <gameDef.icon className="h-10 w-10 text-slate-200" />
           )}
           <div>
-            <h1 className="text-xl font-bold">{gameDef?.name ?? room.gameType}</h1>
+            <h1 className="text-xl font-bold">{gameDef ? t(gameDef.name) : room.gameType}</h1>
             <p className="text-sm text-slate-400">
               {t('gameRoom.status')}
               {room.status === 'waiting' ? t('gameRoom.statusWaiting') : isPlaying ? t('gameRoom.statusPlaying') : t('gameRoom.statusFinished')}

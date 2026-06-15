@@ -21,7 +21,9 @@ import {
   type AIDifficulty,
 } from '../core/types/ai';
 
-const GAME_LABELS: Record<string, string> = Object.fromEntries(
+// GameDefinition.name 現在是 i18n key，渲染時用 t() 翻譯
+// 保留 GAME_LABELS 給 room card 用（也透過 t()）
+const GAME_LABEL_KEYS: Record<string, string> = Object.fromEntries(
   gameRegistry.map((g) => [g.id, g.name])
 );
 
@@ -296,7 +298,7 @@ export default function Lobby() {
                         selectedGame === g.id ? 'text-white' : 'text-slate-300'
                       }`}
                     />
-                    {g.name}
+                    {t(g.name)}
                     <span className="text-xs opacity-70">
                       ({g.minPlayers}-{g.maxPlayers} 人)
                     </span>
@@ -547,7 +549,7 @@ export default function Lobby() {
                         )}
                         <div>
                           <p className="font-medium">
-                            {GAME_LABELS[room.gameType] ?? room.gameType}
+                            {t(GAME_LABEL_KEYS[room.gameType] ?? room.gameType)}
                             {room.hasPassword && (
                               <span
                                 className="ml-2 text-xs text-yellow-400"

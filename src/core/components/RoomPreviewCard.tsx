@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import type { RoomSummary } from '../types/room';
 import { TURN_TIME_LIMITS } from '../types/room';
 import { BoardThumbnail } from './BoardThumbnail';
@@ -20,6 +21,7 @@ export function RoomPreviewCard({ room, gameDef, gameState }: RoomPreviewCardPro
   const turnTimeValid = TURN_TIME_LIMITS.includes(
     room.turnTimeLimitSec as (typeof TURN_TIME_LIMITS)[number]
   );
+  const { t } = useTranslation();
   return (
     <div
       role="tooltip"
@@ -33,7 +35,9 @@ export function RoomPreviewCard({ room, gameDef, gameState }: RoomPreviewCardPro
               <gameDef.icon className="h-6 w-6 text-slate-200" />
             )}
             <div>
-              <h3 className="text-sm font-bold text-white">{gameDef?.name ?? room.gameType}</h3>
+              <h3 className="text-sm font-bold text-white">
+                {gameDef ? t(gameDef.name) : room.gameType}
+              </h3>
               {gameDef?.description && (
                 <p className="text-xs text-slate-400">{gameDef.description}</p>
               )}

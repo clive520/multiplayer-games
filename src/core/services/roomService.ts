@@ -196,7 +196,7 @@ export async function createRoom(
 
   // 對戰電腦模式：確認該遊戲有 AI engine
   if (options.aiDifficulty && !def.aiEngine) {
-    throw new Error(`${def.name} 尚未支援對戰電腦`);
+    throw new Error(`${def.name} (i18n: errors.aiNotSupported)`);
   }
 
   const password = options.password?.trim() || '';
