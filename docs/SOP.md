@@ -150,6 +150,52 @@ git push origin main
 > 預防：每次改 rules 檔，先 `firebase deploy` 再 `git push`，或 commit message 寫 `[skip-vercel]` 提醒自己。  
 > 已發生在 2026-06-15 #20 聊天上線時。
 
+> ⚠️ **更更嚴重的陷阱（靜默版）**：Firestore rules 的 `rooms/{roomId}` update 規則用 `affectedKeys().hasOnly([...])` 白名單限制可寫入的欄位。**新增 Room 欄位時必須同步加到白名單**！
+> - 症狀：前端看起來正常，但功能失效（額度沒生效 / 狀態沒更新）。Console 沒錯誤（Firebase SDK 預設吞掉 permission denied 警告）。
+> - 例：#12 悔棋功能 `undoUsedByUids` 沒在白名單 → `incrementUndoQuota` 寫入被默默擋掉 → 悔棋限額失效 → 可以一直悔棋。
+> - 預防：見下方「改資料結構 Checklist」。
+
+### 3.3.1 改資料結構 Checklist（必查）
+
+**情境 A：新增 / 改 Room 結構（Firestore `rooms/{roomId}` doc 的欄位）**
+- [ ] `src/core/types/room.ts`：加欄位到 `Room` interface
+- [ ] `src/core/services/roomService.ts`：`roomFromDoc` 解析新欄位（給 `?? {}` 預設值，避免舊 doc 讀不到）
+- [ ] **`firebase/firestore.rules`**：在 `rooms/{roomId}` update 規則的 `hasOnly([...])` 白名單加新欄位名
+- [ ] 部署：`firebase deploy --only firestore:rules`
+- [ ] 任何 `updateDoc(ref, { ... })` 呼叫的 `affectedKeys` 都要在白名單內
+- [ ] 跨用戶寫入的欄位（如 `users/{uid}` 的 `overall` / `byGame`）也要在 `users/{uid}` update 規則的白名單內
+
+**情境 B：新增 / 改 RTDB 結構（`rooms-live/{roomId}/state` / `chat` / `reactions` / 新節點）**
+- [ ] 程式碼：寫入新節點
+- [ ] **`firebase/database.rules.json`**：在對應路徑加 `.read` / `.write` 規則
+- [ ] 必要時加 `.validate` 限制必填欄位
+- [ ] 部署：`firebase deploy --only database`
+- [ ] **不要假設 emulator 行為等同 production**（emulator 沒開時，本地測試不會擋 PERMISSION_DENIED）
+
+**情境 C：新增 / 改 useEffect、useState、useCallback**
+- [ ] 所有 React hooks 必須在 **early return 之前**（rules of hooks）
+- [ ] 違反 → React error #310「Rendered more hooks than during the previous render」
+- [ ] 參考 #12 悔棋 Phase A 的 bug：把 useEffect 放在 `if (loading) return` 之後，第一次 render 走 early return、第二次走完整邏輯 → hook 數量變化
+
+**驗證 SOP**：每次 commit 前
+```bash
+# 三項都通過
+npm run typecheck
+npm test
+npm run build
+```
+
+然後：
+```bash
+git push origin main
+# Vercel 自動部署前端
+
+# 若是改了 firebase/*.rules
+firebase deploy --only firestore:rules,database
+```
+
+
+
 ### 3.4 部署後驗證清單
 - [ ] 網站可開啟（HTTP 200）
 - [ ] Google 登入按鈕可運作（已加 Authorized Domain）
