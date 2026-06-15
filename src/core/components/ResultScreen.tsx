@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Room } from '../types/room';
 import { sendReaction, subscribeReactions, type RoomReaction } from '../services/reactionsService';
+import { REACTION_SOUNDS } from '../utils/sound';
 
 interface ResultScreenProps {
   room: Room;
@@ -28,12 +29,22 @@ interface ReactionStyle {
 const REACTION_KEYS = ['cheer', 'congrats', 'surprise', 'respect', 'encourage'] as const;
 type ReactionKey = (typeof REACTION_KEYS)[number];
 
+// 可愛版本：🫶 🎀 🥰 💖 ✨（比原本的 👏 🎉 😱 👍 💪 更軟、更 kawaii）
 const REACTION_EMOJI: Record<ReactionKey, string> = {
-  cheer: '👏',
-  congrats: '🎉',
-  surprise: '😱',
-  respect: '👍',
-  encourage: '💪',
+  cheer: '🫶',        // heart hands
+  congrats: '🎀',     // ribbon
+  surprise: '🥰',     // smiling face with hearts
+  respect: '💖',      // sparkling heart
+  encourage: '✨',    // sparkles
+};
+
+// 對應到 REACTION_SOUNDS 的音效函式
+const REACTION_SOUND_MAP: Record<ReactionKey, () => void> = {
+  cheer: REACTION_SOUNDS.cheer,
+  congrats: REACTION_SOUNDS.congrats,
+  surprise: REACTION_SOUNDS.surprise,
+  respect: REACTION_SOUNDS.respect,
+  encourage: REACTION_SOUNDS.encourage,
 };
 
 function getOutcome(room: Room, currentUserId: string, isSpectator: boolean): Outcome {
@@ -88,10 +99,16 @@ export function ResultScreen({
     return subscribeReactions(room.id, setReactions);
   }, [room.id]);
 
-  const handleSendReaction = (emoji: string) => {
+  const handleSendReaction = (key: ReactionKey) => {
     if (leaving) return;
+    // 播放對應音效（瀏覽器需要使用者互動，這裡的 click 算互動）
+    try {
+      REACTION_SOUND_MAP[key]();
+    } catch {
+      // 音效失敗不擋功能
+    }
     sendReaction(room.id, {
-      emoji,
+      emoji: REACTION_EMOJI[key],
       uid: currentUserId,
       displayName: currentUserDisplayName,
     });
@@ -212,7 +229,7 @@ export function ResultScreen({
           <button
             key={rk}
             type="button"
-            onClick={() => handleSendReaction(REACTION_EMOJI[rk])}
+            onClick={() => handleSendReaction(rk)}
             disabled={leaving}
             className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-600 bg-slate-800 text-xl hover:scale-110 hover:bg-slate-700 disabled:opacity-50"
             title={t(`resultScreen.reactions.${rk}`)}
