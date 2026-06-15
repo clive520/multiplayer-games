@@ -4,6 +4,19 @@ import { LanguageSwitcher } from '../core/components/LanguageSwitcher';
 import { useSettings } from '../core/hooks/useSettings';
 import { useAuth } from '../core/auth/useAuth';
 import { signOut } from '../core/auth/googleSignIn';
+import { THEME_IDS, type ThemeId } from '../core/services/settingsService';
+
+/** 主題按鈕：顯示「顏色小圓點 + 名稱」 */
+function themeLabel(t: (k: string) => string, id: ThemeId): string {
+  return t(`settings.theme${id.charAt(0).toUpperCase()}${id.slice(1)}`);
+}
+
+/** 主題預覽色（按鈕左邊的小圓點） */
+const THEME_SWATCH: Record<ThemeId, string> = {
+  dark: 'bg-slate-800',
+  coffee: 'bg-amber-200',
+  green: 'bg-green-300',
+};
 
 export default function Settings() {
   const navigate = useNavigate();
@@ -19,7 +32,7 @@ export default function Settings() {
           <LanguageSwitcher />
           <button
             onClick={() => navigate('/lobby')}
-            className="rounded dark:bg-slate-700 bg-coffee-200 px-3 py-1.5 text-sm hover:dark:bg-slate-600 bg-coffee-300"
+            className="rounded dark:bg-slate-700 bg-app-hover px-3 py-1.5 text-sm hover:dark:bg-slate-600 bg-app-border-strong"
           >
             {t('settings.backToLobby')}
           </button>
@@ -27,7 +40,7 @@ export default function Settings() {
       </header>
 
       {/* 音效區塊 */}
-      <section className="mb-6 rounded-lg border dark:border-slate-700 border-coffee-200 dark:bg-slate-800 bg-coffee-100 p-4">
+      <section className="mb-6 rounded-lg border dark:border-slate-700 border-app-border dark:bg-slate-800 bg-app-card p-4">
         <h2 className="mb-3 text-sm font-semibold dark:text-slate-300 text-slate-700">{t('settings.sectionSound')}</h2>
         <label className="flex cursor-pointer items-center justify-between gap-3">
           <div>
@@ -40,7 +53,7 @@ export default function Settings() {
             aria-checked={settings.muted}
             onClick={() => setMuted(!settings.muted)}
             className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors ${
-              settings.muted ? 'dark:bg-slate-600 bg-coffee-300' : 'bg-blue-600'
+              settings.muted ? 'dark:bg-slate-600 bg-app-border-strong' : 'bg-blue-600'
             }`}
           >
             <span
@@ -53,7 +66,7 @@ export default function Settings() {
       </section>
 
       {/* 語言區塊 */}
-      <section className="mb-6 rounded-lg border dark:border-slate-700 border-coffee-200 dark:bg-slate-800 bg-coffee-100 p-4">
+      <section className="mb-6 rounded-lg border dark:border-slate-700 border-app-border dark:bg-slate-800 bg-app-card p-4">
         <h2 className="mb-3 text-sm font-semibold dark:text-slate-300 text-slate-700">{t('settings.sectionLanguage')}</h2>
         <div>
           <p className="mb-1 text-sm font-medium dark:text-white text-slate-900">{t('settings.language')}</p>
@@ -67,7 +80,7 @@ export default function Settings() {
                 className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
                   settings.language === lang
                     ? 'bg-blue-600 dark:text-white text-slate-900'
-                    : 'dark:bg-slate-700 bg-coffee-200 dark:text-slate-300 text-slate-700 hover:dark:bg-slate-600 bg-coffee-300'
+                    : 'dark:bg-slate-700 bg-app-hover dark:text-slate-300 text-slate-700 hover:dark:bg-slate-600 bg-app-border-strong'
                 }`}
               >
                 {lang === 'zh-TW' ? '繁體中文' : 'English'}
@@ -77,8 +90,8 @@ export default function Settings() {
         </div>
       </section>
 
-      {/* 顯示區塊（主題 — IMPROVEMENTS #18） */}
-      <section className="mb-6 rounded-lg border border-slate-700 dark:border-slate-700 border-coffee-200 dark:bg-slate-800 bg-coffee-100 p-4">
+      {/* 顯示區塊（主題 — IMPROVEMENTS #18 多主題） */}
+      <section className="mb-6 rounded-lg border dark:border-slate-700 border-app-border dark:bg-slate-800 bg-app-card p-4">
         <h2 className="mb-3 text-sm font-semibold dark:text-slate-300 text-slate-700">
           {t('settings.sectionDisplay')}
         </h2>
@@ -90,35 +103,35 @@ export default function Settings() {
             {t('settings.themeHint')}
           </p>
           <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() => setTheme('dark')}
-              className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
-                settings.theme === 'dark'
-                  ? 'bg-blue-600 text-white'
-                  : 'dark:bg-slate-700 bg-coffee-200 dark:text-white text-slate-900 hover:dark:bg-slate-600 hover:bg-slate-300'
-              }`}
-            >
-              {t('settings.themeDark')}
-            </button>
-            <button
-              type="button"
-              onClick={() => setTheme('light')}
-              className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
-                settings.theme === 'light'
-                  ? 'bg-blue-600 text-white'
-                  : 'dark:bg-slate-700 bg-coffee-200 dark:text-white text-slate-900 hover:dark:bg-slate-600 hover:bg-slate-300'
-              }`}
-            >
-              {t('settings.themeLight')}
-            </button>
+            {THEME_IDS.map((id) => {
+              const isActive = settings.theme === id;
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => setTheme(id)}
+                  aria-pressed={isActive}
+                  className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition ${
+                    isActive
+                      ? 'bg-blue-600 text-white'
+                      : 'dark:bg-slate-700 bg-app-hover dark:text-slate-200 text-slate-800 hover:dark:bg-slate-600 hover:bg-slate-300'
+                  }`}
+                >
+                  <span
+                    aria-hidden
+                    className={`inline-block h-4 w-4 rounded-full border border-slate-400 dark:border-slate-500 ${THEME_SWATCH[id]}`}
+                  />
+                  {themeLabel(t, id)}
+                </button>
+              );
+            })}
           </div>
         </div>
       </section>
 
       {/* 帳號區塊（如果有登入就顯示登出） */}
       {user && (
-        <section className="mb-6 rounded-lg border dark:border-slate-700 border-coffee-200 dark:bg-slate-800 bg-coffee-100 p-4">
+        <section className="mb-6 rounded-lg border dark:border-slate-700 border-app-border dark:bg-slate-800 bg-app-card p-4">
           <h2 className="mb-3 text-sm font-semibold dark:text-slate-300 text-slate-700">帳號</h2>
           <div className="flex items-center justify-between">
             <p className="text-sm dark:text-slate-300 text-slate-700">
@@ -129,7 +142,7 @@ export default function Settings() {
                 await signOut();
                 navigate('/');
               }}
-              className="rounded dark:bg-slate-700 bg-coffee-200 px-3 py-1.5 text-sm dark:text-slate-200 text-slate-800 hover:dark:bg-slate-600 bg-coffee-300"
+              className="rounded dark:bg-slate-700 bg-app-hover px-3 py-1.5 text-sm dark:text-slate-200 text-slate-800 hover:dark:bg-slate-600 bg-app-border-strong"
             >
               {t('nav.signOut')}
             </button>

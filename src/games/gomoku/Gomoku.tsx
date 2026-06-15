@@ -82,7 +82,7 @@ export default function Gomoku({
 
   if (!state) {
     return (
-      <div className="rounded-lg border dark:border-slate-700 border-coffee-200 dark:bg-slate-800 bg-coffee-100 p-6 text-center">
+      <div className="rounded-lg border dark:border-slate-700 border-app-border dark:bg-slate-800 bg-app-card p-6 text-center">
         <p className="dark:text-slate-400 text-slate-600">{t('games.gomoku.loading')}</p>
       </div>
     );

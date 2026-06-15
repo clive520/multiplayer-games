@@ -6,6 +6,53 @@
 
 ---
 
+## 2026-06-15（Day 3）— #18 多淺色主題架構（CSS 變數 + 語義色）
+
+**用戶請求**：把淺色模式從「單一淺咖啡主題」改成「多淺色主題架構」，先提供綠色系（深→中→淺→極淺 4 色階）。
+
+**決策**：
+- 用 **CSS 變數** 取代「寫死 coffee-* class」做法
+- 設計 5 個語義色 token：`app-bg / app-card / app-hover / app-border / app-border-strong`
+- 預設走 `:root` 的淺咖啡，`theme-green` 覆寫為綠色系
+- ThemeId: `'dark' | 'coffee' | 'green'`，未來加新主題只加 `:root.theme-X` 區塊 + ThemeId 成員 + Settings 按鈕，**元件完全不用動**
+
+**實作**：
+1. `tailwind.config.js`：加 5 個 app-* 顏色（值為 `var(--app-*)`）+ 5 個 green 階色
+2. `index.css`：
+   - `:root` 預設 5 個淺咖啡 CSS 變數
+   - `:root.theme-green` 覆寫為綠色
+3. `scripts/replace-coffee-with-vars.mjs`：批次替換工具
+   - `bg-coffee-50/100/200/300` → `bg-app-bg/card/hover/border-strong`
+   - `border-coffee-200/300` → `border-app-border/border-strong`
+   - `hover:bg-coffee-X` → `hover:bg-app-X`
+   - 排除 `tailwind.config.js`、自身腳本
+   - dry-run 預設、 `--apply` 才寫入
+4. **跑批次**：18 個檔案，**157 處替換**
+5. `settingsService.ts`：
+   - 新 `ThemeId` type + `THEME_IDS` 常數
+   - `isValidTheme` 加 'green'
+6. `useSettings.ts`：
+   - `applyTheme` 改寫：先清掉所有 theme-X + dark class，再依 theme 加回去
+   - 自動清理殘留 class
+7. `Settings.tsx`：用 `THEME_IDS.map()` 渲染按鈕
+   - 每個按鈕左邊加圓色塊（`bg-slate-800 / bg-amber-200 / bg-green-300`）當 swatch
+   - `aria-pressed` 標示當前選中
+8. i18n：`themeDark` 從「深色模式」→「深色」、「themeLight」拆成「淺咖啡 / 森林綠」（中英都改）
+9. `settingsService.test.ts`：原 7 個測試 + 2 個新測試（不支援 theme fallback、3 主題都能存取）
+
+**效果**：
+- 149/149 測試過、TypeScript 0 錯誤、Vite build 成功
+- 之後加藍/紫/橙/...主題只需 3 步驟
+- 17 個檔案 121 處套用新語義色，UI 行為/外觀不變
+
+**後續**：
+- 之後可以做 #20 房間聊天、#12 悔棋
+- 可能要小修：GameHeader SVG 顏色、棋盤 hover 偏淡、ResultScreen 外框配色（等用戶反饋）
+
+---
+
+## 2026-06-12（Day 2）— 部署、文件整理
+
 ## 2026-06-12（Day 2）— 部署、文件整理
 
 ### ~11:50 — 井字遊戲棋子視覺改為實心圓

@@ -43,21 +43,21 @@ export default function Leaderboard() {
           {user && (
             <button
               onClick={() => navigate('/profile')}
-              className="rounded dark:bg-slate-700 bg-coffee-200 px-3 py-1.5 text-sm hover:dark:bg-slate-600 bg-coffee-300"
+              className="rounded dark:bg-slate-700 bg-app-hover px-3 py-1.5 text-sm hover:dark:bg-slate-600 bg-app-border-strong"
             >
               {t('nav.profile')}
             </button>
           )}
           <button
             onClick={() => navigate('/lobby')}
-            className="rounded dark:bg-slate-700 bg-coffee-200 px-3 py-1.5 text-sm hover:dark:bg-slate-600 bg-coffee-300"
+            className="rounded dark:bg-slate-700 bg-app-hover px-3 py-1.5 text-sm hover:dark:bg-slate-600 bg-app-border-strong"
           >
             {t('nav.lobby')}
           </button>
           {user ? (
             <button
               onClick={() => signOut()}
-              className="rounded dark:bg-slate-700 bg-coffee-200 px-3 py-1.5 text-sm hover:dark:bg-slate-600 bg-coffee-300"
+              className="rounded dark:bg-slate-700 bg-app-hover px-3 py-1.5 text-sm hover:dark:bg-slate-600 bg-app-border-strong"
             >
               {t('nav.signOut')}
             </button>
@@ -75,7 +75,7 @@ export default function Leaderboard() {
               className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition ${
                 scope === tab.value
                   ? 'bg-blue-600 dark:text-white text-slate-900'
-                  : 'dark:bg-slate-700 bg-coffee-200 dark:text-slate-300 text-slate-700 hover:dark:bg-slate-600 bg-coffee-300'
+                  : 'dark:bg-slate-700 bg-app-hover dark:text-slate-300 text-slate-700 hover:dark:bg-slate-600 bg-app-border-strong'
               }`}
             >
               {Icon && <Icon className="h-5 w-5" />}
@@ -94,16 +94,16 @@ export default function Leaderboard() {
       {loading ? (
         <p className="dark:text-slate-400 text-slate-600">{t('common.loading')}</p>
       ) : entries.length === 0 ? (
-        <div className="rounded-lg border border-dashed dark:border-slate-700 border-coffee-200 p-8 text-center text-slate-500">
+        <div className="rounded-lg border border-dashed dark:border-slate-700 border-app-border p-8 text-center text-slate-500">
           {t('leaderboard.empty')}
         </div>
       ) : (
-        <div className="overflow-hidden rounded-lg border dark:border-slate-700 border-coffee-200">
-          <div className="border-b dark:border-slate-700 border-coffee-200 dark:bg-slate-800 bg-coffee-100 px-4 py-2 text-xs dark:text-slate-400 text-slate-600">
+        <div className="overflow-hidden rounded-lg border dark:border-slate-700 border-app-border">
+          <div className="border-b dark:border-slate-700 border-app-border dark:bg-slate-800 bg-app-card px-4 py-2 text-xs dark:text-slate-400 text-slate-600">
             {t('common.loading')}：{gameLabel}（{entries.length}）
           </div>
           <table className="w-full">
-            <thead className="dark:bg-slate-800 bg-coffee-100 text-xs dark:text-slate-400 text-slate-600">
+            <thead className="dark:bg-slate-800 bg-app-card text-xs dark:text-slate-400 text-slate-600">
               <tr>
                 <th className="px-3 py-2 text-left">#</th>
                 <th className="px-3 py-2 text-left">{t('leaderboard.player')}</th>
@@ -122,7 +122,7 @@ export default function Leaderboard() {
                 return (
                   <tr
                     key={entry.uid}
-                    className={`border-t dark:border-slate-700 border-coffee-200 ${
+                    className={`border-t dark:border-slate-700 border-app-border ${
                       isMe ? 'bg-blue-900/20' : ''
                     }`}
                   >
@@ -138,7 +138,7 @@ export default function Leaderboard() {
                             className="h-6 w-6 rounded-full"
                           />
                         ) : (
-                          <div className="h-6 w-6 rounded-full dark:bg-slate-700 bg-coffee-200" />
+                          <div className="h-6 w-6 rounded-full dark:bg-slate-700 bg-app-hover" />
                         )}
                         <span className="text-sm font-medium dark:text-white text-slate-900">
                           {entry.displayName}

@@ -9,11 +9,11 @@
 ## 進度總覽
 
 - **總項目**：26
-- **✅ 已完成**：13
+- **✅ 已完成**：14
 - **⏳ 進行中**：0
-- **⬜ 待辦**：13
-- **已完成優先項目**：1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 5a, 16（部分）, 10a（部分）
-- **剩餘優先項目**：17, 18, 20, 12, 13, 19, 21, 22, 15, 14, 24, 25, 26
+- **⬜ 待辦**：12
+- **已完成優先項目**：1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 5a, 16（部分）, 10a（部分）, 17, 18, 18 補強（多淺色主題架構）
+- **剩餘優先項目**：20, 12, 13, 19, 21, 22, 15, 14, 24, 25, 26
 
 ### 階段紀錄
 - **階段一**（#1-#8）：結構面 + 觀戰體驗 ✅
@@ -22,8 +22,12 @@
 - **階段四**（#16 音效 + #10a 反應廣播）：部分完成
   - ✅ 反應按鈕加 Web Audio API 音效
   - ✅ 5 個貼圖換成可愛版（🫶 🎀 🥰 💖 ✨）
-  - ❌ 缺少靜音 / 音量 Settings 切換（待 #17）
-- **階段五**：使用者體驗 + 主題 + 設定（進行中）
+  - ✅ 缺少靜音 / 音量 Settings 切換（由 #17 補完）
+- **階段五**（#17 設定頁 + #18 淺色 + 多主題）：✅ 完成
+  - ✅ Settings 集中管理音效/語言/主題/帳號
+  - ✅ Tailwind dark: + 淺咖啡預設 + 森林綠第二主題
+  - ✅ CSS 變數架構（bg-app-card / border-app-border），加新主題只要在 :root 加 .theme-X
+  - ✅ 之後加新主題（藍/紫/...）只需 5 個 CSS 變數 + ThemeId type 加成員 + Settings 按鈕，元件完全不用動
 
 ---
 
@@ -486,7 +490,7 @@
 
 ---
 
-### 18. 主題（淺色模式）— ⬜ 待辦
+### 18. 主題（淺色模式）— ✅ 完成
 
 **類別**：玩家體驗
 
@@ -499,8 +503,25 @@
 - 白天/晚上使用體驗差很多
 - 擴展設計自由度
 
-**完成紀錄**：
-- ⬜
+**完成紀錄**（2025-01-15）：
+- ✅ Tailwind `darkMode: 'class'`
+- ✅ `<html class="dark">` 預設（向後相容）
+- ✅ Settings 加 2 選項（深色/淺色）切換
+- ✅ localStorage 持久化（`multiplayer-games-settings` 內 theme 欄位）
+- ✅ 批次改 18 個檔案 121 處 `coffee-*` class 為 `bg-app-*` 語義色
+- ✅ 淺色用淺咖啡 `#f9f1de` 取代純白，避免太亮
+- ✅ `index.css` body fallback 顏色（防 FOUC）
+- ✅ useSettings.applyTheme 自動套用 class
+- ✅ **多淺色主題架構**（#18 補強）：
+  - 採用 **CSS 變數 + 語義色 class** 設計
+  - Tailwind 定義 `app-bg / app-card / app-hover / app-border / app-border-strong` 指向 `var(--app-*)`
+  - `:root` 預設淺咖啡、`:root.theme-green` 覆寫為森林綠
+  - ThemeId 從 `'dark' | 'light'` 擴展為 `'dark' | 'coffee' | 'green'`
+  - Settings 加綠色按鈕（顯示色塊 swatch + 名稱）
+  - 之後加新主題（藍/紫/...）只需 3 步：加 `:root.theme-X` 區塊 + ThemeId 加成員 + Settings 加按鈕，**元件完全不用動**
+  - useSettings.applyTheme 自動清掉舊的 theme-X class，避免殘留
+- ✅ 2 個新 settingsService 測試（不支援 theme fallback、3 主題都能存取）
+- ✅ 149 個單元測試全過、TypeScript 0 錯誤、Vite build 成功
 
 ---
 

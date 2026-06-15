@@ -2,17 +2,46 @@
 @tailwind components;
 @tailwind utilities;
 
-/* IMPROVEMENTS #18：light/dark 模式基底背景
-   淺色模式用淺咖啡色 (#f9f1de coffee-50) 取代純白，避免太亮
-   預設走 Tailwind dark: 前綴（<html class="dark">）
-   :root 設 fallback 顏色避免 FOUC（首次渲染時還沒套上 dark class） */
+/* IMPROVEMENTS #18：light/dark 模式基底背景 + 多主題支援
+
+   架構：
+   - Tailwind dark: 變數處理深色模式（<html class="dark">）
+   - CSS 變數處理多個淺色主題（class="theme-green" 等）
+   - 預設走淺咖啡主題（不需要 class）
+
+   為什麼用 CSS 變數？
+   - 元件用 bg-app-card / border-app-border 這類語義色
+   - 切換主題時只改 :root 的 CSS 變數值，不用重 render 或改 class
+   - 新增主題只要加 :root.theme-X 區塊，不用動任何元件
+
+   預設值（淺咖啡）：
+   - --app-bg / --app-card / --app-hover / --app-border / --app-border-strong
+
+   森林綠（:root.theme-green）：
+   - 同 5 個變數，換成綠色系
+*/
 :root {
   font-family: system-ui, -apple-system, 'Segoe UI', 'Microsoft JhengHei', sans-serif;
   line-height: 1.5;
   font-weight: 400;
   color-scheme: light dark;
-  background-color: #f9f1de; /* coffee-50 淺咖啡 */
+  /* 多主題 CSS 變數（預設淺咖啡） */
+  --app-bg: #f9f1de;
+  --app-card: #f5ebd6;
+  --app-hover: #ede4d3;
+  --app-border: #e5d9bf;
+  --app-border-strong: #c8b89c;
+  background-color: var(--app-bg);
   color: #0f172a;
+}
+
+:root.theme-green {
+  /* 森林綠色系（多主題切換） */
+  --app-bg: #d8e8d5;
+  --app-card: #b8d8b8;
+  --app-hover: #9cc9a0;
+  --app-border: #82b58c;
+  --app-border-strong: #4d7a5a;
 }
 
 html.dark {

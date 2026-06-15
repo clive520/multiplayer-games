@@ -38,8 +38,9 @@
     "language": "Interface language",
     "languageHint": "Changes take effect immediately",
     "theme": "Theme",
-    "themeDark": "Dark mode",
-    "themeLight": "Light mode",
+    "themeDark": "Dark",
+    "themeCoffee": "Coffee",
+    "themeGreen": "Forest",
     "themeHint": "Changes take effect immediately",
     "saved": "Saved",
     "autoSaved": "Settings auto-saved"

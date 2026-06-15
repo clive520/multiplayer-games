@@ -38,8 +38,9 @@
     "language": "介面語言",
     "languageHint": "切換後立即生效",
     "theme": "主題",
-    "themeDark": "深色模式",
-    "themeLight": "淺色模式",
+    "themeDark": "深色",
+    "themeCoffee": "淺咖啡",
+    "themeGreen": "森林綠",
     "themeHint": "切換後立即生效",
     "saved": "已儲存",
     "autoSaved": "設定自動儲存"

@@ -45,19 +45,19 @@ function HomePage() {
           </button>
           <button
             onClick={() => navigate('/leaderboard')}
-            className="rounded-lg dark:bg-slate-700 bg-coffee-200 dark:bg-slate-700 bg-coffee-200 px-6 py-3 font-medium dark:text-white text-slate-900 hover:dark:bg-slate-600 bg-coffee-300 dark:hover:dark:bg-slate-600 bg-coffee-300 hover:bg-coffee-300"
+            className="rounded-lg dark:bg-slate-700 bg-app-hover dark:bg-slate-700 bg-app-hover px-6 py-3 font-medium dark:text-white text-slate-900 hover:dark:bg-slate-600 bg-app-border-strong dark:hover:dark:bg-slate-600 bg-app-border-strong hover:bg-app-border-strong"
           >
             排行榜
           </button>
           <button
             onClick={() => navigate('/profile')}
-            className="rounded-lg dark:bg-slate-700 bg-coffee-200 dark:bg-slate-700 bg-coffee-200 px-6 py-3 font-medium dark:text-white text-slate-900 hover:dark:bg-slate-600 bg-coffee-300 dark:hover:dark:bg-slate-600 bg-coffee-300 hover:bg-coffee-300"
+            className="rounded-lg dark:bg-slate-700 bg-app-hover dark:bg-slate-700 bg-app-hover px-6 py-3 font-medium dark:text-white text-slate-900 hover:dark:bg-slate-600 bg-app-border-strong dark:hover:dark:bg-slate-600 bg-app-border-strong hover:bg-app-border-strong"
           >
             我的檔案
           </button>
           <button
             onClick={() => navigate('/settings')}
-            className="rounded-lg dark:bg-slate-700 bg-coffee-200 dark:bg-slate-700 bg-coffee-200 px-6 py-3 font-medium dark:text-white text-slate-900 hover:dark:bg-slate-600 bg-coffee-300 dark:hover:dark:bg-slate-600 bg-coffee-300 hover:bg-coffee-300"
+            className="rounded-lg dark:bg-slate-700 bg-app-hover dark:bg-slate-700 bg-app-hover px-6 py-3 font-medium dark:text-white text-slate-900 hover:dark:bg-slate-600 bg-app-border-strong dark:hover:dark:bg-slate-600 bg-app-border-strong hover:bg-app-border-strong"
           >
             設定
           </button>

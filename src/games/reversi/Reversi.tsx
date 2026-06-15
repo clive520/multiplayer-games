@@ -97,7 +97,7 @@ export default function Reversi({
 
   if (!state) {
     return (
-      <div className="rounded-lg border dark:border-slate-700 border-coffee-200 dark:bg-slate-800 bg-coffee-100 p-6 text-center">
+      <div className="rounded-lg border dark:border-slate-700 border-app-border dark:bg-slate-800 bg-app-card p-6 text-center">
         <p className="dark:text-slate-400 text-slate-600">{t('games.reversi.loading')}</p>
       </div>
     );
@@ -203,7 +203,7 @@ export default function Reversi({
                   className={`rounded px-3 py-1 text-xs ${
                     hintMode
                       ? 'bg-blue-600 dark:text-white text-slate-900'
-                      : 'dark:bg-slate-700 bg-coffee-200 dark:text-slate-300 text-slate-700 hover:dark:bg-slate-600 bg-coffee-300'
+                      : 'dark:bg-slate-700 bg-app-hover dark:text-slate-300 text-slate-700 hover:dark:bg-slate-600 bg-app-border-strong'
                   }`}
                 >
                   {hintMode ? t('games.reversi.hideHints') : t('games.reversi.showHints')}

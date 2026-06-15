@@ -116,7 +116,7 @@ export function GameHeader({
 
   const showRightSide = players || rightContent;
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border dark:border-slate-700 border-coffee-200 dark:bg-slate-800 bg-coffee-100 p-4">
+    <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border dark:border-slate-700 border-app-border dark:bg-slate-800 bg-app-card p-4">
       <div>{statusNode}</div>
       {showRightSide && (
         <div className="flex flex-wrap items-center gap-3 text-sm">

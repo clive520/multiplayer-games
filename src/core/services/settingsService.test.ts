@@ -34,7 +34,7 @@ describe('settingsService', () => {
   });
 
   it('saveSettings 後 loadSettings 回傳相同資料', () => {
-    const data: AppSettings = { muted: true, language: 'en-US', theme: 'light' };
+    const data: AppSettings = { muted: true, language: 'en-US', theme: 'green' };
     saveSettings(data);
     expect(loadSettings()).toEqual(data);
   });
@@ -59,6 +59,22 @@ describe('settingsService', () => {
     );
     const loaded = loadSettings();
     expect(loaded.language).toBe(DEFAULT_SETTINGS.language);
+  });
+
+  it('不支援的 theme 會 fallback 到 DEFAULT', () => {
+    window.localStorage.setItem(
+      'multiplayer-games-settings',
+      JSON.stringify({ muted: false, language: 'zh-TW', theme: 'blue' })
+    );
+    const loaded = loadSettings();
+    expect(loaded.theme).toBe(DEFAULT_SETTINGS.theme);
+  });
+
+  it('三個主題（dark/coffee/green）都能儲存和讀取', () => {
+    for (const theme of ['dark', 'coffee', 'green'] as const) {
+      saveSettings({ muted: false, language: 'zh-TW', theme });
+      expect(loadSettings().theme).toBe(theme);
+    }
   });
 
   it('缺欄位時用 DEFAULT 補', () => {
