@@ -5,19 +5,21 @@ import App from './App';
 import { AuthProvider } from './core/auth/AuthProvider';
 import { ErrorBoundary } from './core/components/ErrorBoundary';
 import { ToastProvider } from './core/components/Toast';
-import './core/i18n';
+import { initI18n } from './core/i18n';
 import './index.css';
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <ErrorBoundary>
-      <BrowserRouter>
-        <AuthProvider>
-          <ToastProvider>
-            <App />
-          </ToastProvider>
-        </AuthProvider>
-      </BrowserRouter>
-    </ErrorBoundary>
-  </StrictMode>
-);
+void initI18n.then(() => {
+  createRoot(document.getElementById('root')!).render(
+    <StrictMode>
+      <ErrorBoundary>
+        <BrowserRouter>
+          <AuthProvider>
+            <ToastProvider>
+              <App />
+            </ToastProvider>
+          </AuthProvider>
+        </BrowserRouter>
+      </ErrorBoundary>
+    </StrictMode>
+  );
+});

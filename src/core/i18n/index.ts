@@ -55,6 +55,22 @@ void i18n
     debug: false,
     // 偵測到非支援語言（eg. en）時，fallback 到 zh-TW
     nonExplicitSupportedLngs: true,
+    // 關鍵修正：react-i18next 預設 useSuspense: true
+    // 沒包 Suspense 邊界時會 fallback 到 key 字串
+    // 改 false：t() 會回傳 key（直到 init 完成），但至少不 crash
+    // 搭配 main.tsx 的 await initI18n，確保 init 完成才 render
+    react: {
+      useSuspense: false,
+    },
   });
+
+/** 等待 i18n 初始化完成（init() 是 async；必須 await 才不會 render 到 key） */
+export const initI18n: Promise<void> = new Promise((resolve) => {
+  if (i18n.isInitialized) {
+    resolve();
+  } else {
+    i18n.on('initialized', () => resolve());
+  }
+});
 
 export default i18n;
