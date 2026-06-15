@@ -30,7 +30,8 @@ export const LANGUAGE_LABELS: Record<SupportedLanguage, string> = {
 
 export const DEFAULT_LANGUAGE: SupportedLanguage = 'zh-TW';
 
-void i18n
+// 直接捕捉 init 傳回的 promise（不再用 void 忽略錯誤）
+const initPromise = i18n
   .use(LanguageDetector)
   .use(initReactI18next)
   .init({
@@ -62,15 +63,14 @@ void i18n
     react: {
       useSuspense: false,
     },
+  })
+  .catch((err) => {
+    // eslint-disable-next-line no-console
+    console.error('[i18n] init 失敗', err);
+    throw err;
   });
 
-/** 等待 i18n 初始化完成（init() 是 async；必須 await 才不會 render 到 key） */
-export const initI18n: Promise<void> = new Promise((resolve) => {
-  if (i18n.isInitialized) {
-    resolve();
-  } else {
-    i18n.on('initialized', () => resolve());
-  }
-});
+/** 等待 i18n 初始化完成（main.tsx 必須 await 才不會 render 到 key） */
+export const initI18n: Promise<void> = initPromise.then(() => undefined);
 
 export default i18n;
