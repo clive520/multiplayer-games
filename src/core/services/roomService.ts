@@ -430,6 +430,20 @@ export async function leaveRoom(roomId: string): Promise<void> {
     return;
   }
 
+  // IMPROVEMENTS #9：對戰電腦房中，如果剩下的玩家都是 AI（沒有真人），
+  // 視為空房刪除。AI 沒人對戰、繼續保留房間沒意義；
+  // 觀戰者也看不到什麼有意義的內容，直接清掉。
+  const realPlayersRemaining = remaining.filter((p) => !isAIPlayerUid(p.uid));
+  if (realPlayersRemaining.length === 0) {
+    await deleteDoc(ref);
+    if (room.hasPassword) {
+      const hash = await getRoomPasswordHash(roomId);
+      if (hash) await releasePasswordIndex(hash);
+      await deleteRoomPassword(roomId);
+    }
+    return;
+  }
+
   // 還有其他玩家或觀戰者：更新房間狀態
   const updates: Record<string, unknown> = {
     players: remaining,
@@ -618,7 +632,11 @@ export async function resetRoom(roomId: string): Promise<void> {
   const room = roomFromDoc(snap.id, snap.data());
   if (room.hostId !== uid) throw new Error('只有房主可以重置房間');
 
-  const resetPlayers = room.players.map((p) => ({ ...p, ready: p.isHost }));
+  // IMPROVEMENTS #9：AI 玩家永遠 ready（沒有「按準備」的概念）
+  const resetPlayers = room.players.map((p) => ({
+    ...p,
+    ready: p.isHost || isAIPlayerUid(p.uid),
+  }));
   await updateDoc(ref, {
     status: 'waiting' as RoomStatus,
     players: resetPlayers,
