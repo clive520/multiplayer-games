@@ -116,20 +116,20 @@ export default function Profile() {
         <div className="flex gap-2">
           <button
             onClick={() => navigate('/lobby')}
-            className="rounded dark:bg-slate-700 bg-slate-200 px-3 py-1.5 text-sm hover:dark:bg-slate-600 bg-slate-300"
+            className="rounded dark:bg-slate-700 bg-coffee-200 px-3 py-1.5 text-sm hover:dark:bg-slate-600 bg-coffee-300"
           >
             {t('profile.backToLobby')}
           </button>
           <button
             onClick={() => signOut()}
-            className="rounded dark:bg-slate-700 bg-slate-200 px-3 py-1.5 text-sm hover:dark:bg-slate-600 bg-slate-300"
+            className="rounded dark:bg-slate-700 bg-coffee-200 px-3 py-1.5 text-sm hover:dark:bg-slate-600 bg-coffee-300"
           >
             {t('nav.signOut')}
           </button>
         </div>
       </header>
 
-      <section className="mb-6 flex items-center gap-4 rounded-lg border dark:border-slate-700 border-slate-200 dark:bg-slate-800 bg-white p-6">
+      <section className="mb-6 flex items-center gap-4 rounded-lg border dark:border-slate-700 border-coffee-200 dark:bg-slate-800 bg-coffee-100 p-6">
         {photoURL && (
           <img
             src={photoURL}
@@ -147,7 +147,7 @@ export default function Profile() {
                 maxLength={12}
                 autoFocus
                 disabled={saving}
-                className="w-full rounded border dark:border-slate-600 border-slate-300 dark:bg-slate-900 bg-slate-50 px-3 py-2 text-lg font-bold focus:border-blue-500 focus:outline-none"
+                className="w-full rounded border dark:border-slate-600 border-coffee-300 dark:bg-slate-900 bg-slate-50 px-3 py-2 text-lg font-bold focus:border-blue-500 focus:outline-none"
               />
               {editError && (
                 <p className="text-xs text-red-400">{editError}</p>
@@ -164,7 +164,7 @@ export default function Profile() {
                   type="button"
                   onClick={handleCancelEdit}
                   disabled={saving}
-                  className="rounded dark:bg-slate-700 bg-slate-200 px-3 py-1.5 text-sm dark:text-slate-200 text-slate-800 hover:dark:bg-slate-600 bg-slate-300 disabled:opacity-50"
+                  className="rounded dark:bg-slate-700 bg-coffee-200 px-3 py-1.5 text-sm dark:text-slate-200 text-slate-800 hover:dark:bg-slate-600 bg-coffee-300 disabled:opacity-50"
                 >
                   {t('common.cancel')}
                 </button>
@@ -212,19 +212,19 @@ export default function Profile() {
       <section className="mb-6">
         <h2 className="mb-3 text-sm font-semibold dark:text-slate-300 text-slate-700">{t('profile.overallStats')}</h2>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
-          <div className="rounded-lg border dark:border-slate-700 border-slate-200 dark:bg-slate-800 bg-white p-4 text-center">
+          <div className="rounded-lg border dark:border-slate-700 border-coffee-200 dark:bg-slate-800 bg-coffee-100 p-4 text-center">
             <p className="text-2xl font-bold text-yellow-400">{overallStats.wins}</p>
             <p className="text-xs text-slate-500">{t('profile.wins')}</p>
           </div>
-          <div className="rounded-lg border dark:border-slate-700 border-slate-200 dark:bg-slate-800 bg-white p-4 text-center">
+          <div className="rounded-lg border dark:border-slate-700 border-coffee-200 dark:bg-slate-800 bg-coffee-100 p-4 text-center">
             <p className="text-2xl font-bold text-red-400">{overallStats.losses}</p>
             <p className="text-xs text-slate-500">{t('profile.losses')}</p>
           </div>
-          <div className="rounded-lg border dark:border-slate-700 border-slate-200 dark:bg-slate-800 bg-white p-4 text-center">
+          <div className="rounded-lg border dark:border-slate-700 border-coffee-200 dark:bg-slate-800 bg-coffee-100 p-4 text-center">
             <p className="text-2xl font-bold dark:text-slate-400 text-slate-600">{overallStats.draws}</p>
             <p className="text-xs text-slate-500">{t('profile.draws')}</p>
           </div>
-          <div className="rounded-lg border dark:border-slate-700 border-slate-200 dark:bg-slate-800 bg-white p-4 text-center">
+          <div className="rounded-lg border dark:border-slate-700 border-coffee-200 dark:bg-slate-800 bg-coffee-100 p-4 text-center">
             <p className="text-2xl font-bold text-blue-400">{overallWinRate}%</p>
             <p className="text-xs text-slate-500">{t('profile.winRate')}</p>
           </div>
@@ -249,7 +249,7 @@ export default function Profile() {
               return (
                 <div
                   key={gt}
-                  className="rounded-lg border dark:border-slate-700 border-slate-200 dark:bg-slate-800 bg-white p-4"
+                  className="rounded-lg border dark:border-slate-700 border-coffee-200 dark:bg-slate-800 bg-coffee-100 p-4"
                 >
                   <div className="mb-2 flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -301,7 +301,7 @@ export default function Profile() {
         {historyLoading ? (
           <p className="dark:text-slate-400 text-slate-600">{t('common.loading')}</p>
         ) : entries.length === 0 ? (
-          <div className="rounded-lg border border-dashed dark:border-slate-700 border-slate-200 p-8 text-center text-slate-500">
+          <div className="rounded-lg border border-dashed dark:border-slate-700 border-coffee-200 p-8 text-center text-slate-500">
             {t('profile.historyEmpty')}
           </div>
         ) : (
@@ -312,7 +312,7 @@ export default function Profile() {
               return (
                 <li
                   key={e.id}
-                  className="flex items-center gap-3 rounded-lg border dark:border-slate-700 border-slate-200 dark:bg-slate-800 bg-white p-3"
+                  className="flex items-center gap-3 rounded-lg border dark:border-slate-700 border-coffee-200 dark:bg-slate-800 bg-coffee-100 p-3"
                 >
                   <span
                     className={`w-8 text-center text-sm font-bold ${r.color}`}

@@ -25,7 +25,7 @@ export function RoomPreviewCard({ room, gameDef, gameState }: RoomPreviewCardPro
   return (
     <div
       role="tooltip"
-      className="rounded-lg border dark:border-slate-600 border-slate-300 dark:bg-slate-900 bg-slate-50 p-4 shadow-2xl"
+      className="rounded-lg border dark:border-slate-600 border-coffee-300 dark:bg-slate-900 bg-slate-50 p-4 shadow-2xl"
     >
       <div className="grid gap-4 md:grid-cols-[1fr_auto]">
         {/* 左：房間資訊 */}

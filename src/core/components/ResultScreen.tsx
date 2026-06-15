@@ -185,7 +185,7 @@ export function ResultScreen({
                   ? 'border-yellow-500 bg-yellow-900/20'
                   : isLoser && isMe
                     ? 'border-red-700 bg-red-900/20'
-                    : 'dark:border-slate-700 border-slate-200 dark:bg-slate-900 bg-slate-50/50'
+                    : 'dark:border-slate-700 border-coffee-200 dark:bg-slate-900 bg-slate-50/50'
               }`}
             >
               <div className="flex items-center gap-2">
@@ -231,7 +231,7 @@ export function ResultScreen({
             type="button"
             onClick={() => handleSendReaction(rk)}
             disabled={leaving}
-            className="flex h-10 w-10 items-center justify-center rounded-full border dark:border-slate-600 border-slate-300 dark:bg-slate-800 bg-white text-xl hover:scale-110 hover:dark:bg-slate-700 bg-slate-200 disabled:opacity-50"
+            className="flex h-10 w-10 items-center justify-center rounded-full border dark:border-slate-600 border-coffee-300 dark:bg-slate-800 bg-coffee-100 text-xl hover:scale-110 hover:dark:bg-slate-700 bg-coffee-200 disabled:opacity-50"
             title={t(`resultScreen.reactions.${rk}`)}
             aria-label={t('resultScreen.reactionsAria', { label: t(`resultScreen.reactions.${rk}`) })}
           >

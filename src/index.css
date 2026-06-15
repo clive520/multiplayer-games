@@ -3,6 +3,7 @@
 @tailwind utilities;
 
 /* IMPROVEMENTS #18：light/dark 模式基底背景
+   淺色模式用淺咖啡色 (#f9f1de coffee-50) 取代純白，避免太亮
    預設走 Tailwind dark: 前綴（<html class="dark">）
    :root 設 fallback 顏色避免 FOUC（首次渲染時還沒套上 dark class） */
 :root {
@@ -10,7 +11,7 @@
   line-height: 1.5;
   font-weight: 400;
   color-scheme: light dark;
-  background-color: #f8fafc;
+  background-color: #f9f1de; /* coffee-50 淺咖啡 */
   color: #0f172a;
 }
 

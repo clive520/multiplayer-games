@@ -235,25 +235,25 @@ export default function Lobby() {
         <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={() => navigate('/profile')}
-            className="rounded dark:bg-slate-700 bg-slate-200 px-3 py-1.5 text-sm hover:dark:bg-slate-600 bg-slate-300"
+            className="rounded dark:bg-slate-700 bg-coffee-200 px-3 py-1.5 text-sm hover:dark:bg-slate-600 bg-coffee-300"
           >
             {t('nav.editNickname')}
           </button>
           <button
             onClick={() => navigate('/leaderboard')}
-            className="rounded dark:bg-slate-700 bg-slate-200 px-3 py-1.5 text-sm hover:dark:bg-slate-600 bg-slate-300"
+            className="rounded dark:bg-slate-700 bg-coffee-200 px-3 py-1.5 text-sm hover:dark:bg-slate-600 bg-coffee-300"
           >
             {t('nav.leaderboard')}
           </button>
           <button
             onClick={() => navigate('/settings')}
-            className="rounded dark:bg-slate-700 bg-slate-200 px-3 py-1.5 text-sm hover:dark:bg-slate-600 bg-slate-300"
+            className="rounded dark:bg-slate-700 bg-coffee-200 px-3 py-1.5 text-sm hover:dark:bg-slate-600 bg-coffee-300"
           >
             {t('nav.settings')}
           </button>
           <button
             onClick={() => signOut()}
-            className="rounded dark:bg-slate-700 bg-slate-200 px-3 py-1.5 text-sm hover:dark:bg-slate-600 bg-slate-300"
+            className="rounded dark:bg-slate-700 bg-coffee-200 px-3 py-1.5 text-sm hover:dark:bg-slate-600 bg-coffee-300"
           >
             {t('nav.signOut')}
           </button>
@@ -261,7 +261,7 @@ export default function Lobby() {
       </header>
 
       {cleanupInfo && (
-        <div className="mb-4 rounded-lg border dark:border-slate-600 border-slate-300 dark:bg-slate-800 bg-white p-3 text-sm dark:text-slate-300 text-slate-700">
+        <div className="mb-4 rounded-lg border dark:border-slate-600 border-coffee-300 dark:bg-slate-800 bg-coffee-100 p-3 text-sm dark:text-slate-300 text-slate-700">
           {cleanupInfo}
         </div>
       )}
@@ -273,7 +273,7 @@ export default function Lobby() {
       )}
 
       <section className="mb-6 space-y-3">
-        <div className="rounded-lg border dark:border-slate-700 border-slate-200 dark:bg-slate-800 bg-white p-4">
+        <div className="rounded-lg border dark:border-slate-700 border-coffee-200 dark:bg-slate-800 bg-coffee-100 p-4">
           <p className="mb-2 text-sm dark:text-slate-400 text-slate-600">
             {t('lobby.selectGame')}
             {createMode === 'ai' && (
@@ -294,7 +294,7 @@ export default function Lobby() {
                     className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition ${
                       selectedGame === g.id
                         ? 'bg-blue-600 dark:text-white text-slate-900'
-                        : 'dark:bg-slate-700 bg-slate-200 dark:text-slate-300 text-slate-700 hover:dark:bg-slate-600 bg-slate-300'
+                        : 'dark:bg-slate-700 bg-coffee-200 dark:text-slate-300 text-slate-700 hover:dark:bg-slate-600 bg-coffee-300'
                     }`}
                   >
                     <Icon
@@ -313,19 +313,19 @@ export default function Lobby() {
         </div>
 
         <div className="grid gap-3 sm:grid-cols-2">
-          <div className="rounded-lg border dark:border-slate-700 border-slate-200 dark:bg-slate-800 bg-white p-4">
+          <div className="rounded-lg border dark:border-slate-700 border-coffee-200 dark:bg-slate-800 bg-coffee-100 p-4">
             <div className="mb-3 flex items-center justify-between">
               <p className="text-sm font-medium dark:text-slate-300 text-slate-700">
                 {t('lobby.createRoom')}
               </p>
-              <div className="flex rounded-md border dark:border-slate-600 border-slate-300 p-0.5">
+              <div className="flex rounded-md border dark:border-slate-600 border-coffee-300 p-0.5">
                 <button
                   type="button"
                   onClick={() => setCreateMode('pvp')}
                   className={`rounded px-2 py-1 text-xs font-medium transition ${
                     createMode === 'pvp'
                       ? 'bg-blue-600 dark:text-white text-slate-900'
-                      : 'dark:text-slate-300 text-slate-700 hover:dark:bg-slate-700 bg-slate-200'
+                      : 'dark:text-slate-300 text-slate-700 hover:dark:bg-slate-700 bg-coffee-200'
                   }`}
                 >
                   {t('lobby.createModePvp')}
@@ -336,7 +336,7 @@ export default function Lobby() {
                   className={`rounded px-2 py-1 text-xs font-medium transition ${
                     createMode === 'ai'
                       ? 'bg-purple-600 dark:text-white text-slate-900'
-                      : 'dark:text-slate-300 text-slate-700 hover:dark:bg-slate-700 bg-slate-200'
+                      : 'dark:text-slate-300 text-slate-700 hover:dark:bg-slate-700 bg-coffee-200'
                   }`}
                 >
                   {t('lobby.createModeAi')}
@@ -357,7 +357,7 @@ export default function Lobby() {
                         className={`rounded px-2 py-1 text-xs font-medium transition ${
                           turnTimeLimitSec === sec
                             ? 'bg-blue-600 dark:text-white text-slate-900'
-                            : 'dark:bg-slate-700 bg-slate-200 dark:text-slate-300 text-slate-700 hover:dark:bg-slate-600 bg-slate-300'
+                            : 'dark:bg-slate-700 bg-coffee-200 dark:text-slate-300 text-slate-700 hover:dark:bg-slate-600 bg-coffee-300'
                         }`}
                       >
                         {sec} {t('common.seconds')}
@@ -373,7 +373,7 @@ export default function Lobby() {
                       setUsePassword(e.target.checked);
                       if (!e.target.checked) setCreatePassword('');
                     }}
-                    className="h-4 w-4 rounded dark:border-slate-600 border-slate-300"
+                    className="h-4 w-4 rounded dark:border-slate-600 border-coffee-300"
                   />
                   <span>{t('lobby.enablePassword')}</span>
                 </label>
@@ -389,7 +389,7 @@ export default function Lobby() {
                     }}
                     placeholder={t('lobby.passwordPlaceholder')}
                     maxLength={6}
-                    className="mb-2 w-full rounded border dark:border-slate-600 border-slate-300 dark:bg-slate-900 bg-slate-50 px-3 py-2 text-center text-lg tracking-widest"
+                    className="mb-2 w-full rounded border dark:border-slate-600 border-coffee-300 dark:bg-slate-900 bg-slate-50 px-3 py-2 text-center text-lg tracking-widest"
                   />
                 )}
               </>
@@ -407,7 +407,7 @@ export default function Lobby() {
                       className={`flex-1 rounded px-2 py-1 text-xs font-medium transition ${
                         aiDifficulty === diff
                           ? 'bg-purple-600 dark:text-white text-slate-900'
-                          : 'dark:bg-slate-700 bg-slate-200 dark:text-slate-300 text-slate-700 hover:dark:bg-slate-600 bg-slate-300'
+                          : 'dark:bg-slate-700 bg-coffee-200 dark:text-slate-300 text-slate-700 hover:dark:bg-slate-600 bg-coffee-300'
                       }`}
                     >
                       {t(`aiDifficulty.${diff}`)}
@@ -446,7 +446,7 @@ export default function Lobby() {
 
           <form
             onSubmit={handleJoinSubmit}
-            className="rounded-lg border dark:border-slate-700 border-slate-200 dark:bg-slate-800 bg-white p-4"
+            className="rounded-lg border dark:border-slate-700 border-coffee-200 dark:bg-slate-800 bg-coffee-100 p-4"
           >
             <p className="mb-2 text-sm font-medium dark:text-slate-300 text-slate-700">
               用房號加入
@@ -457,7 +457,7 @@ export default function Lobby() {
               onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
               placeholder={t('lobby.inputCodePlaceholder')}
               maxLength={6}
-              className="mb-2 w-full rounded border dark:border-slate-600 border-slate-300 dark:bg-slate-900 bg-slate-50 px-3 py-2 text-center text-lg tracking-widest uppercase"
+              className="mb-2 w-full rounded border dark:border-slate-600 border-coffee-300 dark:bg-slate-900 bg-slate-50 px-3 py-2 text-center text-lg tracking-widest uppercase"
             />
             <button
               type="submit"
@@ -488,7 +488,7 @@ export default function Lobby() {
               placeholder={t('lobby.inputPasswordPlaceholder')}
               maxLength={6}
               autoFocus
-              className="flex-1 rounded border dark:border-slate-600 border-slate-300 dark:bg-slate-900 bg-slate-50 px-3 py-2 text-center text-lg tracking-widest"
+              className="flex-1 rounded border dark:border-slate-600 border-coffee-300 dark:bg-slate-900 bg-slate-50 px-3 py-2 text-center text-lg tracking-widest"
             />
             <button
               type="submit"
@@ -500,7 +500,7 @@ export default function Lobby() {
             <button
               type="button"
               onClick={handleCancelPassword}
-              className="rounded-lg dark:bg-slate-700 bg-slate-200 px-4 py-2 dark:text-slate-300 text-slate-700 hover:dark:bg-slate-600 bg-slate-300"
+              className="rounded-lg dark:bg-slate-700 bg-coffee-200 px-4 py-2 dark:text-slate-300 text-slate-700 hover:dark:bg-slate-600 bg-coffee-300"
             >
               {t('common.cancel')}
             </button>
@@ -522,7 +522,7 @@ export default function Lobby() {
         ) : loading ? (
           <p className="dark:text-slate-400 text-slate-600">{t('common.loading')}</p>
         ) : rooms.length === 0 ? (
-          <p className="rounded-lg border border-dashed dark:border-slate-700 border-slate-200 p-8 text-center text-slate-500">
+          <p className="rounded-lg border border-dashed dark:border-slate-700 border-coffee-200 p-8 text-center text-slate-500">
             {t('lobby.noRooms')}
           </p>
         ) : (
@@ -544,7 +544,7 @@ export default function Lobby() {
                     onBlur={() =>
                       setPreviewedRoomId((id) => (id === room.id ? null : id))
                     }
-                    className="w-full rounded-lg border dark:border-slate-700 border-slate-200 dark:bg-slate-800 bg-white p-4 text-left hover:border-slate-500"
+                    className="w-full rounded-lg border dark:border-slate-700 border-coffee-200 dark:bg-slate-800 bg-coffee-100 p-4 text-left hover:border-slate-500"
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
@@ -601,7 +601,7 @@ export default function Lobby() {
                           className={`rounded px-2 py-1 text-xs ${
                             isPlaying
                               ? 'bg-blue-900/50 text-blue-300'
-                              : 'dark:bg-slate-700 bg-slate-200 dark:text-slate-300 text-slate-700'
+                              : 'dark:bg-slate-700 bg-coffee-200 dark:text-slate-300 text-slate-700'
                           }`}
                         >
                           {isPlaying ? t('lobby.actionSpectate') : t('lobby.actionJoin')}

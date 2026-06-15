@@ -83,7 +83,7 @@ export default function TicTacToe({
 
   if (!state) {
     return (
-      <div className="rounded-lg border dark:border-slate-700 border-slate-200 dark:bg-slate-800 bg-white p-6 text-center">
+      <div className="rounded-lg border dark:border-slate-700 border-coffee-200 dark:bg-slate-800 bg-coffee-100 p-6 text-center">
         <p className="dark:text-slate-400 text-slate-600">{t('games.tictactoe.loading')}</p>
       </div>
     );
@@ -127,7 +127,7 @@ export default function TicTacToe({
         </div>
       )}
 
-      <div className="grid grid-cols-3 gap-2 rounded-lg border dark:border-slate-700 border-slate-200 dark:bg-slate-800 bg-white p-4">
+      <div className="grid grid-cols-3 gap-2 rounded-lg border dark:border-slate-700 border-coffee-200 dark:bg-slate-800 bg-coffee-100 p-4">
         {state.board.map((cell, idx) => {
           const row = Math.floor(idx / BOARD_SIZE);
           const col = idx % BOARD_SIZE;
@@ -157,7 +157,7 @@ export default function TicTacToe({
                   : 'dark:bg-slate-900 bg-slate-50'
               } ${
                 isMyTurn && isEmpty
-                  ? 'hover:dark:bg-slate-700 bg-slate-200 cursor-pointer'
+                  ? 'hover:dark:bg-slate-700 bg-coffee-200 cursor-pointer'
                   : 'cursor-not-allowed'
               }`}
             >

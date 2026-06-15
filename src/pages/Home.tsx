@@ -42,7 +42,7 @@ export default function Home() {
       <h1 className="text-4xl font-bold">{t('home.title')}</h1>
       <p className="dark:text-slate-400 text-slate-600">{t('home.subtitle')}</p>
 
-      <div className="rounded-lg border dark:border-slate-700 border-slate-200 dark:bg-slate-800 bg-white p-6 shadow-lg">
+      <div className="rounded-lg border dark:border-slate-700 border-coffee-200 dark:bg-slate-800 bg-coffee-100 p-6 shadow-lg">
         {user ? (
           <div className="flex flex-col items-center gap-4">
             {user.photoURL && (
@@ -58,7 +58,7 @@ export default function Home() {
             </div>
             <button
               onClick={handleSignOut}
-              className="rounded dark:bg-slate-700 bg-slate-200 px-4 py-2 text-sm hover:dark:bg-slate-600 bg-slate-300"
+              className="rounded dark:bg-slate-700 bg-coffee-200 px-4 py-2 text-sm hover:dark:bg-slate-600 bg-coffee-300"
             >
               {t('home.signOut')}
             </button>

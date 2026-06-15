@@ -22,7 +22,7 @@ export function BoardThumbnail({ gameType, board, cellSize = 18 }: BoardThumbnai
     const cells = board ?? Array(9).fill('');
     return (
       <div
-        className="grid gap-0.5 rounded border dark:border-slate-700 border-slate-200 dark:bg-slate-900 bg-slate-50 p-1"
+        className="grid gap-0.5 rounded border dark:border-slate-700 border-coffee-200 dark:bg-slate-900 bg-slate-50 p-1"
         style={{
           gridTemplateColumns: `repeat(3, ${cellSize}px)`,
           gridTemplateRows: `repeat(3, ${cellSize}px)`,
@@ -32,7 +32,7 @@ export function BoardThumbnail({ gameType, board, cellSize = 18 }: BoardThumbnai
         {cells.map((c, i) => (
           <div
             key={i}
-            className="flex items-center justify-center dark:bg-slate-800 bg-white text-xs font-bold"
+            className="flex items-center justify-center dark:bg-slate-800 bg-coffee-100 text-xs font-bold"
             style={{ width: cellSize, height: cellSize }}
           >
             {c === 'X' && <span className="text-blue-400">×</span>}

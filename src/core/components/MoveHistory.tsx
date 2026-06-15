@@ -33,7 +33,7 @@ export function MoveHistory({ moves, currentUserId, formatSymbol }: MoveHistoryP
   const f = formatSymbol ?? ((s: string) => s);
 
   return (
-    <section className="rounded-lg border dark:border-slate-700 border-slate-200 dark:bg-slate-800 bg-white p-4">
+    <section className="rounded-lg border dark:border-slate-700 border-coffee-200 dark:bg-slate-800 bg-coffee-100 p-4">
       <button
         type="button"
         onClick={() => setCollapsed((c) => !c)}
