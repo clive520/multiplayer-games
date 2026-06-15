@@ -17,6 +17,14 @@ import { ResultScreen } from '../core/components/ResultScreen';
 import { MoveHistory } from '../core/components/MoveHistory';
 import { ChatPanel } from '../core/components/ChatPanel';
 import { clearChatMessages } from '../core/services/chatService';
+import {
+  requestUndo as requestUndoRTDB,
+  subscribeUndoRequest,
+  clearUndoRequest,
+  isUndoRequestTimedOut,
+  type UndoRequest,
+} from '../core/services/undoService';
+import { useToast } from '../core/components/Toast';
 import { getGameDefinition } from '@/registry';
 import type { GameComponentProps, MoveRecord } from '../core/types/game';
 import { rtdb } from '../core/firebase/rtdb';
@@ -66,6 +74,20 @@ export default function GameRoom() {
     };
   }, [roomId]);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
+
+  // IMPROVEMENTS #12 悔棋請求：訂閱 RTDB undoRequest
+  const [undoRequest, setUndoRequest] = useState<UndoRequest | null>(null);
+  const [showUndoConfirm, setShowUndoConfirm] = useState(false);
+  const [undoBusy, setUndoBusy] = useState(false);
+  const toast = useToast();
+  useEffect(() => {
+    if (!roomId) {
+      setUndoRequest(null);
+      return;
+    }
+    const unsubscribe = subscribeUndoRequest(roomId, setUndoRequest);
+    return unsubscribe;
+  }, [roomId]);
 
   // 自動 forfeit（回合倒數）相關
   const [forfeitTriggered, setForfeitTriggered] = useState(false);
@@ -341,8 +363,99 @@ export default function GameRoom() {
       await clearChatMessages(roomId).catch((err) => {
         console.warn('清空聊天失敗', err);
       });
+      // IMPROVEMENTS #12：清空悔棋請求
+      await clearUndoRequest(roomId).catch((err) => {
+        console.warn('清空悔棋請求失敗', err);
+      });
     });
   };
+
+  // IMPROVEMENTS #12 悔棋：發起請求（自己按下「悔棋」按鈕）
+  const handleRequestUndo = async () => {
+    if (!user || !room || !profile) return;
+    const lastMove = moves[moves.length - 1];
+    if (!lastMove) return;
+    if (lastMove.uid !== user.uid) return; // 不是自己下的
+    setShowUndoConfirm(true);
+  };
+
+  const confirmRequestUndo = async () => {
+    if (!user || !room || !profile) return;
+    const lastMove = moves[moves.length - 1];
+    if (!lastMove) {
+      setShowUndoConfirm(false);
+      return;
+    }
+    setShowUndoConfirm(false);
+    setUndoBusy(true);
+    try {
+      await requestUndoRTDB(roomId, {
+        requesterUid: user.uid,
+        requesterNickname: profile.nickname,
+        targetMoveIndex: moves.length - 1,
+      });
+    } catch (err) {
+      console.error('送出悔棋請求失敗', err);
+      toast.error(err instanceof Error ? err.message : '送出失敗');
+    } finally {
+      setUndoBusy(false);
+    }
+  };
+
+  // IMPROVEMENTS #12 悔棋：取消自己送出的請求
+  const handleCancelUndo = async () => {
+    if (!roomId) return;
+    setUndoBusy(true);
+    try {
+      await clearUndoRequest(roomId);
+    } catch (err) {
+      console.error('取消悔棋請求失敗', err);
+    } finally {
+      setUndoBusy(false);
+    }
+  };
+
+  // IMPROVEMENTS #12 悔棋：接受對方請求
+  const handleAcceptUndo = async () => {
+    if (!roomId || !undoRequest || !gameDef?.acceptUndo) return;
+    setUndoBusy(true);
+    try {
+      const result = await gameDef.acceptUndo(roomId, undoRequest.requesterUid);
+      if (result.applied) {
+        toast.success(t('undo.accepted'));
+      } else {
+        toast.error(result.reason ?? t('undo.rejected'));
+      }
+    } catch (err) {
+      console.error('接受悔棋失敗', err);
+      toast.error(err instanceof Error ? err.message : '操作失敗');
+    } finally {
+      setUndoBusy(false);
+    }
+  };
+
+  // IMPROVEMENTS #12 悔棋：拒絕對方請求
+  const handleRejectUndo = async () => {
+    if (!roomId) return;
+    setUndoBusy(true);
+    try {
+      await clearUndoRequest(roomId);
+      toast.info(t('undo.rejected'));
+    } catch (err) {
+      console.error('拒絕悔棋失敗', err);
+    } finally {
+      setUndoBusy(false);
+    }
+  };
+
+  // IMPROVEMENTS #12 悔棋：自動清除超時的請求
+  useEffect(() => {
+    if (!undoRequest || !roomId) return;
+    if (isUndoRequestTimedOut(undoRequest)) {
+      void clearUndoRequest(roomId);
+      toast.info(t('undo.timeout'));
+    }
+  }, [undoRequest, roomId, toast, t]);
 
   return (
     <div className="mx-auto min-h-screen max-w-6xl p-6">
@@ -584,6 +697,27 @@ export default function GameRoom() {
       {isPlaying && gameDef && (currentPlayer || isSpectator) && GameComp && (
         <div className="grid gap-4 lg:grid-cols-3">
           <div className="lg:col-span-2">
+            {/* IMPROVEMENTS #12 悔棋按鈕（IMPROVEMENTS #12） */}
+            {currentPlayer && (() => {
+              const lastMove = moves[moves.length - 1];
+              const isMyLastMove = lastMove && lastMove.uid === user!.uid;
+              const usedQuota = (room.undoUsedByUids?.[user!.uid] ?? 0) >= 1;
+              const canRequest = isMyLastMove && !usedQuota && !undoRequest && gameDef.acceptUndo;
+              if (!canRequest) return null;
+              return (
+                <div className="mb-2 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={handleRequestUndo}
+                    disabled={undoBusy}
+                    className="rounded-lg bg-amber-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-amber-500 disabled:opacity-50"
+                    title={t('undo.yourLastMove')}
+                  >
+                    ↶ {t('undo.requestButton')}
+                  </button>
+                </div>
+              );
+            })()}
             <GameComp
               roomId={roomId}
               currentUserId={user!.uid}
@@ -663,6 +797,82 @@ export default function GameRoom() {
               />
             </div>
           </aside>
+        </div>
+      )}
+
+      {/* IMPROVEMENTS #12 悔棋：發起確認對話框 */}
+      {showUndoConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+          <div className="w-full max-w-md rounded-lg border border-amber-700 dark:bg-slate-800 bg-app-card p-6 shadow-2xl">
+            <h3 className="mb-2 text-lg font-bold text-amber-300">
+              ↶ {t('undo.confirmTitle')}
+            </h3>
+            <p className="mb-6 text-sm leading-relaxed dark:text-slate-300 text-slate-700">
+              {t('undo.confirmBody', { moveNumber: moves.length })}
+            </p>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setShowUndoConfirm(false)}
+                disabled={undoBusy}
+                className="rounded-lg border dark:border-slate-600 border-app-border-strong dark:bg-slate-700 bg-app-hover px-4 py-2 text-sm font-medium dark:text-slate-200 text-slate-800 hover:dark:bg-slate-600 bg-app-border-strong"
+              >
+                {t('common.cancel')}
+              </button>
+              <button
+                onClick={confirmRequestUndo}
+                disabled={undoBusy}
+                className="rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-white hover:bg-amber-500 disabled:opacity-50"
+              >
+                {t('undo.requestButton')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* IMPROVEMENTS #12 悔棋：等待對方回應浮動提示 */}
+      {undoRequest && undoRequest.requesterUid === user?.uid && !showUndoConfirm && (
+        <div className="fixed bottom-6 left-1/2 z-40 -translate-x-1/2 rounded-full border border-amber-600 bg-amber-900/90 px-4 py-2 text-sm text-amber-100 shadow-lg">
+          ⏳ {t('undo.requestSent')} ·{' '}
+          <button
+            onClick={handleCancelUndo}
+            className="ml-1 underline hover:text-white"
+          >
+            {t('undo.cancel')}
+          </button>
+        </div>
+      )}
+
+      {/* IMPROVEMENTS #12 悔棋：收到對方的悔棋請求（彈窗） */}
+      {undoRequest && undoRequest.requesterUid !== user?.uid && gameDef?.acceptUndo && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+          <div className="w-full max-w-md rounded-lg border border-amber-700 dark:bg-slate-800 bg-app-card p-6 shadow-2xl">
+            <h3 className="mb-2 text-lg font-bold text-amber-300">
+              ↶ {t('undo.requestReceivedTitle')}
+            </h3>
+            <p className="mb-6 text-sm leading-relaxed dark:text-slate-300 text-slate-700">
+              {t('undo.requestReceivedBody', {
+                nickname: undoRequest.requesterNickname,
+                moveNumber: undoRequest.targetMoveIndex + 1,
+              })}
+            </p>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={handleRejectUndo}
+                disabled={undoBusy}
+                className="rounded-lg border dark:border-slate-600 border-app-border-strong dark:bg-slate-700 bg-app-hover px-4 py-2 text-sm font-medium dark:text-slate-200 text-slate-800 hover:dark:bg-slate-600 bg-app-border-strong"
+              >
+                {t('undo.reject')}
+              </button>
+              <button
+                onClick={handleAcceptUndo}
+                disabled={undoBusy}
+                className="rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-white hover:bg-amber-500 disabled:opacity-50"
+              >
+                {t('undo.accept')}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

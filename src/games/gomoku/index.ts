@@ -3,6 +3,7 @@ import GomokuIcon from './Icon';
 import { gomokuEngine } from './engine';
 import { gomokuAI } from './ai';
 import { formatGomokuSymbol } from './symbols';
+import { acceptUndo } from './sync';
 import type { GomokuState } from './types';
 
 export const gomokuDefinition: GameDefinition<GomokuState> = {
@@ -18,6 +19,7 @@ export const gomokuDefinition: GameDefinition<GomokuState> = {
   formatSymbol: formatGomokuSymbol,
   estimatedDurationMin: 15,
   aiEngine: gomokuAI,
+  acceptUndo,
   tutorialSteps: [
     '黑棋先手，雙方輪流在 15×15 棋盤上落子。',
     '自己的棋子橫、直、或斜連成 5 個（或以上）即獲勝。',

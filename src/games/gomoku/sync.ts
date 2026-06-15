@@ -2,7 +2,8 @@ import { ref, onValue, runTransaction, type Unsubscribe } from 'firebase/databas
 import { rtdb } from '../../core/firebase/rtdb';
 import { gomokuEngine } from './engine';
 import { createInitialState, isValidState, type GomokuState } from './types';
-import { updateTurn } from '../../core/services/roomService';
+import { incrementUndoQuota, updateTurn } from '../../core/services/roomService';
+import { clearUndoRequest } from '../../core/services/undoService';
 import type { GameMove, MoveRecord } from '../../core/types/game';
 
 const statePath = (roomId: string) => `rooms-live/${roomId}/state`;
@@ -96,4 +97,73 @@ export function subscribeGameState(
 export async function resetGameState(roomId: string): Promise<void> {
   const stateRef = ref(rtdb, statePath(roomId));
   await runTransaction(stateRef, () => createInitialState());
+}
+
+/**
+ * IMPROVEMENTS #12 悔棋：同意對方的悔棋請求（與 tictactoe 邏輯相同）
+ */
+export async function acceptUndo(
+  roomId: string,
+  requesterUid: string,
+): Promise<{ applied: boolean; reason?: string; newTurnSymbol?: string }> {
+  const stateRef = ref(rtdb, statePath(roomId));
+
+  let result: { applied: boolean; reason?: string; newTurnSymbol?: string } = { applied: false };
+
+  await runTransaction(stateRef, (current) => {
+    if (!current) {
+      result = { applied: false, reason: '遊戲尚未初始化' };
+      return;
+    }
+    if (!isValidState(current)) {
+      result = { applied: false, reason: '遊戲狀態損壞' };
+      return;
+    }
+    const state = current as GomokuState;
+    if (!state.moves || state.moves.length === 0) {
+      result = { applied: false, reason: '沒有可以悔的步' };
+      return;
+    }
+    const removed = state.moves[state.moves.length - 1];
+    if (removed.uid !== requesterUid) {
+      result = { applied: false, reason: '這步不是你下的，無法悔棋' };
+      return;
+    }
+
+    let newState: GomokuState = createInitialState();
+    for (let i = 0; i < state.moves.length - 1; i++) {
+      const m = state.moves[i];
+      newState = gomokuEngine.applyMove(newState, {
+        playerId: m.uid,
+        payload: { row: m.row, col: m.col },
+        timestamp: m.timestamp,
+      }) as GomokuState;
+    }
+
+    const finalState: GomokuState = {
+      ...newState,
+      moves: state.moves.slice(0, -1),
+      nextSymbol: removed.symbol as 'X' | 'O',
+    };
+    result = { applied: true, newTurnSymbol: finalState.nextSymbol };
+    return finalState;
+  });
+
+  if (result.applied) {
+    try {
+      await incrementUndoQuota(roomId, requesterUid);
+    } catch (err) {
+      console.warn('incrementUndoQuota 失敗（悔棋仍生效）', err);
+    }
+    try {
+      await clearUndoRequest(roomId);
+    } catch (err) {
+      console.warn('clearUndoRequest 失敗', err);
+    }
+    if (result.newTurnSymbol) {
+      await updateTurn(roomId, result.newTurnSymbol);
+    }
+  }
+
+  return result;
 }

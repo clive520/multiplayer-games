@@ -317,5 +317,24 @@
     "tooLong": "Message too long (max 200 chars)",
     "emptyText": "Message cannot be empty",
     "loadFailed": "Failed to load chat"
+  },
+  "undo": {
+    "requestButton": "Undo",
+    "requestSent": "Undo request sent",
+    "requestSentDescription": "Waiting for {nickname} to respond…",
+    "requestReceivedTitle": "Opponent wants to undo",
+    "requestReceivedBody": "{nickname} wants to undo move #{moveNumber}",
+    "accept": "Accept",
+    "reject": "Reject",
+    "rejected": "Opponent rejected the undo request",
+    "accepted": "Opponent accepted, move undone",
+    "timeout": "Opponent did not respond, undo request cancelled",
+    "confirmTitle": "Request undo",
+    "confirmBody": "Undo move #{moveNumber}? Requires opponent's consent. You have one undo per game.",
+    "waitingTitle": "Waiting for response",
+    "waitingBody": "Undo request sent, waiting for {nickname} to accept or reject.",
+    "cancel": "Cancel request",
+    "quotaUsed": "No undos left this game",
+    "yourLastMove": "Your last move can be undone"
   }
 }

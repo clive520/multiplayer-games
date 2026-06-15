@@ -101,6 +101,12 @@ export interface GameDefinition<TState = unknown> {
    * 型別故意用寬鬆版本（unknown）避免循環依賴，runtime 由 AIEngineCreator 判斷
    */
   aiEngine?: import('./ai').AIEngineCreator;
+  /**
+   * IMPROVEMENTS #12 悔棋：接受對方悔棋請求（每個遊戲自己實作）
+   * 因為不同遊戲的 state 結構不同，revert 邏輯也不同
+   * 沒提供就不支援悔棋（例如未來加的新遊戲可以暫不支援）
+   */
+  acceptUndo?: (roomId: string, requesterUid: string) => Promise<{ applied: boolean; reason?: string; newTurnSymbol?: string }>;
 }
 
 /**

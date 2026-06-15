@@ -317,5 +317,24 @@
     "tooLong": "訊息太長（最多 200 字）",
     "emptyText": "訊息不能為空",
     "loadFailed": "載入聊天失敗"
+  },
+  "undo": {
+    "requestButton": "悔棋",
+    "requestSent": "悔棋請求已送出",
+    "requestSentDescription": "等待 {nickname} 回應…",
+    "requestReceivedTitle": "對方想悔棋",
+    "requestReceivedBody": "{nickname} 想悔第 {moveNumber} 步",
+    "accept": "同意",
+    "reject": "拒絕",
+    "rejected": "對方拒絕了悔棋請求",
+    "accepted": "對方同意，已悔棋",
+    "timeout": "對方沒有回應，悔棋請求已取消",
+    "confirmTitle": "申請悔棋",
+    "confirmBody": "確定要悔第 {moveNumber} 步嗎？需對方同意。本場僅有一次機會。",
+    "waitingTitle": "等待對方回應",
+    "waitingBody": "已送出悔棋請求，等待 {nickname} 同意或拒絕。",
+    "cancel": "取消請求",
+    "quotaUsed": "本場悔棋額度已用完",
+    "yourLastMove": "你下的最後一步可悔棋"
   }
 }

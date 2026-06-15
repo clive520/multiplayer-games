@@ -2,6 +2,7 @@ import type { GameDefinition } from '../../core/types/game';
 import TicTacToeIcon from './Icon';
 import { tictactoeEngine } from './engine';
 import { tictactoeAI } from './ai';
+import { acceptUndo } from './sync';
 import type { TicTacToeState } from './types';
 
 export const tictactoeDefinition: GameDefinition<TicTacToeState> = {
@@ -16,6 +17,7 @@ export const tictactoeDefinition: GameDefinition<TicTacToeState> = {
   icon: TicTacToeIcon,
   estimatedDurationMin: 3,
   aiEngine: tictactoeAI,
+  acceptUndo,
   tutorialSteps: [
     '雙方輪流在 3×3 棋盤上點擊空格放置 X 或 O。',
     '先讓自己的符號（X 或 O）橫、直、或斜連成一線（3 個）者獲勝。',

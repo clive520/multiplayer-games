@@ -50,6 +50,11 @@ export interface Room {
   turnStartedAt: number | null;
   turnSymbol: string | null;
   turnTimeLimitSec: TurnTimeLimit;
+  /**
+   * IMPROVEMENTS #12 悔棋限額：每個玩家這場用了幾次悔棋額度
+   * 預設 0；達到 1 就不能再發起悔棋（之後可由 #14 房間設定擴充）
+   */
+  undoUsedByUids?: Record<string, number>;
 }
 
 export interface RoomSummary {

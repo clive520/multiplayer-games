@@ -6,6 +6,52 @@
 
 ---
 
+## 2026-06-15（Day 3 續 2）— #12 悔棋請求 Phase A
+
+**用戶選**：#12 悔棋 / 復盤請求（先做 Phase A 悔棋，Phase B 復盤之後再說）
+
+**決策**：
+- 用 RTDB 獨立節點（`undoRequest`）不混進 game state
+- 雙方同意：發起者必須是最後一步的下棋者（自然防濫用）
+- 限額：每場每人 1 次悔棋，存 Firestore `room.undoUsedByUids[uid]`
+- 黑白棋特殊處理：每步會翻面多個棋子，靠「重新 apply 前面所有步」自動同步
+- 用 `GameDefinition.acceptUndo` 讓 GameRoom 透過 registry 呼叫，不在 GameRoom 內 branch gameType
+
+**實作**：
+1. i18n：加 `undo.*` 15 個 keys（requestButton / requestSent / requestReceivedTitle / accept / reject / timeout / confirmTitle / confirmBody 等），中英對齊
+2. `core/services/undoService.ts`：
+   - `UndoRequest` interface（requesterUid / requesterNickname / targetMoveIndex / createdAt）
+   - `requestUndo` / `clearUndoRequest` / `subscribeUndoRequest` / `isUndoRequestTimedOut`
+   - `UNDO_REQUEST_TIMEOUT_MS = 30_000`
+3. Room type 加 `undoUsedByUids?: Record<string, number>`，`roomFromDoc` 解析
+4. `roomService.incrementUndoQuota(roomId, uid)` 用 Firestore `increment(1)` 原子操作
+5. 3 個遊戲各加 `acceptUndo(roomId, requesterUid)`：
+   - runTransaction 包住整個流程
+   - 取出最後一步 → 驗證是 requester 的
+   - 重新 apply moves[0..N-2]（engine 自動處理 board 同步、翻面）
+   - 設定 nextSymbol/currentTurn 為 removed.symbol
+   - 黑白棋額外：reset passCount = 0
+   - 成功後：incrementUndoQuota + clearUndoRequest + updateTurn
+6. `GameDefinition.acceptUndo` 欄位（3 個遊戲各自綁定）
+7. GameRoom UI：
+   - 訂閱 RTDB undoRequest
+   - 棋盤上方加「↶ 悔棋」按鈕（只在：自己下最後一步 + 額度未用 + 沒待回應 + 遊戲支援）
+   - 確認對話框 / 等待浮動膠囊（可取消）/ 收到請求同意/拒絕 / 30 秒自動超時
+   - 用 toast 顯示結果
+8. RTDB rules 加 `undoRequest` 路徑（4 個必填欄位驗證）
+9. resetRoom 順便 `clearUndoRequest`
+10. 5 個新 undoService 測試（包含 30 秒邊界嚴格大於）
+11. Firebase RTDB rules 部署 ✓（Vercel 自動部署前端）
+
+**效果**：
+- 162/162 測試過、TS 0 錯誤、Vite build 成功
+- 「↶ 悔棋」按鈕只在合適時機出現
+- 黑白棋被翻的棋子正確還原
+- 限額正確生效（第二次按鈕不出現）
+- 之後加 #13 暫停 / 暫離、#19 好友系統
+
+---
+
 ## 2026-06-15（Day 3 續）— #20 房間內聊天
 
 **用戶選**：#20 房間內聊天（高社交價值，明顯缺點）

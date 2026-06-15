@@ -38,6 +38,15 @@
           "$msgId": {
             ".validate": "newData.hasChildren(['uid', 'nickname', 'text', 'createdAt'])"
           }
+        },
+        // 悔棋請求（IMPROVEMENTS #12 悔棋請求）
+        // 任何登入者皆可讀；只有「被請求的對手」可同意（會由遊戲 sync 處理），
+        // 這裡只擋結構驗證（必填 4 欄位）和基本寫入權限。
+        // 結構：{ requesterUid, requesterNickname, targetMoveIndex, createdAt }
+        "undoRequest": {
+          ".read": "auth != null",
+          ".write": "auth != null",
+          ".validate": "newData.hasChildren(['requesterUid', 'requesterNickname', 'targetMoveIndex', 'createdAt'])"
         }
       }
     }

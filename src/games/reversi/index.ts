@@ -3,6 +3,7 @@ import ReversiIcon from './Icon';
 import { reversiEngine } from './engine';
 import { reversiAI } from './ai';
 import { formatReversiSymbol } from './symbols';
+import { acceptUndo } from './sync';
 import type { ReversiState } from './types';
 
 export const reversiDefinition: GameDefinition<ReversiState> = {
@@ -18,6 +19,7 @@ export const reversiDefinition: GameDefinition<ReversiState> = {
   formatSymbol: formatReversiSymbol,
   estimatedDurationMin: 10,
   aiEngine: reversiAI,
+  acceptUndo,
   tutorialSteps: [
     '黑棋先手，雙方輪流在 8×8 棋盤上落子。',
     '落子時必須能夾住（你的新子與既有子中間有連續對手子）至少一條線的對手棋子。',

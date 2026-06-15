@@ -14,6 +14,7 @@ import {
   runTransaction,
   serverTimestamp,
   Timestamp,
+  increment,
   type Unsubscribe,
 } from 'firebase/firestore';
 import { db } from '../firebase/firestore';
@@ -72,6 +73,7 @@ function roomFromDoc(id: string, data: Record<string, unknown>): Room {
     turnStartedAt: (data.turnStartedAt as number) ?? null,
     turnSymbol: (data.turnSymbol as string) ?? null,
     turnTimeLimitSec: parseTurnTimeLimit(data.turnTimeLimitSec),
+    undoUsedByUids: (data.undoUsedByUids as Record<string, number> | undefined) ?? {},
   };
 }
 
@@ -671,6 +673,19 @@ export async function updateTurn(roomId: string, nextSymbol: string): Promise<vo
   } catch (err) {
     console.warn('updateTurn 寫入失敗（不影響遊戲本體）', err);
   }
+}
+
+/**
+ * IMPROVEMENTS #12 悔棋：累加某玩家本場悔棋次數（悔棋成功時呼叫）
+ * - 用 Firestore increment 原子操作
+ * - 失敗時拋出例外（讓遊戲 sync 層決定如何處理）
+ */
+export async function incrementUndoQuota(roomId: string, uid: string): Promise<void> {
+  const ref = doc(db, ROOMS_COLLECTION, roomId);
+  await updateDoc(ref, {
+    [`undoUsedByUids.${uid}`]: increment(1),
+    lastActivityAt: Date.now(),
+  });
 }
 
 export interface RoomLookupResult {
