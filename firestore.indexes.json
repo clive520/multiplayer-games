@@ -32,13 +32,6 @@
         { "fieldPath": "playerUids", "arrayConfig": "CONTAINS" },
         { "fieldPath": "endedAt", "order": "DESCENDING" }
       ]
-    },
-    {
-      "collectionGroup": "gameHistory",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "endedAt", "order": "DESCENDING" }
-      ]
     }
   ],
   "fieldOverrides": []
