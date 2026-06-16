@@ -177,6 +177,31 @@ git push origin main
 - [ ] 違反 → React error #310「Rendered more hooks than during the previous render」
 - [ ] 參考 #12 悔棋 Phase A 的 bug：把 useEffect 放在 `if (loading) return` 之後，第一次 render 走 early return、第二次走完整邏輯 → hook 數量變化
 
+**情境 D：新增 / 改 Firestore 查詢（`where` + `orderBy` 組合）**
+- [ ] **Firestore 預設只為單欄位建索引**。當查詢用多個 `where` + `orderBy` 時，必須手動建**複合索引**
+- [ ] 症狀：Console 噴 `The query requires an index. You can create it here: <URL>`
+- [ ] 在 `firestore.indexes.json` 加索引 spec（用錯誤訊息的 URL 也可手動建，但 json 版本可版本控制）
+- [ ] 確認 `firebase.json` 有 `"firestore": { "indexes": "firestore.indexes.json" }` 路徑（**沒加的話 CLI 不會部署**）
+- [ ] **不要加單欄位索引**（Firestore 自動建，手動建會被 API 拒絕 400）
+- [ ] 部署：`firebase deploy --only firestore`（會一併部署 rules + indexes）
+- [ ] **等 5-10 分鐘**讓 Firestore 建好索引（到 Console > Firestore > Indexes 看 `BUILDING` / `READY` 狀態）
+- [ ] 範例（#22 棋譜探索頁）：
+  ```json
+  {
+    "indexes": [
+      {
+        "collectionGroup": "gameHistory",
+        "queryScope": "COLLECTION",
+        "fields": [
+          { "fieldPath": "hasAI", "order": "ASCENDING" },
+          { "fieldPath": "endedAt", "order": "DESCENDING" }
+        ]
+      }
+    ]
+  }
+  ```
+- [ ] 已發生在 2026-06-16 #22 棋譜上線時。
+
 **驗證 SOP**：每次 commit 前
 ```bash
 # 三項都通過
