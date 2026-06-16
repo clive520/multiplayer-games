@@ -380,6 +380,7 @@
   },
   "explore": {
     "title": "Explore public replays",
+    "shortTitle": "Explore",
     "subtitle": "Browse all public game replays",
     "filterAll": "All",
     "filterTictactoe": "Tic-tac-toe",

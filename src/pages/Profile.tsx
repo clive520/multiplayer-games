@@ -173,12 +173,19 @@ export default function Profile() {
     <div className="mx-auto min-h-screen max-w-3xl p-6">
       <header className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-bold">{t('profile.title')}</h1>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <button
             onClick={() => navigate('/lobby')}
             className="rounded dark:bg-slate-700 bg-app-hover px-3 py-1.5 text-sm hover:dark:bg-slate-600 bg-app-border-strong"
           >
             {t('profile.backToLobby')}
+          </button>
+          <button
+            onClick={() => navigate('/explore')}
+            className="rounded dark:bg-slate-700 bg-app-hover px-3 py-1.5 text-sm hover:dark:bg-slate-600 bg-app-border-strong"
+            title={t('explore.title')}
+          >
+            🎬 {t('explore.title')}
           </button>
           <button
             onClick={() => signOut()}

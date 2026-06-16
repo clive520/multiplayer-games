@@ -55,6 +55,12 @@ export interface Room {
    * 預設 0；達到 1 就不能再發起悔棋（之後可由 #14 房間設定擴充）
    */
   undoUsedByUids?: Record<string, number>;
+  /**
+   * IMPROVEMENTS #22 棋譜：對局結束時建立的 gameHistory doc ID
+   * 用於 GameRoom 自動給玩家/觀戰者建立 saved link
+   * （Cloud Functions 沒開，server-side 不能跨 user 建 link）
+   */
+  lastHistoryEntryId?: string | null;
 }
 
 export interface RoomSummary {

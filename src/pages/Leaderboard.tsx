@@ -54,6 +54,13 @@ export default function Leaderboard() {
           >
             {t('nav.lobby')}
           </button>
+          <button
+            onClick={() => navigate('/explore')}
+            className="rounded dark:bg-slate-700 bg-app-hover px-3 py-1.5 text-sm hover:dark:bg-slate-600 bg-app-border-strong"
+            title={t('explore.title')}
+          >
+            🎬 {t('explore.title')}
+          </button>
           {user ? (
             <button
               onClick={() => signOut()}

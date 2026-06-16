@@ -83,10 +83,10 @@ service cloud.firestore {
         request.resource.data.status == 'waiting';
 
       // 更新規則：四種合法情境
-      // 允許的欄位含 hostId / spectators / turnStartedAt / turnSymbol / undoUsedByUids
+      // 允許的欄位含 hostId / spectators / turnStartedAt / turnSymbol / undoUsedByUids / lastHistoryEntryId
       allow update: if isSignedIn() &&
         request.resource.data.diff(resource.data).affectedKeys()
-          .hasOnly(['players', 'playerUids', 'hostId', 'status', 'startedAt', 'endedAt', 'winnerId', 'isDraw', 'lastActivityAt', 'spectators', 'spectatorUids', 'turnStartedAt', 'turnSymbol', 'undoUsedByUids']) &&
+          .hasOnly(['players', 'playerUids', 'hostId', 'status', 'startedAt', 'endedAt', 'winnerId', 'isDraw', 'lastActivityAt', 'spectators', 'spectatorUids', 'turnStartedAt', 'turnSymbol', 'undoUsedByUids', 'lastHistoryEntryId']) &&
         (
           isRoomPlayer() ||
           resource.data.hostId == request.auth.uid ||

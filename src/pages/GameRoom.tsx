@@ -24,6 +24,7 @@ import {
   isUndoRequestTimedOut,
   type UndoRequest,
 } from '../core/services/undoService';
+import { ensureAutoLinkedToHistory } from '../core/services/historyService';
 import { useToast } from '../core/components/Toast';
 import { getGameDefinition } from '@/registry';
 import type { GameComponentProps, MoveRecord } from '../core/types/game';
@@ -247,6 +248,33 @@ export default function GameRoom() {
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rtGameState, room?.status, room?.gameType, room?.players, gameDef, roomId]);
+
+  // IMPROVEMENTS #22 修：對局結束時，client-side 為當前使用者建立棋譜 saved link
+  // 因為 Firestore rules 不允許 server-side 跨 user 寫 savedGameHistory
+  // 每個 player / spectator 自己進到 finished 房間時自己 create
+  useEffect(() => {
+    if (!room || !user || !profile) return;
+    if (room.status !== 'finished') return;
+    const entryId = room.lastHistoryEntryId;
+    if (!entryId) return;
+    // 只為「自己」link（不為 AI 玩家）
+    if (!room.playerUids.includes(user.uid)) return;
+
+    const isPlayer = room.players.some((p) => p.uid === user.uid);
+    const isDraw = room.isDraw;
+    const winnerId = room.winnerId;
+    const outcome = !isPlayer
+      ? 'spectator'
+      : isDraw
+        ? 'draw'
+        : winnerId === user.uid
+          ? 'win'
+          : 'lose';
+
+    void ensureAutoLinkedToHistory(user.uid, entryId, outcome).catch((err) => {
+      console.warn('建立棋譜 saved link 失敗', err);
+    });
+  }, [room, user, profile]);
 
   // IMPROVEMENTS #12 悔棋：自動清除超時的請求（必須在 early return 之前，遵守 React hooks 規則）
   useEffect(() => {

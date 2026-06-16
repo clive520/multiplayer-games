@@ -246,6 +246,13 @@ export default function Lobby() {
             {t('nav.leaderboard')}
           </button>
           <button
+            onClick={() => navigate('/explore')}
+            className="rounded dark:bg-slate-700 bg-app-hover px-3 py-1.5 text-sm hover:dark:bg-slate-600 bg-app-border-strong"
+            title={t('explore.title')}
+          >
+            🎬 {t('explore.title')}
+          </button>
+          <button
             onClick={() => navigate('/settings')}
             className="rounded dark:bg-slate-700 bg-app-hover px-3 py-1.5 text-sm hover:dark:bg-slate-600 bg-app-border-strong"
           >

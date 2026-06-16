@@ -95,36 +95,32 @@ export async function createHistoryEntry(args: {
   await setDoc(ref, entry);
   const entryId = ref.id;
 
-  // 自動為每個 player / spectator 建立 saved link
-  for (const uid of [...args.playerUids, ...args.spectatorUids]) {
-    await autoLinkUserToHistory(uid, entryId, args);
-  }
+  // 不在 server 端自動建立 saved link
+  // 原因：Firestore rules 要求 savedGameHistory 的 create 必須是 isSelf(uid)，
+  // server 端的 auth.uid 只能為呼叫者本人建，無法為其他玩家/觀戰者建。
+  // 改由各 player/spectator 的 client 端在 GameRoom 看到 finished 時自己 create。
+  // （IMPROVEMENTS #22 修：原本是 server-side loop，會只建房主的 link。）
 
   return entryId;
 }
 
-async function autoLinkUserToHistory(
+/**
+ * Client-side 自動 link 工具（IMPROVEMENTS #22 修）
+ * - 在 GameRoom 看到 room.status === 'finished' 時呼叫
+ * - 只 link 當前登入使用者（auth.uid == uid，符合 rules）
+ * - 如果已有 link 就跳過
+ */
+export async function ensureAutoLinkedToHistory(
   uid: string,
   entryId: string,
-  args: {
-    winnerId: string | null;
-    isDraw: boolean;
-    playerUids: string[];
-    playerNames: Record<string, string>;
-  },
+  outcome: SavedOutcome,
 ): Promise<void> {
-  const isPlayer = args.playerUids.includes(uid);
-  const outcome: SavedOutcome = !isPlayer
-    ? 'spectator'
-    : args.isDraw
-      ? 'draw'
-      : args.winnerId === uid
-        ? 'win'
-        : 'lose';
-
+  // 檢查是否已存在
+  const existing = await getDoc(savedRef(uid, entryId));
+  if (existing.exists()) return;
   await linkUserToHistory(uid, entryId, {
     entryId,
-    yourSymbol: null, // 對局結束時不知道你是 X 或 O；如需可在後續 query
+    yourSymbol: null,
     yourOutcome: outcome,
     linkedAt: Date.now(),
     source: 'auto',

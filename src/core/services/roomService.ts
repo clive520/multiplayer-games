@@ -74,6 +74,7 @@ function roomFromDoc(id: string, data: Record<string, unknown>): Room {
     turnSymbol: (data.turnSymbol as string) ?? null,
     turnTimeLimitSec: parseTurnTimeLimit(data.turnTimeLimitSec),
     undoUsedByUids: (data.undoUsedByUids as Record<string, number> | undefined) ?? {},
+    lastHistoryEntryId: (data.lastHistoryEntryId as string | null | undefined) ?? null,
   };
 }
 
@@ -614,19 +615,30 @@ export async function finishGame(
     }).catch((err) => {
       console.error('更新使用者 stats 失敗', err);
     }),
-    // IMPROVEMENTS #22：用新版 archive（含 moves + 自動 link + 清 RTDB）
-    archiveFinishedRoomToHistory({
-      ...room,
-      status: 'finished',
-      endedAt: Date.now(),
-      winnerId: realWinnerId,
-      isDraw,
-      turnStartedAt: null,
-      turnSymbol: null,
-    }).catch((err) => {
-      console.error('存棋譜失敗', err);
-    }),
   ]);
+
+  // IMPROVEMENTS #22：用新版 archive（含 moves + 清 RTDB）
+  // IMPROVEMENTS #22 fix：client-side auto-link 取代 server-side
+  // 因為 Firestore rules 不允許跨 user 寫 savedGameHistory，
+  // 改由各玩家/觀戰者的 client 端在進入 finished 房間時自己 create link
+  const entryId = await archiveFinishedRoomToHistory({
+    ...room,
+    status: 'finished',
+    endedAt: Date.now(),
+    winnerId: realWinnerId,
+    isDraw,
+    turnStartedAt: null,
+    turnSymbol: null,
+  }).catch((err) => {
+    console.error('存棋譜失敗', err);
+    return null;
+  });
+  // 把 entryId 寫回房間，讓 GameRoom 知道要建立 saved link
+  if (entryId) {
+    await updateDoc(ref, { lastHistoryEntryId: entryId }).catch((err) => {
+      console.warn('寫入 lastHistoryEntryId 失敗', err);
+    });
+  }
 }
 
 export async function resetRoom(roomId: string): Promise<void> {

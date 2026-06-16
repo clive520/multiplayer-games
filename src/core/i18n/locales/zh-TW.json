@@ -380,6 +380,7 @@
   },
   "explore": {
     "title": "探索公開棋譜",
+    "shortTitle": "探索棋譜",
     "subtitle": "瀏覽所有公開的對局棋譜",
     "filterAll": "全部",
     "filterTictactoe": "井字",
