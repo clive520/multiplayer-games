@@ -131,7 +131,7 @@ export async function ensureAutoLinkedToHistory(
 export async function getHistoryEntry(entryId: string): Promise<GameHistoryEntry | null> {
   const snap = await getDoc(doc(db, HISTORY_COLLECTION, entryId));
   if (!snap.exists()) return null;
-  return { id: snap.id, ...(snap.data() as Omit<GameHistoryEntry, 'id'>) };
+  return normalizeEntry(snap.id, snap.data() as Record<string, unknown>);
 }
 
 /** 訂閱單一棋譜（live） */
@@ -144,8 +144,35 @@ export function subscribeHistoryEntry(
       callback(null);
       return;
     }
-    callback({ id: snap.id, ...(snap.data() as Omit<GameHistoryEntry, 'id'>) });
+    callback(normalizeEntry(snap.id, snap.data() as Record<string, unknown>));
   });
+}
+
+/**
+ * 正規化單一棋譜 doc（IMPROVEMENTS #22 修）
+ * - 舊版寫入的 doc 可能缺欄位（如 #22 client-side auto-link 修好前的 doc）
+ * - 缺欄位會讓前端 `.map` 崩潰
+ * - 補上預設值讓前端程式碼可以安全存取
+ */
+function normalizeEntry(id: string, data: Record<string, unknown>): GameHistoryEntry {
+  return {
+    id,
+    roomId: (data.roomId as string) ?? '',
+    gameType: (data.gameType as GameHistoryEntry['gameType']) ?? 'tictactoe',
+    startedAt: (data.startedAt as number) ?? 0,
+    endedAt: (data.endedAt as number) ?? 0,
+    winnerId: (data.winnerId as string | null) ?? null,
+    isDraw: (data.isDraw as boolean) ?? false,
+    playerUids: Array.isArray(data.playerUids) ? (data.playerUids as string[]) : [],
+    playerNames: (data.playerNames as Record<string, string>) ?? {},
+    spectatorUids: Array.isArray(data.spectatorUids) ? (data.spectatorUids as string[]) : [],
+    moves: Array.isArray(data.moves) ? (data.moves as GameHistoryEntry['moves']) : [],
+    initialBoard: Array.isArray(data.initialBoard) ? (data.initialBoard as string[]) : [],
+    totalMoves: (data.totalMoves as number) ?? 0,
+    truncated: (data.truncated as boolean) ?? false,
+    createdAt: (data.createdAt as number) ?? 0,
+    hasAI: (data.hasAI as boolean) ?? false,
+  };
 }
 
 /** 批次取得棋譜（給 Profile「我的棋譜」用：先訂閱 saved links，再 batch fetch） */
@@ -153,20 +180,20 @@ export async function getHistoryEntriesByIds(entryIds: string[]): Promise<GameHi
   if (entryIds.length === 0) return [];
   // Firestore 'in' 查詢最多 30 個，分批
   const batchSize = 30;
-  const batches: string[][] = [];
-  for (let i = 0; i < entryIds.length; i += batchSize) {
-    batches.push(entryIds.slice(i, i + batchSize));
-  }
-  const results: GameHistoryEntry[] = [];
-  for (const batch of batches) {
-    const q = query(collection(db, HISTORY_COLLECTION), where('__name__', 'in', batch));
-    const snap = await getDocs(q);
-    for (const d of snap.docs) {
-      results.push({ id: d.id, ...(d.data() as Omit<GameHistoryEntry, 'id'>) });
+    const batches: string[][] = [];
+    for (let i = 0; i < entryIds.length; i += batchSize) {
+      batches.push(entryIds.slice(i, i + batchSize));
     }
+    const results: GameHistoryEntry[] = [];
+    for (const batch of batches) {
+      const q = query(collection(db, HISTORY_COLLECTION), where('__name__', 'in', batch));
+      const snap = await getDocs(q);
+      for (const d of snap.docs) {
+        results.push(normalizeEntry(d.id, d.data() as Record<string, unknown>));
+      }
+    }
+    return results;
   }
-  return results;
-}
 
 // =============================================================
 // Saved History Link
@@ -352,7 +379,7 @@ export async function searchHistory(
   const snap = await getDocs(q);
   const entries: GameHistoryEntry[] = [];
   for (const d of snap.docs) {
-    entries.push({ id: d.id, ...(d.data() as Omit<GameHistoryEntry, 'id'>) });
+    entries.push(normalizeEntry(d.id, d.data() as Record<string, unknown>));
   }
   const nextCursor = snap.docs.length > 0 ? snap.docs[snap.docs.length - 1] : null;
   return { entries, nextCursor };
@@ -371,7 +398,7 @@ export function subscribeLatestHistory(
   return onSnapshot(q, (snap) => {
     const entries: GameHistoryEntry[] = [];
     for (const d of snap.docs) {
-      entries.push({ id: d.id, ...(d.data() as Omit<GameHistoryEntry, 'id'>) });
+      entries.push(normalizeEntry(d.id, d.data() as Record<string, unknown>));
     }
     callback(entries);
   });
