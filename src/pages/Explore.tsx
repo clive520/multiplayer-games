@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   searchHistory,
@@ -56,11 +56,21 @@ export default function Explore() {
     return unsubscribe;
   }, [filterGame, filterAI]);
 
+  const navigate = useNavigate();
+
   return (
     <div className="mx-auto min-h-screen max-w-4xl p-6">
-      <header className="mb-4">
-        <h1 className="text-2xl font-bold">{t('explore.title')}</h1>
-        <p className="text-sm dark:text-slate-400 text-slate-600">{t('explore.subtitle')}</p>
+      <header className="mb-4 flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold">{t('explore.title')}</h1>
+          <p className="text-sm dark:text-slate-400 text-slate-600">{t('explore.subtitle')}</p>
+        </div>
+        <button
+          onClick={() => navigate('/lobby')}
+          className="shrink-0 rounded dark:bg-slate-700 bg-app-hover px-3 py-1.5 text-sm hover:dark:bg-slate-600 bg-app-border-strong"
+        >
+          ← {t('profile.backToLobby')}
+        </button>
       </header>
 
       {/* 篩選器 */}
