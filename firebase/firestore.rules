@@ -30,15 +30,12 @@ service cloud.firestore {
     }
 
     function isAbandonedRoom() {
-      // lastActivityAt 在程式碼中以 number (millis) 儲存
       return request.time.toMillis() - resource.data.lastActivityAt > 1800000;
     }
 
     // 使用者資料：所有人可讀
     // 自己可寫（個人資料、暱稱、大頭貼等）
-    // 其他玩家也可更新戰績欄位（overall.*、byGame.*、displayName、photoURL、updatedAt）
-    // 因為 recordGameResult 在對戰結束時，需由任一玩家把戰果寫進所有參與者的 user doc
-    // （MVP 暫時信任 client；之後可改用 Cloud Functions server-side 計算）
+    // 其他玩家也可更新戰績欄位
     match /users/{uid} {
       allow read: if isSignedIn();
       allow create: if isSignedIn();
@@ -50,8 +47,23 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // 全域 meta 資料：使用者流水號計數器
-    // 只有 AuthProvider 在 transaction 中讀寫 userCounter 欄位
+    // 使用者子集合：savedGameHistory（IMPROVEMENTS #22）
+    // 個人「我儲存的棋譜」連結，只能操作自己的
+    // 刪除 = 軟刪除連結，棋譜本體 gameHistory 不受影響
+    match /users/{uid}/savedGameHistory/{entryId} {
+      allow read: if isSelf(uid);
+      allow create, delete: if isSelf(uid);
+      allow update: if false;
+    }
+
+    // 使用者子集合：favoriteGameHistory（IMPROVEMENTS #22）
+    match /users/{uid}/favoriteGameHistory/{entryId} {
+      allow read: if isSelf(uid);
+      allow create, delete: if isSelf(uid);
+      allow update: if false;
+    }
+
+    // 全域 meta 資料
     match /meta/{docId} {
       allow read: if isSignedIn();
       allow create: if isSignedIn() &&
@@ -62,7 +74,7 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // 房間：所有人可讀，房間玩家可寫
+    // 房間
     match /rooms/{roomId} {
       allow read: if isSignedIn();
 
@@ -71,29 +83,18 @@ service cloud.firestore {
         request.resource.data.status == 'waiting';
 
       // 更新規則：四種合法情境
-      // 1. 已加入房間的玩家（改 ready、開始遊戲、結束遊戲、回合計時器等）
-      // 2. 房主（重置房間、轉移房主給下一位）
-      // 3. 還未加入但正要加入（把自己加進 playerUids 與 players）
-      // 4. 觀戰者加入或離開（把自己加進 / 移出 spectatorUids 與 spectators）
-      // 允許的欄位含 hostId（房主離開時轉移給下一位）、spectators/spectatorUids（觀戰者）、
-      // turnStartedAt / turnSymbol（每回合計時器，由當前玩家下棋後更新）、
-      // undoUsedByUids（IMPROVEMENTS #12 悔棋額度，悔棋成功時累加）
+      // 允許的欄位含 hostId / spectators / turnStartedAt / turnSymbol / undoUsedByUids
       allow update: if isSignedIn() &&
         request.resource.data.diff(resource.data).affectedKeys()
           .hasOnly(['players', 'playerUids', 'hostId', 'status', 'startedAt', 'endedAt', 'winnerId', 'isDraw', 'lastActivityAt', 'spectators', 'spectatorUids', 'turnStartedAt', 'turnSymbol', 'undoUsedByUids']) &&
         (
           isRoomPlayer() ||
           resource.data.hostId == request.auth.uid ||
-          // 加入房間：原本不在 playerUids，更新後在
-          // 必須用括號確保 ! 套用在整個 in 運算式上
           (!(request.auth.uid in resource.data.playerUids) &&
            request.auth.uid in request.resource.data.playerUids) ||
-          // 加入/離開觀戰
           isAddingSelfToSpectators() ||
           isRemovingSelfFromSpectators()
         ) &&
-        // 回合計時器時間合法性檢查：turnStartedAt 不能超過 server time + 5s（防止作弊）
-        // （舊資料沒有 turnStartedAt 時跳過檢查）
         (!('turnStartedAt' in request.resource.data) ||
          request.resource.data.turnStartedAt == null ||
          request.resource.data.turnStartedAt <= request.time.toMillis() + 5000);
@@ -105,7 +106,7 @@ service cloud.firestore {
         isAbandonedRoom()
       );
 
-      // 房間密碼（秘密子集合）：所有人可讀（用於驗證密碼），僅房主可寫
+      // 房間密碼子集合：所有人可讀（驗證用），僅房主可寫
       match /secret/{document=**} {
         allow read: if isSignedIn();
         allow create, update: if isSignedIn() &&
@@ -114,53 +115,31 @@ service cloud.firestore {
           get(/databases/$(database)/documents/rooms/$(roomId)).data.hostId == request.auth.uid;
       }
 
-    // 對戰歷史子集合
-    match /history/{moveId} {
-      allow read: if isSignedIn();
-      allow create: if isSignedIn();
-      allow update, delete: if false;
+      // 對戰歷史子集合（rooms/{roomId}/history — 已被 #22 取代但保留相容）
+      match /history/{moveId} {
+        allow read: if isSignedIn();
+        allow create: if isSignedIn();
+        allow update, delete: if false;
+      }
     }
 
-    // IMPROVEMENTS #22 棋譜分享
-    // gameHistory：公開棋譜本體（任何登入者可讀、參與者可建、不能改/刪）
+    // IMPROVEMENTS #22 公開棋譜
+    // 任何登入者皆可讀（探索、Profile 等場景）
+    // 只能由 playerUids 內的玩家建立（archiveFinishedRoomToHistory 寫入時驗證）
+    // 棋譜一旦建立就不可改/刪
     match /gameHistory/{entryId} {
       allow read: if isSignedIn();
-      // 只能由玩家/觀戰者建立（看 playerUids 或 spectatorUids）
       allow create: if isSignedIn() &&
         request.auth.uid in request.resource.data.playerUids;
       allow update, delete: if false;
     }
 
-    // 個人子集合：saved / favorite（IMPROVEMENTS #22）
-    // - savedGameHistory：連結到自己儲存的棋譜
-    // - favoriteGameHistory：連結到自己加到最愛的棋譜
-    // 兩者都只能操作自己的，刪除 = 軟刪除連結，棋譜本體不受影響
-    match /users/{uid}/savedGameHistory/{entryId} {
-      allow read: if isSelf(uid);
-      allow create, delete: if isSelf(uid);
-      allow update: if false;
-    }
-    match /users/{uid}/favoriteGameHistory/{entryId} {
-      allow read: if isSelf(uid);
-      allow create, delete: if isSelf(uid);
-      allow update: if false;
-    }
-  }
-
-    // 密碼唯一性索引：用密碼 hash 當 document ID
-    // 建立後不可修改（強制使用 create），避免覆蓋
+    // 密碼唯一性索引
     match /passwordIndex/{hash} {
       allow read: if isSignedIn();
       allow create: if isSignedIn();
-      allow update: if false;  // 不可改，只能建立後整個刪除
-      allow delete: if isSignedIn();  // 房主離開時刪除
-    }
-
-    // 對戰歷史集合：玩家可讀自己有參與的記錄
-    match /gameHistory/{entryId} {
-      allow read: if isSignedIn() && request.auth.uid in resource.data.playerUids;
-      allow create: if isSignedIn();
-      allow update, delete: if false;
+      allow update: if false;
+      allow delete: if isSignedIn();
     }
 
     // 其他集合預設拒絕
