@@ -144,6 +144,31 @@ export function getReplayRenderers(gameType: GameType): ReplayRenderers {
         },
         maxCellPx: 32,
       };
+    case 'dotsandboxes':
+      return {
+        boardSize: 4, // 4x4 方格
+        boardClassName: 'dark:bg-slate-800 bg-app-card border dark:border-slate-700 border-app-border',
+        renderCell: (cell, isLastMoveHere) => {
+          if (!cell) return null;
+          const isX = cell === 'X';
+          return (
+            <>
+              <span
+                className={`absolute inset-1 rounded-sm ${
+                  isX ? 'bg-blue-500 opacity-50' : 'bg-rose-500 opacity-50'
+                }`}
+              />
+              {isLastMoveHere && (
+                <span
+                  aria-hidden
+                  className="absolute inset-0 animate-pulse-ring rounded"
+                />
+              )}
+            </>
+          );
+        },
+        maxCellPx: 32,
+      };
     default:
       return {
         boardSize: 3,

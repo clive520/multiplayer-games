@@ -29,6 +29,12 @@ export interface MoveRecord {
   timestamp: number;
   flipped?: ReadonlyArray<{ row: number; col: number }>;
   boardAfter?: ReadonlyArray<string>;
+  /**
+   * 遊戲自訂附加資料（IMPROVEMENTS #12 + 5th 遊戲 Dots and Boxes）
+   * - dotsandboxes 用 `{ type: 'h' | 'v' }` 標記這步畫的是水平還是垂直邊
+   * - 其他遊戲不需要這個欄位
+   */
+  metadata?: Readonly<Record<string, unknown>>;
 }
 
 export interface GameResult {

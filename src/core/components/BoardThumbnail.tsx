@@ -120,5 +120,31 @@ export function BoardThumbnail({ gameType, board, cellSize = 18 }: BoardThumbnai
     );
   }
 
+  // dotsandboxes：4x4 方格，用 4 個小方格代表誰佔領（X 藍/O 紅）
+  if (gameType === 'dotsandboxes') {
+    const cells = board ?? Array(16).fill(null);
+    return (
+      <div
+        className="grid gap-0.5 rounded border dark:border-slate-700 border-app-border dark:bg-slate-800 bg-app-card p-1"
+        style={{
+          gridTemplateColumns: `repeat(4, ${cellSize}px)`,
+          gridTemplateRows: `repeat(4, ${cellSize}px)`,
+        }}
+        aria-label="點點連連棋盤縮圖"
+      >
+        {cells.map((c, i) => (
+          <div
+            key={i}
+            className="flex items-center justify-center"
+            style={{ width: cellSize, height: cellSize }}
+          >
+            {c === 'X' && <div className="h-3 w-3 rounded-sm bg-blue-500 opacity-60" />}
+            {c === 'O' && <div className="h-3 w-3 rounded-sm bg-rose-500 opacity-60" />}
+          </div>
+        ))}
+      </div>
+    );
+  }
+
   return null;
 }

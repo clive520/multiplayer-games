@@ -3,12 +3,14 @@ import { tictactoeDefinition } from './games/tictactoe';
 import { gomokuDefinition } from './games/gomoku';
 import { reversiDefinition } from './games/reversi';
 import { connect4Definition } from './games/connect4';
+import { dotsAndBoxesDefinition } from './games/dotsandboxes';
 
 export const gameRegistry: GameDefinition[] = [
   tictactoeDefinition,
   gomokuDefinition,
   reversiDefinition,
   connect4Definition,
+  dotsAndBoxesDefinition,
 ];
 
 export function getGameDefinition(id: string): GameDefinition | undefined {

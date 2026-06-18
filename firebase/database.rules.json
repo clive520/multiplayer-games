@@ -12,7 +12,9 @@
         "state": {
           ".read": "auth != null",
           ".write": "auth != null",
-          ".validate": "newData.hasChildren(['board', 'moveCount'])"
+          // 5th 遊戲 dotsandboxes 用 hEdges/vEdges/boxOwners 取代 board，
+          // 所以只驗證所有遊戲都有的 moveCount + currentTurn（currentTurn 黑白棋之前也用，所以兩個最常見）
+          ".validate": "newData.hasChildren(['moveCount'])"
         },
         // 玩家在線狀態：僅自己可寫
         "presence": {

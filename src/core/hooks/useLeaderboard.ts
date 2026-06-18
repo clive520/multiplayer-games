@@ -34,6 +34,8 @@ export function subscribeLeaderboard(
             tictactoe: { ...DEFAULT_GAME_STATS },
             gomoku: { ...DEFAULT_GAME_STATS },
             reversi: { ...DEFAULT_GAME_STATS },
+            connect4: { ...DEFAULT_GAME_STATS },
+            dotsandboxes: { ...DEFAULT_GAME_STATS },
           },
           winRate: calculateWinRate(stats),
         };
