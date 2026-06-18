@@ -10,6 +10,12 @@ import type { GameHistoryEntry } from '../core/types/history';
 import { gameRegistry } from '@/registry';
 import type { GameType } from '../core/types/room';
 
+/** IMPROVEMENTS 從 registry 自動產生篩選選項（新增遊戲自動包含） */
+const FILTER_GAME_OPTIONS: ReadonlyArray<GameType | 'all'> = [
+  'all',
+  ...gameRegistry.map((g) => g.id as GameType),
+];
+
 /**
  * 公開棋譜探索頁（IMPROVEMENTS #22 Phase 2）
  *
@@ -76,7 +82,7 @@ export default function Explore() {
       {/* 篩選器 */}
       <section className="mb-4 flex flex-wrap gap-2">
         <div className="flex gap-1 rounded-lg dark:bg-slate-800 bg-app-card p-1">
-          {(['all', 'tictactoe', 'gomoku', 'reversi'] as const).map((gt) => (
+          {FILTER_GAME_OPTIONS.map((gt) => (
             <button
               key={gt}
               type="button"

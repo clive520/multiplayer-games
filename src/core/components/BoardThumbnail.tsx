@@ -91,5 +91,34 @@ export function BoardThumbnail({ gameType, board, cellSize = 18 }: BoardThumbnai
     );
   }
 
+  // connect4：7x6 棋盤，用紅圓/黃圓環表示
+  if (gameType === 'connect4') {
+    const cells = board ?? Array(42).fill('');
+    return (
+      <div
+        className="grid gap-0.5 rounded border border-amber-900/30 bg-amber-50 p-1"
+        style={{
+          gridTemplateColumns: `repeat(7, ${Math.round(cellSize * 0.6)}px)`,
+          gridTemplateRows: `repeat(6, ${Math.round(cellSize * 0.6)}px)`,
+        }}
+        aria-label="四子棋棋盤縮圖"
+      >
+        {cells.map((c, i) => (
+          <div
+            key={i}
+            className="flex items-center justify-center"
+            style={{
+              width: Math.round(cellSize * 0.6),
+              height: Math.round(cellSize * 0.6),
+            }}
+          >
+            {c === 'X' && <div className="h-3 w-3 rounded-full bg-red-500" />}
+            {c === 'O' && <div className="h-3 w-3 rounded-full bg-yellow-400 ring-1 ring-amber-700" />}
+          </div>
+        ))}
+      </div>
+    );
+  }
+
   return null;
 }

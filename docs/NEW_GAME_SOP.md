@@ -373,6 +373,40 @@ firebase deploy --only firestore  # 一併部署 rules + indexes
 
 **檢查 `statsService.recordGameResult`**：是否正確讀取 `players[].symbol`（應該通用，不用改）。
 
+### 12.1 ⚠️ 常見漏掉的位置（**新增遊戲最容易忘的地方**）
+
+下面這些地方**每個都會硬編 gameId 清單**，新增遊戲時**必須一起更新**。  
+建議：把硬編清單改成 `gameRegistry.map(...)` 自動產生（下面標 ✅ 已改 / ⚠️ 待改）。
+
+| 位置 | 檔案 | 寫法 | 狀態 |
+|---|---|---|---|
+| Profile「我的棋譜」遊戲名 + Icon | `pages/Profile.tsx` | 硬編 `GAME_LABELS` / `GAME_ICONS` | ⚠️ **必改**（用 Record 必須 exhaustive）|
+| Leaderboard tabs | `pages/Leaderboard.tsx` | 原本硬編 → 改用 `gameRegistry.map` | ✅ 已自動 |
+| Explore 篩選器 | `pages/Explore.tsx` | 原本硬編 → 改用 `FILTER_GAME_OPTIONS` | ✅ 已自動 |
+| BoardThumbnail | `core/components/BoardThumbnail.tsx` | if/switch 渲染 | ⚠️ **必加**新 gameType case |
+| GameRoom 遊戲邏輯 | `pages/GameRoom.tsx` | `if (gameType === 'xxx')` 三處分支 | ⚠️ **必加**新 resetGameState / submitMove 引入 |
+| i18n keys | `core/i18n/locales/*.json` | 必須 explicit 加（雙括號、parity 測試會抓）| ⚠️ **必加** |
+| 戰績 byGame shape | `core/services/statsService.ts` | `byGame: { xxx: GameStats, ... }` | ⚠️ **必加** |
+| GameType union | `core/types/room.ts` | `'tictactoe' \| 'gomoku' \| ...` | ⚠️ **必加** |
+| MOVES_CAP | `core/types/history.ts` | `MOVES_CAP: Record<GameType, number>` | ⚠️ **必加**（沒有會無限增長）|
+| getInitialBoard | `core/utils/board.ts` | switch case | ⚠️ **必加** |
+| replayRenderers | `core/utils/replayRenderers.tsx` | switch case | ⚠️ **必加** |
+
+**檢查指令**（必跑）：
+
+```bash
+# 找所有硬編 gameId 的地方
+grep -rn "'tictactoe'\|'gomoku'\|'reversi'" src/
+
+# 跑 typecheck 看有沒有漏掉 GameType union
+npm run typecheck
+
+# 跑 i18n parity 測試
+npm test -- i18n
+```
+
+**已發生**：2026-06-18 Connect 4 上線時漏掉 `Explore.tsx` 的篩選清單和 `BoardThumbnail.tsx` 的渲染，導致公開棋譜列表看不到四子棋。
+
 ---
 
 ## Phase 13：測試（30-60 分鐘）
