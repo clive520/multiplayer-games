@@ -40,14 +40,14 @@ function getAvailableEdges(state: DotsAndBoxesState): EdgeInfo[] {
   const out: EdgeInfo[] = [];
   for (let r = 0; r < BOX_ROWS + 1; r++) {
     for (let c = 0; c < BOX_COLS; c++) {
-      if (state.hEdges[r][c] === null) {
+      if (state.hEdges[r][c] === '') {
         out.push(analyzeEdge(state, 'h', r, c));
       }
     }
   }
   for (let r = 0; r < BOX_ROWS; r++) {
     for (let c = 0; c < BOX_COLS + 1; c++) {
-      if (state.vEdges[r][c] === null) {
+      if (state.vEdges[r][c] === '') {
         out.push(analyzeEdge(state, 'v', r, c));
       }
     }
@@ -66,7 +66,7 @@ function analyzeEdge(
   let threeSide = 0;
   const affected = boxesAffectedBy(type, row, col);
   for (const { r, c } of affected) {
-    if (state.boxOwners[r][c] !== null) continue; // 已被拿走
+    if (state.boxOwners[r][c] !== '') continue; // 已被拿走
     const sides = countBoxSides(state, r, c);
     // 畫完後 sides+1：
     //   原本 1 → 2-side（對手下一步可拿 → 危險）
@@ -101,10 +101,10 @@ function boxesAffectedBy(
 /** 計算某方格目前有幾條邊畫了 */
 function countBoxSides(state: DotsAndBoxesState, r: number, c: number): number {
   let n = 0;
-  if (state.hEdges[r][c] !== null) n++; // 上邊
-  if (state.hEdges[r + 1][c] !== null) n++; // 下邊
-  if (state.vEdges[r][c] !== null) n++; // 左邊
-  if (state.vEdges[r][c + 1] !== null) n++; // 右邊
+  if (state.hEdges[r][c] !== '') n++; // 上邊
+  if (state.hEdges[r + 1][c] !== '') n++; // 下邊
+  if (state.vEdges[r][c] !== '') n++; // 左邊
+  if (state.vEdges[r][c + 1] !== '') n++; // 右邊
   return n;
 }
 
@@ -121,28 +121,27 @@ function estimateChainLength(state: DotsAndBoxesState, start: { r: number; c: nu
     const { r, c } = stack.pop()!;
     const key = `${r},${c}`;
     if (visited.has(key)) continue;
-    if (state.boxOwners[r][c] !== null) continue;
+    if (state.boxOwners[r][c] !== '') continue;
     visited.add(key);
     count++;
     // 找 4 個相鄰方格（透過共享邊）
     const neighbors: Array<{ r: number; c: number }> = [];
-    if (state.hEdges[r][c] === null) {
+    if (state.hEdges[r][c] === '') {
       // 上邊沒畫
       if (r - 1 >= 0) neighbors.push({ r: r - 1, c });
-    } else if (state.hEdges[r][c] !== null && r - 1 >= 0) {
-      // 上邊畫了，可視為鏈中兩方格相連（只走 2-side → 1-side 方向）
     }
-    if (state.hEdges[r + 1][c] === null && r + 1 < BOX_ROWS) {
+    // 上邊畫了不需要走（鏈只在「未畫邊」方向延伸）
+    if (state.hEdges[r + 1][c] === '' && r + 1 < BOX_ROWS) {
       neighbors.push({ r: r + 1, c });
     }
-    if (state.vEdges[r][c] === null && c - 1 >= 0) {
+    if (state.vEdges[r][c] === '' && c - 1 >= 0) {
       neighbors.push({ r, c: c - 1 });
     }
-    if (state.vEdges[r][c + 1] === null && c + 1 < BOX_COLS) {
+    if (state.vEdges[r][c + 1] === '' && c + 1 < BOX_COLS) {
       neighbors.push({ r, c: c + 1 });
     }
     for (const n of neighbors) {
-      if (!visited.has(`${n.r},${n.c}`) && state.boxOwners[n.r][n.c] === null) {
+      if (!visited.has(`${n.r},${n.c}`) && state.boxOwners[n.r][n.c] === '') {
         stack.push(n);
       }
     }
@@ -182,7 +181,7 @@ function pickBest(state: DotsAndBoxesState, preferShortChain: boolean): Move | n
       const affected = boxesAffectedBy(e.type, e.row, e.col);
       let minChain = 0;
       for (const a of affected) {
-        if (state.boxOwners[a.r][a.c] !== null) continue;
+        if (state.boxOwners[a.r][a.c] !== '') continue;
         const sides = countBoxSides(state, a.r, a.c);
         if (sides === 1) {
           const chain = estimateChainLength(state, { r: a.r, c: a.c });

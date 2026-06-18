@@ -20,7 +20,7 @@
 
 import type { MoveRecord } from '../../core/types/game';
 
-export type CellMark = 'X' | 'O' | null;
+export type CellMark = 'X' | 'O' | '';
 
 /** 邊的方向 */
 export type EdgeDirection = 'h' | 'v';
@@ -52,9 +52,9 @@ export interface DotsAndBoxesState {
 
 export function createInitialState(): DotsAndBoxesState {
   return {
-    hEdges: emptyGrid(BOX_ROWS + 1, BOX_COLS, null),
-    vEdges: emptyGrid(BOX_ROWS, BOX_COLS + 1, null),
-    boxOwners: emptyGrid(BOX_ROWS, BOX_COLS, null),
+    hEdges: emptyGrid(BOX_ROWS + 1, BOX_COLS, ''),
+    vEdges: emptyGrid(BOX_ROWS, BOX_COLS + 1, ''),
+    boxOwners: emptyGrid(BOX_ROWS, BOX_COLS, ''),
     currentTurn: 'X',
     moveCount: 0,
     lastMove: null,

@@ -114,7 +114,7 @@ export default function DotsAndBoxes({
   if (!state) {
     headerStatus = { kind: 'spectating', symbol: 'X', gameType: 'dotsandboxes' };
   } else {
-    const isFinished = state.boxOwners.every((row) => row.every((c) => c !== null));
+    const isFinished = state.boxOwners.every((row) => row.every((c) => c !== ''));
     if (isFinished) {
       headerStatus = { kind: 'spectating', symbol: state.currentTurn, gameType: 'dotsandboxes' };
     } else if (isSpectator) {
@@ -172,7 +172,7 @@ export default function DotsAndBoxes({
           {/* 1. 方格所有權背景（先畫在最底層） */}
           {state.boxOwners.map((row, r) =>
             row.map((owner, c) => {
-              if (owner === null) return null;
+              if (owner === '') return null;
               return (
                 <rect
                   key={`box-${r}-${c}`}
@@ -211,7 +211,7 @@ export default function DotsAndBoxes({
               const isHover = hovered?.type === 'h' && hovered.row === r && hovered.col === c;
               return (
                 <g key={`h-${r}-${c}`}>
-                  {owner !== null ? (
+                  {owner !== '' ? (
                     <line
                       x1={PADDING + c * CELL}
                       y1={PADDING + r * CELL}
@@ -223,7 +223,7 @@ export default function DotsAndBoxes({
                     />
                   ) : null}
                   {/* 點擊熱區：寬 CELL × 高 16 的透明矩形 */}
-                  {owner === null && isMyTurn ? (
+                  {owner === '' && isMyTurn ? (
                     <rect
                       x={PADDING + c * CELL}
                       y={PADDING + r * CELL - 10}
@@ -251,7 +251,7 @@ export default function DotsAndBoxes({
               const isHover = hovered?.type === 'v' && hovered.row === r && hovered.col === c;
               return (
                 <g key={`v-${r}-${c}`}>
-                  {owner !== null ? (
+                  {owner !== '' ? (
                     <line
                       x1={PADDING + c * CELL}
                       y1={PADDING + r * CELL}
@@ -262,7 +262,7 @@ export default function DotsAndBoxes({
                       strokeLinecap="round"
                     />
                   ) : null}
-                  {owner === null && isMyTurn ? (
+                  {owner === '' && isMyTurn ? (
                     <rect
                       x={PADDING + c * CELL - 10}
                       y={PADDING + r * CELL}

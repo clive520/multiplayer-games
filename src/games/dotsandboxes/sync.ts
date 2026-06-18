@@ -15,7 +15,8 @@ const statePath = (roomId: string) => `rooms-live/${roomId}/state`;
 export async function ensureGameState(roomId: string): Promise<void> {
   const stateRef = ref(rtdb, statePath(roomId));
   await runTransaction(stateRef, (current) => {
-    if (current) return current;
+    // 沒 state 或 state 結構不對（其他遊戲殘留 / Firebase 序列化損壞）→ 重置
+    if (current && isValidState(current)) return current;
     return dotsAndBoxesEngine.getInitialState();
   });
 }

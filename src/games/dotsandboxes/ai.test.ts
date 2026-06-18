@@ -45,13 +45,13 @@ describe('dotsandboxes AI', () => {
     let has3 = false;
     for (let r = 0; r < 4; r++) {
       for (let c = 0; c < 4; c++) {
-        if (next.boxOwners[r][c] !== null) continue;
+        if (next.boxOwners[r][c] !== '') continue;
         // 計算 4 條邊有幾條畫了
         let n = 0;
-        if (next.hEdges[r][c] !== null) n++;
-        if (next.hEdges[r + 1][c] !== null) n++;
-        if (next.vEdges[r][c] !== null) n++;
-        if (next.vEdges[r][c + 1] !== null) n++;
+        if (next.hEdges[r][c] !== '') n++;
+        if (next.hEdges[r + 1][c] !== '') n++;
+        if (next.vEdges[r][c] !== '') n++;
+        if (next.vEdges[r][c + 1] !== '') n++;
         if (n === 3) has3 = true;
       }
     }

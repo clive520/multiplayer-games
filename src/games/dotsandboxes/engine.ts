@@ -18,16 +18,16 @@ function inBoundsV(row: number, col: number): boolean {
 
 /** 判斷方格 (bRow, bCol) 是否 4 邊都畫了 */
 function isBoxComplete(
-  hEdges: ReadonlyArray<ReadonlyArray<'X' | 'O' | null>>,
-  vEdges: ReadonlyArray<ReadonlyArray<'X' | 'O' | null>>,
+  hEdges: ReadonlyArray<ReadonlyArray<'X' | 'O' | ''>>,
+  vEdges: ReadonlyArray<ReadonlyArray<'X' | 'O' | ''>>,
   bRow: number,
   bCol: number,
 ): boolean {
   return (
-    hEdges[bRow][bCol] !== null &&         // 上邊
-    hEdges[bRow + 1][bCol] !== null &&     // 下邊
-    vEdges[bRow][bCol] !== null &&         // 左邊
-    vEdges[bRow][bCol + 1] !== null        // 右邊
+    hEdges[bRow][bCol] !== '' &&           // 上邊
+    hEdges[bRow + 1][bCol] !== '' &&       // 下邊
+    vEdges[bRow][bCol] !== '' &&           // 左邊
+    vEdges[bRow][bCol + 1] !== ''          // 右邊
   );
 }
 
@@ -47,10 +47,10 @@ export const dotsAndBoxesEngine: GameEngine<DotsAndBoxesState> = {
     if (typeof p.row !== 'number' || typeof p.col !== 'number') return false;
     if (p.type === 'h') {
       if (!inBoundsH(p.row, p.col)) return false;
-      return state.hEdges[p.row][p.col] === null;
+      return state.hEdges[p.row][p.col] === '';
     }
     if (!inBoundsV(p.row, p.col)) return false;
-    return state.vEdges[p.row][p.col] === null;
+    return state.vEdges[p.row][p.col] === '';
   },
 
   applyMove(state, move) {
@@ -73,7 +73,7 @@ export const dotsAndBoxesEngine: GameEngine<DotsAndBoxesState> = {
     const completedBoxes: Array<{ row: number; col: number }> = [];
     const checkBox = (bRow: number, bCol: number): void => {
       if (bRow < 0 || bRow >= BOX_ROWS || bCol < 0 || bCol >= BOX_COLS) return;
-      if (boxOwners[bRow][bCol] !== null) return; // 已佔領
+      if (boxOwners[bRow][bCol] !== '') return; // 已佔領
       if (isBoxComplete(hEdges, vEdges, bRow, bCol)) {
         boxOwners[bRow][bCol] = player;
         completedBoxes.push({ row: bRow, col: bCol });

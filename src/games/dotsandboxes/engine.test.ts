@@ -30,10 +30,10 @@ describe('dotsandboxes engine', () => {
     expect(s.vEdges[0].length).toBe(BOX_COLS + 1); // 5
     expect(s.boxOwners.length).toBe(BOX_ROWS);
     expect(s.boxOwners[0].length).toBe(BOX_COLS);
-    // 全 null
-    expect(s.hEdges.flat().every((c) => c === null)).toBe(true);
-    expect(s.vEdges.flat().every((c) => c === null)).toBe(true);
-    expect(s.boxOwners.flat().every((c) => c === null)).toBe(true);
+    // 全空字串
+    expect(s.hEdges.flat().every((c) => c === '')).toBe(true);
+    expect(s.vEdges.flat().every((c) => c === '')).toBe(true);
+    expect(s.boxOwners.flat().every((c) => c === '')).toBe(true);
     expect(s.currentTurn).toBe('X');
     expect(s.moveCount).toBe(0);
     expect(s.scores).toEqual({ X: 0, O: 0 });

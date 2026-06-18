@@ -29,9 +29,9 @@ export function getInitialBoard(gameType: GameType): ReadonlyArray<string> {
     case 'dotsandboxes': {
       const s = createDotsAndBoxesState();
       return [
-        ...s.hEdges.flat().map((c) => c ?? ''),
-        ...s.vEdges.flat().map((c) => c ?? ''),
-        ...s.boxOwners.flat().map((c) => c ?? ''),
+        ...s.hEdges.flat(),
+        ...s.vEdges.flat(),
+        ...s.boxOwners.flat(),
       ];
     }
     default:
