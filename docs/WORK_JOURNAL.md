@@ -1,8 +1,49 @@
 # 工作日誌
 
 > 記錄多人遊戲網站專案的所有開發事件。  
-> **格式**：倒序（最新在最上方），按日期時間排列。  
+> **格式**：倒序（最新在最上面），按日期時間排列。  
 > **目標**：事後可回溯決策與問題。
+
+---
+
+## 2026-06-18（Day 4）— 新增四子棋 Connect 4（套用 NEW_GAME_SOP）
+
+**用戶要求**：新增四子棋（Connect 4）作為第 4 個遊戲。剛好拿來測試剛寫好的 `NEW_GAME_SOP.md` checklist。
+
+**決策**：
+- 嚴格照 SOP 走 15 個 phases
+- 棋盤 7×6 = 42 格
+- 紅棋 X / 黃棋 O（與井字/五子棋/黑白棋區分）
+- 4 連線 = 4 個 X/O 在橫/直/斜連線
+- AI 用啟發式：easy 隨機 / normal 1-ply / hard 2-ply
+
+**實作**：
+1. Phase 0：建 `src/games/connect4/` 資料夾
+2. Phase 1：`types.ts` (Connect4State)、`engine.ts` (applyMove 自動找最低空格 + 4 連線偵測)、`engine.test.ts` 12 個測試
+3. Phase 2：`sync.ts` (submitMove + acceptUndo)
+4. Phase 3：`ai.ts` 啟發式 AI + `ai.test.ts` 7 個測試
+5. Phase 4：symbols.ts (紅棋/黃棋) + Icon.tsx (SVG)
+6. Phase 5：GameDefinition + Connect4.tsx UI（點欄頂部下子 + hover 預覽）+ registry 註冊
+7. Phase 6：MOVES_CAP 42 + getInitialBoard + replayRenderers（紅圓/黃圓環）+ acceptUndo
+8. Phase 7：i18n 中英對齊（28 個 key：name, loading, stateCorrupted, playAgainHint, moveFailed, myTurn_, spectating_, opponentTurn_, scopeConnect4）
+9. Phase 8-10：rules / indexes 無需改（RTDB state 只驗 board + moveCount 通用欄位、indexes 不需新）
+10. Phase 11-12：Lobby / Profile / Leaderboard 自動從 registry 讀
+11. Phase 13：191/191 測試過、build OK
+12. Phase 14：commit + push
+
+**效果**：
+- 191/191 測試過（含 12 個 connect4 engine 測試 + 7 個 AI 測試）
+- TS 0 錯誤、build OK
+- Leaderboard / Profile / Lobby 自動包含四子棋
+- 探索頁可以看四子棋棋譜
+- 復盤時間軸支援
+
+**踩坑**：
+1. findDropRow 簽名：原本傳 Connect4State，UI 端需要傳 board，改成傳 ReadonlyArray<Cell> 統一
+2. AIEngine 介面要求 `gameType` 欄位（新增必填）
+3. i18n 測試會抓單/雙括號，en-US 第一次編輯時漏了幾個 key
+
+**SOP 驗證**：`NEW_GAME_SOP.md` 完整跑過，15 個 phase 全部對得上。預期未來新增第 5 個遊戲可以照著做，估 3-4 小時。
 
 ---
 

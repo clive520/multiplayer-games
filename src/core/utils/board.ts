@@ -2,6 +2,7 @@ import type { GameType } from '../types/room';
 import { createInitialState as createTictactoeState } from '../../games/tictactoe/types';
 import { createInitialState as createGomokuState } from '../../games/gomoku/types';
 import { createInitialState as createReversiState } from '../../games/reversi/types';
+import { createInitialState as createConnect4State } from '../../games/connect4/types';
 
 /**
  * 取得遊戲的初始棋盤（IMPROVEMENTS #12 Phase B 復盤用）
@@ -21,6 +22,8 @@ export function getInitialBoard(gameType: GameType): ReadonlyArray<string> {
       return createGomokuState().board as ReadonlyArray<string>;
     case 'reversi':
       return createReversiState().board as ReadonlyArray<string>;
+    case 'connect4':
+      return createConnect4State().board as ReadonlyArray<string>;
     default:
       return [];
   }

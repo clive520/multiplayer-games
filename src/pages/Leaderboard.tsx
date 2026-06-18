@@ -15,6 +15,7 @@ const SCOPE_I18N_KEY: Record<LeaderboardScope, string> = {
   tictactoe: 'leaderboard.scopeTictactoe',
   gomoku: 'leaderboard.scopeGomoku',
   reversi: 'leaderboard.scopeReversi',
+  connect4: 'leaderboard.scopeConnect4',
 };
 
 export default function Leaderboard() {
@@ -25,11 +26,13 @@ export default function Leaderboard() {
   const { entries, loading, error } = useLeaderboard(scope);
 
   const gameLabel = t(SCOPE_I18N_KEY[scope]);
+  // IMPROVEMENTS 自動從 registry 產生 tabs（新增遊戲自動顯示）
   const tabs: Array<{ value: LeaderboardScope; icon?: IconComponent }> = [
     { value: 'overall' },
-    { value: 'tictactoe', icon: gameRegistry.find((g) => g.id === 'tictactoe')!.icon },
-    { value: 'gomoku', icon: gameRegistry.find((g) => g.id === 'gomoku')!.icon },
-    { value: 'reversi', icon: gameRegistry.find((g) => g.id === 'reversi')!.icon },
+    ...gameRegistry.map((g) => ({
+      value: g.id as LeaderboardScope,
+      icon: g.icon,
+    })),
   ];
 
   return (

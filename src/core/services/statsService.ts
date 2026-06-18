@@ -30,6 +30,7 @@ export interface UserStats {
     tictactoe: GameStats;
     gomoku: GameStats;
     reversi: GameStats;
+    connect4: GameStats;
   };
   updatedAt: number;
 }
@@ -53,6 +54,7 @@ function emptyByGame(): UserStats['byGame'] {
     tictactoe: { ...DEFAULT_GAME_STATS },
     gomoku: { ...DEFAULT_GAME_STATS },
     reversi: { ...DEFAULT_GAME_STATS },
+    connect4: { ...DEFAULT_GAME_STATS },
   };
 }
 

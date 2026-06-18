@@ -245,6 +245,7 @@
     "scopeTictactoe": "Tic-tac-toe",
     "scopeGomoku": "Gomoku",
     "scopeReversi": "Reversi",
+    "scopeConnect4": "Connect 4",
     "rank": "Rank",
     "player": "Player",
     "elo": "ELO",
@@ -285,21 +286,32 @@
       "hideHints": "Hide hints",
       "pass": "Pass (let opponent play)"
     },
+    "connect4": {
+      "name": "Connect 4",
+      "moveFailed": "Drop failed",
+      "loading": "Loading game...",
+      "stateCorrupted": "Game state corrupted. Please refresh or reset the room.",
+      "playAgainHint": "Host can click \"Play again\" on the room page to reset the board."
+    },
     "verb": {
       "tictactoe": "play",
       "gomoku": "place",
-      "reversi": "place"
+      "reversi": "place",
+      "connect4": "drop"
     },
     "headerStatus": {
       "myTurn_tictactoe": "Your turn: {{symbol}}",
       "myTurn_gomoku": "Your turn: {{symbol}}",
       "myTurn_reversi": "Your turn: {{symbol}}",
+      "myTurn_connect4": "Your turn: {{symbol}}",
       "spectating_tictactoe": "Spectating — {{symbol}}'s turn to play",
       "spectating_gomoku": "Spectating — {{symbol}}'s turn to place",
       "spectating_reversi": "Spectating — {{symbol}}'s turn to place",
+      "spectating_connect4": "Spectating — {{symbol}}'s turn to drop",
       "opponentTurn_tictactoe": "Opponent: {{symbol}} playing",
       "opponentTurn_gomoku": "Opponent: {{symbol}} placing",
       "opponentTurn_reversi": "Opponent: {{symbol}} placing",
+      "opponentTurn_connect4": "Opponent: {{symbol}} dropping",
       "waiting": "Waiting",
       "draw": "Draw",
       "wonBy": "Won by {{name}}"

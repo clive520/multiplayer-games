@@ -22,6 +22,7 @@ export const MOVES_CAP: Record<GameType, number> = {
   tictactoe: 9,    // 棋盤只有 9 格
   gomoku: 100,     // 超過通常接近平局
   reversi: 80,     // 棋盤填滿也只 60 步
+  connect4: 42,    // 棋盤填滿 = 42 步
 };
 
 /** 每人 saved link 上限 */

@@ -17,6 +17,7 @@ const GAME_LABELS: Record<GameType, string> = {
   tictactoe: 'games.tictactoe.name',
   gomoku: 'games.gomoku.name',
   reversi: 'games.reversi.name',
+  connect4: 'games.connect4.name',
 };
 
 type IconComponent = ComponentType<{ className?: string }>;
@@ -24,6 +25,7 @@ const GAME_ICONS: Record<GameType, IconComponent> = {
   tictactoe: gameRegistry.find((g) => g.id === 'tictactoe')!.icon,
   gomoku: gameRegistry.find((g) => g.id === 'gomoku')!.icon,
   reversi: gameRegistry.find((g) => g.id === 'reversi')!.icon,
+  connect4: gameRegistry.find((g) => g.id === 'connect4')!.icon,
 };
 
 function formatTime(ms: number): string {

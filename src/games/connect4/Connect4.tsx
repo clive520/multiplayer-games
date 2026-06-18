@@ -1,0 +1,229 @@
+import { useEffect, useState, useRef, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
+import type { GameComponentProps } from '../../core/types/game';
+import { connect4Engine } from './engine';
+import {
+  ensureGameState,
+  submitMove,
+  subscribeGameState,
+} from './sync';
+import { formatConnect4Symbol } from './symbols';
+import { GameHeader, type GameHeaderStatus } from '../../core/components/GameHeader';
+import { useToast } from '../../core/components/Toast';
+import { useNewlyChangedCells } from '../../core/hooks/useNewlyChangedCells';
+import { COLS, ROWS, findDropRow, type Connect4State } from './types';
+
+export default function Connect4({
+  roomId,
+  currentUserId,
+  players,
+  isHost,
+  isSpectator = false,
+  turnSecondsLeft,
+  turnTimeLimitSec,
+  onGameFinished,
+  onActivity,
+}: GameComponentProps) {
+  const { t } = useTranslation();
+  const toast = useToast();
+  const [state, setState] = useState<Connect4State | null>(null);
+  const [hoveredCol, setHoveredCol] = useState<number | null>(null);
+  const finishedReportedRef = useRef(false);
+
+  useEffect(() => {
+    finishedReportedRef.current = false;
+  }, [roomId]);
+
+  useEffect(() => {
+    ensureGameState(roomId).catch((err) => {
+      console.error('初始化遊戲狀態失敗', err);
+    });
+    const unsubscribe = subscribeGameState(roomId, setState);
+    return unsubscribe;
+  }, [roomId]);
+
+  useEffect(() => {
+    if (!state) return;
+    onActivity?.();
+  }, [state?.moveCount, onActivity]);
+
+  useEffect(() => {
+    if (!state || finishedReportedRef.current) return;
+    const result = connect4Engine.checkResult(state, players);
+    if (result.finished) {
+      finishedReportedRef.current = true;
+      onGameFinished(result.winnerId ?? null, !!result.isDraw).catch((err) => {
+        console.error('回報遊戲結果失敗', err);
+      });
+    }
+  }, [state, players, onGameFinished]);
+
+  const currentPlayer = players.find((p) => p.uid === currentUserId) ?? null;
+  const mySymbol = currentPlayer?.symbol as 'X' | 'O' | undefined;
+  const isMyTurn =
+    !isSpectator && state !== null && mySymbol === state.currentTurn;
+
+  const newlyChangedCells = useNewlyChangedCells(state?.board);
+
+  const handleColClick = useCallback(
+    async (col: number) => {
+      if (!state || !currentPlayer || !isMyTurn) return;
+      const dropRow = findDropRow(state.board, col);
+      if (dropRow === -1) return; // 欄滿了
+      const res = await submitMove(roomId, currentUserId, currentPlayer.symbol, currentPlayer.displayName, {
+        col,
+      });
+      if (!res.applied) {
+        toast.error(res.reason ?? t('games.connect4.moveFailed'));
+      }
+    },
+    [state, currentPlayer, isMyTurn, roomId, currentUserId, toast, t]
+  );
+
+  // 計算 header 狀態
+  let headerStatus: GameHeaderStatus;
+  if (!state) {
+    headerStatus = { kind: 'spectating', symbol: 'X', gameType: 'connect4' };
+  } else {
+    const isFinished = state.winnerLine !== null;
+    if (isFinished) {
+      // 簡化：finished 由 GameRoom 顯示 ResultScreen，這裡只處理未完狀態
+      headerStatus = { kind: 'spectating', symbol: state.currentTurn, gameType: 'connect4' };
+    } else if (isSpectator) {
+      headerStatus = { kind: 'spectating', symbol: state.currentTurn, gameType: 'connect4' };
+    } else if (isMyTurn && mySymbol) {
+      headerStatus = { kind: 'myTurn', symbol: mySymbol, gameType: 'connect4' };
+    } else {
+      headerStatus = { kind: 'opponentTurn', symbol: state.currentTurn, gameType: 'connect4' };
+    }
+  }
+
+  if (!state) {
+    return (
+      <div className="rounded-lg border dark:border-slate-700 border-app-border dark:bg-slate-800 bg-app-card p-6 text-center">
+        <p className="dark:text-slate-400 text-slate-600">{t('common.loading')}</p>
+      </div>
+    );
+  }
+
+  // 找出 hover 的 col 對應的落子 row（給預覽用）
+  const hoverDropRow = hoveredCol !== null ? findDropRow(state.board, hoveredCol) : -1;
+  // 找出獲勝線的 key set
+  const winnerKeySet = new Set<string>();
+  if (state.winnerLine) {
+    for (const { row, col } of state.winnerLine) {
+      winnerKeySet.add(`${row},${col}`);
+    }
+  }
+  // 最後一手 key
+  const lastMoveKey = state.lastMove ? `${state.lastMove.row},${state.lastMove.col}` : null;
+
+  return (
+    <div className="space-y-4">
+      <GameHeader
+        status={headerStatus}
+        formatSymbol={formatConnect4Symbol}
+        turnSecondsLeft={turnSecondsLeft}
+        turnTimeLimitSec={turnTimeLimitSec}
+        players={players}
+        currentUserId={currentUserId}
+      />
+
+      {/* 棋盤外框：包含「點擊欄」與「格子」 */}
+      <div className="rounded-lg border border-amber-900/30 bg-amber-50 p-4">
+        {/* 頂部：點擊欄（透明 overlay） */}
+        <div
+          className="mb-1 grid w-full gap-1"
+          style={{ gridTemplateColumns: `repeat(${COLS}, minmax(0, 1fr))` }}
+        >
+          {Array.from({ length: COLS }, (_, col) => {
+            const isColFull = findDropRow(state.board, col) === -1;
+            const canClick = isMyTurn && !isColFull;
+            return (
+              <button
+                key={`col-header-${col}`}
+                type="button"
+                disabled={!canClick}
+                onClick={() => handleColClick(col)}
+                onMouseEnter={() => setHoveredCol(col)}
+                onMouseLeave={() => setHoveredCol(null)}
+                className={`h-8 rounded-t transition ${
+                  canClick
+                    ? 'cursor-pointer hover:bg-amber-200/60'
+                    : 'cursor-not-allowed opacity-40'
+                }`}
+                aria-label={`第 ${col + 1} 欄`}
+              />
+            );
+          })}
+        </div>
+
+        {/* 棋盤本身：COLS x ROWS */}
+        <div
+          className="grid w-full"
+          style={{
+            gridTemplateColumns: `repeat(${COLS}, minmax(0, 1fr))`,
+            aspectRatio: `${COLS} / ${ROWS}`,
+          }}
+          aria-label="Connect 4 board"
+        >
+          {state.board.map((cell, idx) => {
+            const row = Math.floor(idx / COLS);
+            const col = idx % COLS;
+            const isLastMove = lastMoveKey === `${row},${col}`;
+            const isWinner = winnerKeySet.has(`${row},${col}`);
+            const isHoverPreview =
+              hoveredCol === col && row === hoverDropRow && isMyTurn && cell === '' && mySymbol;
+            return (
+              <div
+                key={idx}
+                className="relative border border-amber-900/20 bg-amber-100/50"
+                onMouseEnter={() => setHoveredCol(col)}
+                onMouseLeave={() => setHoveredCol(null)}
+              >
+                {/* 棋子 */}
+                {cell === 'X' && (
+                  <span className="absolute inset-1 rounded-full bg-red-500 shadow-md" />
+                )}
+                {cell === 'O' && (
+                  <span className="absolute inset-1 rounded-full bg-yellow-400 shadow-md ring-2 ring-amber-700" />
+                )}
+                {/* 滑鼠 hover 預覽（半透明） */}
+                {isHoverPreview && mySymbol === 'X' && (
+                  <span className="pointer-events-none absolute inset-1 rounded-full bg-red-500 opacity-30" />
+                )}
+                {isHoverPreview && mySymbol === 'O' && (
+                  <span className="pointer-events-none absolute inset-1 rounded-full bg-yellow-400 opacity-30 ring-2 ring-amber-700" />
+                )}
+                {/* 最後一手指示 */}
+                {isLastMove && !isWinner && (
+                  <span
+                    aria-hidden
+                    className="absolute inset-0 animate-pulse-ring rounded"
+                  />
+                )}
+                {/* 獲勝線高亮 */}
+                {isWinner && (
+                  <span
+                    aria-hidden
+                    className="absolute inset-1 rounded-full ring-4 ring-yellow-300"
+                  />
+                )}
+                {/* 動畫（新落子 fade-in） */}
+                {newlyChangedCells.has(idx) && (
+                  <span className="absolute inset-0 animate-cell-appear" />
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {isHost && (
+        <p className="text-center text-xs text-slate-500">
+          {t('games.connect4.playAgainHint')}
+        </p>
+      )}
+    </div>
+  );
+}

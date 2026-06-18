@@ -3,6 +3,7 @@ import type { GameType } from '../types/room';
 import { BOARD_SIZE as TICTACTOE_SIZE } from '../../games/tictactoe/types';
 import { BOARD_SIZE as GOMOKU_SIZE } from '../../games/gomoku/types';
 import { BOARD_SIZE as REVERSI_SIZE } from '../../games/reversi/types';
+import { COLS as CONNECT4_COLS } from '../../games/connect4/types';
 
 export interface ReplayRenderers {
   /** 棋盤邊長（3 = 井字、8 = 黑白棋、15 = 五子棋） */
@@ -111,6 +112,37 @@ export function getReplayRenderers(gameType: GameType): ReplayRenderers {
           );
         },
         maxCellPx: 36,
+      };
+    case 'connect4':
+      return {
+        boardSize: CONNECT4_COLS,
+        boardClassName: 'bg-amber-50 border border-amber-900/30',
+        renderCell: (cell, isLastMoveHere, isFlipped) => {
+          if (!cell) return null;
+          const isX = cell === 'X';
+          return (
+            <>
+              <span
+                className={`absolute inset-1 rounded-full shadow-md ${
+                  isX ? 'bg-red-500' : 'bg-yellow-400 ring-2 ring-amber-700'
+                }`}
+              />
+              {isLastMoveHere && (
+                <span
+                  aria-hidden
+                  className="absolute inset-0 animate-pulse-ring rounded"
+                />
+              )}
+              {isFlipped && (
+                <span
+                  aria-hidden
+                  className="absolute inset-1 rounded-full ring-2 ring-yellow-300"
+                />
+              )}
+            </>
+          );
+        },
+        maxCellPx: 32,
       };
     default:
       return {
