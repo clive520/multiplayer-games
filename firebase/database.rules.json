@@ -7,10 +7,12 @@
         // 但目前三個遊戲的 state 都沒有 players 欄位，導致 submitMove 全部被擋
         // 安全 trade-off：state 只影響當前對局（不含 stats），stats 由 Firestore rules 保護
         // （TODO：未來可在 state 加 players map，或改用 Cloud Functions 處理）
+        // IMPROVEMENTS 修：validate 只檢查「所有遊戲都有的 board + moveCount」，
+        // 不檢查 nextSymbol（井字/五子棋用）vs currentTurn（黑白棋用）等差異欄位。
         "state": {
           ".read": "auth != null",
           ".write": "auth != null",
-          ".validate": "newData.hasChildren(['board', 'nextSymbol', 'moveCount'])"
+          ".validate": "newData.hasChildren(['board', 'moveCount'])"
         },
         // 玩家在線狀態：僅自己可寫
         "presence": {
