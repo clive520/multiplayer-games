@@ -6,6 +6,50 @@
 
 ---
 
+## 2026-06-18（Day 4 續）— 新增第 5 個遊戲「點點連連 Dots and Boxes」
+
+**用戶要求**：繼續做 5th 遊戲 - 點點連連（Dots and Boxes）。
+
+**決策**：
+- 嚴格照 `NEW_GAME_SOP.md` 走 15 個 phases
+- 4×4 方格 = 16 方格、5×5 點 = 25 點、40 條邊（h+v）
+- 藍線 X / 紅線 O（與四子棋紅/黃、黑白棋黑/白區分）
+- 額外回合機制：完成方格可多畫一條邊
+- AI 啟發式：easy 隨機 / normal 「3-side 必取 + 避 2-side」/ hard 「normal + 估計鏈長」
+
+**實作**：
+1. Phase 0：建 `src/games/dotsandboxes/` 資料夾
+2. Phase 1：`types.ts` (DotsAndBoxesState with hEdges/vEdges/boxOwners/2D arrays)、`engine.ts`（applyMove 自動偵測完成方格 + 額外回合）、`engine.test.ts` 12 個測試
+3. Phase 2：`sync.ts` (submitMove + acceptUndo，悔棋時 reapply moves[0..N-2])
+4. Phase 3：`ai.ts`（3-side 必取 + 避 2-side + 鏈長啟發式）+ `ai.test.ts` 5 個測試
+5. Phase 4：symbols.ts (藍線/紅線) + Icon.tsx (9 個彩色方格 + 16 個點)
+6. Phase 5：GameDefinition + DotsAndBoxes.tsx UI（SVG 棋盤 + 邊的點擊熱區 + hover 預覽）+ registry 註冊
+7. Phase 6：MOVES_CAP 40 + getInitialBoard (3 grid 扁平化) + replayRenderers + acceptUndo + BoardThumbnail 4×4 縮圖
+8. Phase 7：i18n 中英對齊（name, moveFailed, edgeTaken, extraTurnHint, headerStatus 3 個, verb, scopeDotsAndBoxes, filterDotsAndBoxes）
+9. Phase 8-10：**RTDB 規則需改**！原本 `state.validate: hasChildren(['board', 'moveCount'])` 不適用（dotsandboxes 沒 `board` 欄，改用 hEdges/vEdges/boxOwners）→ 改為只驗 `moveCount` 並部署。Firestore rules 不需改。
+10. Phase 11-12：Lobby / Profile / Leaderboard 自動從 registry 讀
+11. Phase 13：208/208 測試過、build OK、Vercel 自動部署
+12. Phase 14-15：commit `2b5ac50` + push
+
+**效果**：
+- 208/208 測試過（含 12 個 dotsandboxes engine 測試 + 5 個 AI 測試）
+- TS 0 錯誤、build OK
+- Leaderboard / Profile / Lobby 自動包含點點連連
+- 探索頁可篩選點點連連棋譜
+- 復盤時間軸支援（4×4 彩色方格 renderer）
+- 悔棋功能支援（重算 moves[0..N-2]）
+
+**踩坑**：
+1. **RTDB validate 規則** — 原本以為「共用 board + moveCount」就夠，沒想到 5th 遊戲用 3 個 grid。**SOP 情境 B/D 已提醒，但忘了**。改為只驗 `moveCount`（所有遊戲都有的最基本欄位）。
+2. **MoveRecord 缺 metadata** — 原本 MoveRecord 只有 row/col/symbol，沒辦法存「這步是水平邊還是垂直邊」。加 `metadata?: Record<string, unknown>` 欄位，dotsandboxes 存 `{ type: 'h' | 'v' }`。悔棋時用 `m.metadata?.type` fallback 'h'。
+3. **engine.test.ts 一開始 2 個測試錯** — `applyEdge` 測試輔助函式的 `symbol` 參數根本沒用（engine 用 `state.currentTurn`），誤傳 symbol。改測試邏輯：直接驗 `vEdges[0][0] === 'X'` (因為 X 先手)。
+4. **AI 3-side 偵測漏掉「完成方格」** — 原本只偵測 sides === 2（畫完變 3-side），漏了 sides === 3（畫完變 4-side 完成方格）。補上 `sides === 2 || sides === 3 → threeSide++`。
+5. **getInitialBoard 對 CellMark?[]** — DotsAndBoxesState 的 hEdges 是 `'X' | 'O' | null`，但 `getInitialBoard` 簽名是 `ReadonlyArray<string>`，要把 null 轉 ''。
+
+**SOP 驗證**：第二次跑 `NEW_GAME_SOP.md`，新增「**情境 B：5th+ 遊戲 state 結構可能沒有 board 欄**」（已在 SOP 標註），提醒 RTDB validate 只用最通用欄位。15 個 phase 全部對得上，總時長約 1.5 小時（比 connect4 的 3-4 小時快，因 SOP 越來越熟）。
+
+---
+
 ## 2026-06-18（Day 4）— 新增四子棋 Connect 4（套用 NEW_GAME_SOP）
 
 **用戶要求**：新增四子棋（Connect 4）作為第 4 個遊戲。剛好拿來測試剛寫好的 `NEW_GAME_SOP.md` checklist。

@@ -172,6 +172,7 @@ git push origin main
 - [ ] 必要時加 `.validate` 限制必填欄位
 - [ ] 部署：`firebase deploy --only database`
 - [ ] **不要假設 emulator 行為等同 production**（emulator 沒開時，本地測試不會擋 PERMISSION_DENIED）
+- [ ] **5th+ 遊戲的 state 可能沒有 `board` 欄位**（例：dotsandboxes 用 hEdges/vEdges/boxOwners）。`state.validate` 只用「所有遊戲都有的最基本欄位」驗證（如 `moveCount`），不要硬卡 `board`
 
 **情境 C：新增 / 改 useEffect、useState、useCallback**
 - [ ] 所有 React hooks 必須在 **early return 之前**（rules of hooks）
