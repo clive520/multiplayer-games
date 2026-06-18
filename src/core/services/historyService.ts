@@ -370,7 +370,7 @@ export async function searchHistory(
     constraints.push(where('hasAI', '==', filters.hasAI));
   }
   constraints.push(orderBy('endedAt', 'desc'));
-  constraints.push(limit(filters.pageSize ?? 20));
+  constraints.push(limit(filters.pageSize ?? 50));
   if (filters.cursor) {
     constraints.push(startAfter(filters.cursor));
   }

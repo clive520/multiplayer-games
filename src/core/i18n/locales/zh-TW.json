@@ -405,6 +405,7 @@
     "filterGomoku": "五子棋",
     "filterReversi": "黑白棋",
     "filterConnect4": "四子棋",
+    "filterAllAI": "全部 AI",
     "filterHideAI": "排除 AI 對戰",
     "filterShowAI": "包含 AI 對戰",
     "empty": "目前沒有公開棋譜",

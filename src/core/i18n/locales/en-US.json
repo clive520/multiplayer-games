@@ -405,6 +405,7 @@
     "filterGomoku": "Gomoku",
     "filterReversi": "Reversi",
     "filterConnect4": "Connect 4",
+    "filterAllAI": "All AI",
     "filterHideAI": "Exclude AI games",
     "filterShowAI": "Include AI games",
     "empty": "No public replays yet",
