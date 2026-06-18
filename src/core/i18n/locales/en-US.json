@@ -291,7 +291,9 @@
       "moveFailed": "Drop failed",
       "loading": "Loading game...",
       "stateCorrupted": "Game state corrupted. Please refresh or reset the room.",
-      "playAgainHint": "Host can click \"Play again\" on the room page to reset the board."
+      "playAgainHint": "Host can click \"Play again\" on the room page to reset the board.",
+      "dropHere": "Click to drop",
+      "colFull": "Column full"
     },
     "verb": {
       "tictactoe": "play",

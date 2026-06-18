@@ -291,7 +291,9 @@
       "moveFailed": "下子失敗",
       "loading": "遊戲載入中...",
       "stateCorrupted": "遊戲狀態損壞，請重新整理或重置房間",
-      "playAgainHint": "房主可在房間頁面按「再來一局」重置棋盤"
+      "playAgainHint": "房主可在房間頁面按「再來一局」重置棋盤",
+      "dropHere": "點此下子",
+      "colFull": "此欄已滿"
     },
     "verb": {
       "tictactoe": "下棋",

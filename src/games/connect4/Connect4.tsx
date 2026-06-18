@@ -69,7 +69,7 @@ export default function Connect4({
     async (col: number) => {
       if (!state || !currentPlayer || !isMyTurn) return;
       const dropRow = findDropRow(state.board, col);
-      if (dropRow === -1) return; // 欄滿了
+      if (dropRow === -1) return;
       const res = await submitMove(roomId, currentUserId, currentPlayer.symbol, currentPlayer.displayName, {
         col,
       });
@@ -80,14 +80,12 @@ export default function Connect4({
     [state, currentPlayer, isMyTurn, roomId, currentUserId, toast, t]
   );
 
-  // 計算 header 狀態
   let headerStatus: GameHeaderStatus;
   if (!state) {
     headerStatus = { kind: 'spectating', symbol: 'X', gameType: 'connect4' };
   } else {
     const isFinished = state.winnerLine !== null;
     if (isFinished) {
-      // 簡化：finished 由 GameRoom 顯示 ResultScreen，這裡只處理未完狀態
       headerStatus = { kind: 'spectating', symbol: state.currentTurn, gameType: 'connect4' };
     } else if (isSpectator) {
       headerStatus = { kind: 'spectating', symbol: state.currentTurn, gameType: 'connect4' };
@@ -106,16 +104,13 @@ export default function Connect4({
     );
   }
 
-  // 找出 hover 的 col 對應的落子 row（給預覽用）
   const hoverDropRow = hoveredCol !== null ? findDropRow(state.board, hoveredCol) : -1;
-  // 找出獲勝線的 key set
   const winnerKeySet = new Set<string>();
   if (state.winnerLine) {
     for (const { row, col } of state.winnerLine) {
       winnerKeySet.add(`${row},${col}`);
     }
   }
-  // 最後一手 key
   const lastMoveKey = state.lastMove ? `${state.lastMove.row},${state.lastMove.col}` : null;
 
   return (
@@ -131,7 +126,7 @@ export default function Connect4({
 
       {/* 棋盤外框：包含「點擊欄」與「格子」 */}
       <div className="rounded-lg border border-amber-900/30 bg-amber-50 p-4">
-        {/* 頂部：點擊欄（透明 overlay） */}
+        {/* 頂部：點擊欄（透明 overlay + 下箭頭提示） */}
         <div
           className="mb-1 grid w-full gap-1"
           style={{ gridTemplateColumns: `repeat(${COLS}, minmax(0, 1fr))` }}
@@ -139,6 +134,7 @@ export default function Connect4({
           {Array.from({ length: COLS }, (_, col) => {
             const isColFull = findDropRow(state.board, col) === -1;
             const canClick = isMyTurn && !isColFull;
+            const isHovered = hoveredCol === col;
             return (
               <button
                 key={`col-header-${col}`}
@@ -147,13 +143,32 @@ export default function Connect4({
                 onClick={() => handleColClick(col)}
                 onMouseEnter={() => setHoveredCol(col)}
                 onMouseLeave={() => setHoveredCol(null)}
-                className={`h-8 rounded-t transition ${
+                className={`relative h-10 rounded-t transition ${
                   canClick
                     ? 'cursor-pointer hover:bg-amber-200/60'
                     : 'cursor-not-allowed opacity-40'
-                }`}
+                } ${isHovered && canClick ? 'bg-amber-200/80' : ''}`}
                 aria-label={`第 ${col + 1} 欄`}
-              />
+                title={canClick ? t('games.connect4.dropHere') : (isColFull ? t('games.connect4.colFull') : '')}
+              >
+                {/* 永久下箭頭（提示用） */}
+                {canClick && (
+                  <svg
+                    aria-hidden
+                    className="absolute left-1/2 top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 text-amber-700"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                  >
+                    <path d="M12 16l-6-6h12l-6 6z" />
+                  </svg>
+                )}
+                {/* 欄滿了顯示鎖 */}
+                {isColFull && (
+                  <span aria-hidden className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-xs text-slate-400">
+                    ⊘
+                  </span>
+                )}
+              </button>
             );
           })}
         </div>
@@ -174,6 +189,7 @@ export default function Connect4({
             const isWinner = winnerKeySet.has(`${row},${col}`);
             const isHoverPreview =
               hoveredCol === col && row === hoverDropRow && isMyTurn && cell === '' && mySymbol;
+            const isNewlyPlaced = newlyChangedCells.has(idx);
             return (
               <div
                 key={idx}
@@ -181,14 +197,22 @@ export default function Connect4({
                 onMouseEnter={() => setHoveredCol(col)}
                 onMouseLeave={() => setHoveredCol(null)}
               >
-                {/* 棋子 */}
+                {/* 棋子（含落下動畫） */}
                 {cell === 'X' && (
-                  <span className="absolute inset-1 rounded-full bg-red-500 shadow-md" />
+                  <span
+                    className={`absolute inset-1 rounded-full bg-red-500 shadow-md ${
+                      isNewlyPlaced ? 'animate-piece-drop' : ''
+                    }`}
+                  />
                 )}
                 {cell === 'O' && (
-                  <span className="absolute inset-1 rounded-full bg-yellow-400 shadow-md ring-2 ring-amber-700" />
+                  <span
+                    className={`absolute inset-1 rounded-full bg-yellow-400 shadow-md ring-2 ring-amber-700 ${
+                      isNewlyPlaced ? 'animate-piece-drop' : ''
+                    }`}
+                  />
                 )}
-                {/* 滑鼠 hover 預覽（半透明） */}
+                {/* 滑鼠 hover 預覽（半透明，會在落子動畫前顯示） */}
                 {isHoverPreview && mySymbol === 'X' && (
                   <span className="pointer-events-none absolute inset-1 rounded-full bg-red-500 opacity-30" />
                 )}
@@ -208,10 +232,6 @@ export default function Connect4({
                     aria-hidden
                     className="absolute inset-1 rounded-full ring-4 ring-yellow-300"
                   />
-                )}
-                {/* 動畫（新落子 fade-in） */}
-                {newlyChangedCells.has(idx) && (
-                  <span className="absolute inset-0 animate-cell-appear" />
                 )}
               </div>
             );

@@ -79,6 +79,30 @@ body {
   animation: cell-appear 280ms ease-out;
 }
 
+/* 四子棋專用：棋子從頂部落入的動畫（IMPROVEMENTS #N） */
+@keyframes piece-drop {
+  0% {
+    opacity: 0;
+    transform: translateY(-400%);
+    /* 初始 scale 略小，模擬「剛落下」 */
+  }
+  70% {
+    opacity: 1;
+    transform: translateY(8%);
+  }
+  85% {
+    transform: translateY(-2%);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-piece-drop {
+  animation: piece-drop 500ms cubic-bezier(0.33, 1, 0.68, 1);
+}
+
 @keyframes pulse-ring {
   0% {
     box-shadow: 0 0 0 0 rgba(250, 204, 21, 0.7);
