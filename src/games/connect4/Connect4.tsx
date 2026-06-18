@@ -11,6 +11,7 @@ import { formatConnect4Symbol } from './symbols';
 import { GameHeader, type GameHeaderStatus } from '../../core/components/GameHeader';
 import { useToast } from '../../core/components/Toast';
 import { useNewlyChangedCells } from '../../core/hooks/useNewlyChangedCells';
+import { playPieceDrop } from '../../core/utils/sound';
 import { COLS, ROWS, findDropRow, type Connect4State } from './types';
 
 export default function Connect4({
@@ -64,6 +65,16 @@ export default function Connect4({
     !isSpectator && state !== null && mySymbol === state.currentTurn;
 
   const newlyChangedCells = useNewlyChangedCells(state?.board);
+
+  // 棋子落地時播放「扣扣扣」聲（依 row 調整音量）
+  const lastMoveRowRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (!state?.lastMove) return;
+    const { row } = state.lastMove;
+    if (lastMoveRowRef.current === row && state.moveCount <= 1) return;
+    // 只在新一步下子時播（moveCount 變化時觸發）
+    playPieceDrop(row);
+  }, [state?.moveCount, state?.lastMove]);
 
   const handleColClick = useCallback(
     async (col: number) => {

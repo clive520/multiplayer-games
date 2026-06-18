@@ -83,15 +83,23 @@ body {
 @keyframes piece-drop {
   0% {
     opacity: 0;
-    transform: translateY(-400%);
-    /* 初始 scale 略小，模擬「剛落下」 */
+    transform: translateY(-500%);
+  }
+  60% {
+    opacity: 1;
+    /* 模擬重力加速：剛開始慢、後面快 */
   }
   70% {
-    opacity: 1;
-    transform: translateY(8%);
+    transform: translateY(10%);
+    /* 落地時稍微壓縮感 */
   }
-  85% {
-    transform: translateY(-2%);
+  82% {
+    transform: translateY(-3%);
+    /* 第一次小回彈 */
+  }
+  92% {
+    transform: translateY(1%);
+    /* 第二次更小回彈 */
   }
   100% {
     opacity: 1;
@@ -100,7 +108,8 @@ body {
 }
 
 .animate-piece-drop {
-  animation: piece-drop 500ms cubic-bezier(0.33, 1, 0.68, 1);
+  /* 放慢到 900ms，配合「扣扣扣」3 聲 */
+  animation: piece-drop 900ms cubic-bezier(0.4, 0, 0.6, 1);
 }
 
 @keyframes pulse-ring {

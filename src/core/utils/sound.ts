@@ -110,3 +110,30 @@ export const REACTION_SOUNDS = {
   respect: () => playPop(880, 0.12),     // 亮高音
   encourage: () => playChime([523, 659], 0.1, 0.01), // 上行二音
 } as const;
+
+/**
+ * 棋子落下音效（IMPROVEMENTS 為四子棋設計）
+ * 模擬「扣扣扣」落地聲：
+ * - 第一次碰底（最大聲）
+ * - 小回彈（中等）
+ * - 第二次回彈（最輕）
+ *
+ * 對齊 piece-drop CSS 動畫的時間點：
+ * - 70% = 落地
+ * - 85% = 第一次回彈
+ * - 100% = 完全靜止
+ *
+ * @param row 棋子最終落到的 row（0 = 頂部，ROWS-1 = 底部）
+ *             用來調整音量（越高越遠 → 越小聲）
+ */
+export function playPieceDrop(row: number = 0): void {
+  if (muted) return;
+  // 從頂部落下時衰減音量（越高越小聲）
+  const baseVolume = Math.max(0.08, 0.25 - row * 0.015);
+  // 主要「扣」：落地瞬間，較低頻（沉悶）
+  setTimeout(() => playPop(180, 0.08, baseVolume * 1.0), 0);
+  // 「扣」：第一次回彈，較高頻（清脆）
+  setTimeout(() => playPop(320, 0.06, baseVolume * 0.7), 90);
+  // 「扣」：第二次回彈（最輕，幾乎消失）
+  setTimeout(() => playPop(520, 0.04, baseVolume * 0.35), 160);
+}
