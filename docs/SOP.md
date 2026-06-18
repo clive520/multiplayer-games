@@ -13,6 +13,7 @@
 4. [測試 SOP](#4-測試-sop)
 5. [Bug 處理 SOP](#5-bug-處理-sop)
 6. [Commit 規範 SOP](#6commit-規範-sop)
+7. [新增遊戲 SOP](NEW_GAME_SOP.md) — 完整建置新棋類遊戲的 15 階段 checklist
 
 ---
 

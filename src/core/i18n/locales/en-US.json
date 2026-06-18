@@ -308,9 +308,13 @@
   "errors": {
     "initStateFailed": "Failed to initialize game state",
     "reportResultFailed": "Failed to report game result",
-    "forfeitFailed": "Failed to auto-forfeit on timeout",
+    "forfeitFailed": "Failed to auto-judge turn timeout",
     "aiSubmitFailed": "[AI] submitMove failed",
-    "aiPassFailed": "[AI] passTurn failed"
+    "aiPassFailed": "[AI] passTurn failed",
+    "unauthorizedDomain": "This domain is not authorized. Please ask the admin to add it to Firebase Authentication's Authorized domains.",
+    "operationNotAllowed": "This sign-in method is not enabled. Please contact the admin.",
+    "popupClosedByUser": "Sign-in popup was closed. Please try again.",
+    "networkRequestFailed": "Network request failed. Please check your connection and try again."
   },
   "auth": {
     "defaultNickname": "Player"
