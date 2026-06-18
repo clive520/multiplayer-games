@@ -6,7 +6,7 @@ import type { MoveRecord } from '../types/game';
 import { sendReaction, subscribeReactions, type RoomReaction } from '../services/reactionsService';
 import { REACTION_SOUNDS } from '../utils/sound';
 import { getInitialBoard } from '../utils/board';
-import { getReplayRenderers } from '../utils/replayRenderers';
+import { getCustomReplayBoard, getReplayRenderers } from '../utils/replayRenderers';
 import { ReplayBoard } from './ReplayBoard';
 
 interface ResultScreenProps {
@@ -299,6 +299,14 @@ export function ResultScreen({
             </span>
           </button>
           {showReplay && (() => {
+            const CustomBoard = getCustomReplayBoard(room.gameType);
+            if (CustomBoard) {
+              return (
+                <div className="mt-2">
+                  <CustomBoard moves={moves} />
+                </div>
+              );
+            }
             const { boardSize, boardClassName, renderCell, maxCellPx } = getReplayRenderers(room.gameType);
             return (
               <div className="mt-2">

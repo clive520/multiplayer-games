@@ -14,7 +14,7 @@ import {
 } from '../core/services/favoritesService';
 import type { GameHistoryEntry } from '../core/types/history';
 import { ReplayBoard } from '../core/components/ReplayBoard';
-import { getReplayRenderers } from '../core/utils/replayRenderers';
+import { getReplayRenderers, getCustomReplayBoard } from '../core/utils/replayRenderers';
 import { useToast } from '../core/components/Toast';
 import { gameRegistry } from '@/registry';
 import type { GameType } from '../core/types/room';
@@ -187,14 +187,22 @@ export default function PublicReplay() {
 
       {/* 復盤 */}
       <section className="mb-4">
-        <ReplayBoard
-          moves={entry.moves}
-          initialBoard={entry.initialBoard}
-          boardSize={boardSize}
-          boardClassName={boardClassName}
-          renderCell={renderCell}
-          maxCellPx={maxCellPx}
-        />
+        {(() => {
+          const CustomBoard = getCustomReplayBoard(entry.gameType as GameType);
+          if (CustomBoard) {
+            return <CustomBoard moves={entry.moves} />;
+          }
+          return (
+            <ReplayBoard
+              moves={entry.moves}
+              initialBoard={entry.initialBoard}
+              boardSize={boardSize}
+              boardClassName={boardClassName}
+              renderCell={renderCell}
+              maxCellPx={maxCellPx}
+            />
+          );
+        })()}
         {entry.truncated && (
           <p className="mt-1 text-center text-xs text-yellow-400">
             ⚠️ {t('profile.truncated')}（{t('profile.totalMoves', { count: entry.totalMoves })}）

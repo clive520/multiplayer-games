@@ -1,9 +1,11 @@
-import type { ReactNode } from 'react';
+import type { ReactNode, ComponentType } from 'react';
 import type { GameType } from '../types/room';
 import { BOARD_SIZE as TICTACTOE_SIZE } from '../../games/tictactoe/types';
 import { BOARD_SIZE as GOMOKU_SIZE } from '../../games/gomoku/types';
 import { BOARD_SIZE as REVERSI_SIZE } from '../../games/reversi/types';
 import { COLS as CONNECT4_COLS } from '../../games/connect4/types';
+import type { MoveRecord } from '../types/game';
+import { DotsAndBoxesReplayBoard } from '../../games/dotsandboxes/DotsAndBoxesReplayBoard';
 
 export interface ReplayRenderers {
   /** 棋盤邊長（3 = 井字、8 = 黑白棋、15 = 五子棋） */
@@ -144,36 +146,40 @@ export function getReplayRenderers(gameType: GameType): ReplayRenderers {
         },
         maxCellPx: 32,
       };
+    // dotsandboxes 用專用 CustomReplayBoard（見 getCustomReplayBoard），
+    // 因為它的「棋盤」是「點 + 邊 + 方格」混合結構，通用 NxN 渲染不適用。
     case 'dotsandboxes':
-      return {
-        boardSize: 4, // 4x4 方格
-        boardClassName: 'dark:bg-slate-800 bg-app-card border dark:border-slate-700 border-app-border',
-        renderCell: (cell, isLastMoveHere) => {
-          if (!cell) return null;
-          const isX = cell === 'X';
-          return (
-            <>
-              <span
-                className={`absolute inset-1 rounded-sm ${
-                  isX ? 'bg-blue-500 opacity-50' : 'bg-rose-500 opacity-50'
-                }`}
-              />
-              {isLastMoveHere && (
-                <span
-                  aria-hidden
-                  className="absolute inset-0 animate-pulse-ring rounded"
-                />
-              )}
-            </>
-          );
-        },
-        maxCellPx: 32,
-      };
     default:
       return {
         boardSize: 3,
         boardClassName: 'dark:bg-slate-800 bg-app-card border dark:border-slate-700 border-app-border',
         renderCell: (cell) => cell,
       };
+  }
+}
+
+/** 專用復盤元件的 props：只需要 moves（自己從 boardAfter 重建棋盤） */
+export interface CustomReplayBoardProps {
+  moves: ReadonlyArray<MoveRecord>;
+}
+
+/**
+ * 取得遊戲的專用復盤元件（NEW_GAME_SOP 5th 遊戲補充）
+ *
+ * 為什麼需要：
+ * - 通用 ReplayBoard 是 NxN 格子 + renderCell，適合井字/五子棋/黑白棋/四子棋
+ * - 點點連連的「棋盤」是「點 + 邊 + 方格」混合結構，必須用 SVG 完整重畫
+ * - 之後若再加這類「非格子」遊戲（如：多米諾、骨牌、UNO），也可以走這條路
+ *
+ * 回傳 null 表示用通用 ReplayBoard。
+ */
+export function getCustomReplayBoard(
+  gameType: GameType,
+): ComponentType<CustomReplayBoardProps> | null {
+  switch (gameType) {
+    case 'dotsandboxes':
+      return DotsAndBoxesReplayBoard;
+    default:
+      return null;
   }
 }
