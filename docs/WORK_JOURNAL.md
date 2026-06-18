@@ -6,6 +6,38 @@
 
 ---
 
+## 2026-06-18（Day 4 續 2）— 修復 dotsandboxes 啟動後 RTDB state 損壞
+
+**用戶回報**：「開始遊戲後出現」`RTDB returned invalid dotsandboxes state, ignoring {currentTurn: 'X', moveCount: 0, scores: {…}}`。
+
+**根因**：
+- dotsandboxes state 用 2D 陣列 `hEdges/vEdges/boxOwners` 存 40 條邊的狀態
+- 每個空格用 `null` 標記（`CellMark = 'X' | 'O' | null`）
+- **Firebase Realtime Database 不支援陣列裡有 `null` 元素**——`null` 會被當成 absent key，2D 陣列被破壞成空 `[]`
+- 結果：state 寫入 RTDB 時 hEdges/vEdges/boxOwners 被丟掉，只剩 currentTurn/moveCount/scores
+- `isValidState` 檢查到 `hEdges.length !== 5`，reject 整個 state，UI 永遠 loading
+
+**修復**：
+1. `CellMark` 改為 `'X' | 'O' | ''`（與 connect4/井字/黑白棋一致）
+2. `createInitialState` 用 `''` 取代 `null`
+3. `engine.ts` / `ai.ts` / `ai.test.ts` / `engine.test.ts` / `DotsAndBoxes.tsx` / `board.ts` 所有 `=== null` / `!== null` 改成 `=== ''` / `!== ''`
+4. `ensureGameState` 加 `isValidState` 檢查：若現有 state 結構不對（其他遊戲殘留或 RTDB 損壞），**自動重置**為新 initial state
+5. 加 `inBoundsV` 函式檢查垂直邊範圍（之前只檢查 h 邊）
+
+**效果**：
+- 208/208 測試過
+- TS 0 錯誤、build OK
+- 點點連連可正常開局（測試用戶回報修復後可玩）
+- 現有房間的壞 state 會在下次進入時自動重置
+
+**SOP 補充**：
+- `SOP.md` 情境 B 加一條「**state 中的空格必須用 `''` 而非 `null`**」
+- 連接 connect4/井字/黑白棋的設計（都用 `''`），提醒未來加 6th+ 遊戲照做
+
+**commit**：`0c4829d`
+
+---
+
 ## 2026-06-18（Day 4 續）— 新增第 5 個遊戲「點點連連 Dots and Boxes」
 
 **用戶要求**：繼續做 5th 遊戲 - 點點連連（Dots and Boxes）。

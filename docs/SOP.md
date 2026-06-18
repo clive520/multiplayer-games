@@ -173,6 +173,7 @@ git push origin main
 - [ ] 部署：`firebase deploy --only database`
 - [ ] **不要假設 emulator 行為等同 production**（emulator 沒開時，本地測試不會擋 PERMISSION_DENIED）
 - [ ] **5th+ 遊戲的 state 可能沒有 `board` 欄位**（例：dotsandboxes 用 hEdges/vEdges/boxOwners）。`state.validate` 只用「所有遊戲都有的最基本欄位」驗證（如 `moveCount`），不要硬卡 `board`
+- [ ] **state 中的「空格」必須用 `''`（空字串）而非 `null`**。Firebase Realtime Database **不支援陣列裡有 `null` 元素**——會被當成 absent key，2D 陣列會變空 `[]`，`isValidState` 會 reject。例：井字/四子棋/黑白棋都用 `''`（`type Cell = 'X' | 'O' | ''`），新增遊戲也照做。`null` 保留給「整個欄位不存在」語意（如 `lastMove: {...} | null`）
 
 **情境 C：新增 / 改 useEffect、useState、useCallback**
 - [ ] 所有 React hooks 必須在 **early return 之前**（rules of hooks）
