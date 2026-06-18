@@ -17,6 +17,21 @@ const FILTER_GAME_OPTIONS: ReadonlyArray<GameType | 'all'> = [
   ...gameRegistry.map((g) => g.id as GameType),
 ];
 
+/**
+ * i18n key 覆寫表（NEW_GAME_SOP 補充）
+ *
+ * 預設用 `explore.filter${capitalize(id)}` 自動組裝，例如：
+ *   tictactoe → filterTictactoe
+ *   connect4 → filterConnect4
+ *   dotsandboxes → filterDotsandboxes ← 自動組裝的結果（小寫 and）
+ *
+ * 但有些 game id 是複合字（如 dotsandboxes、cards-against-humanity），
+ * 自然閱讀會想用 camelCase（filterDotsAndBoxes）。在這裡覆寫即可。
+ */
+const FILTER_I18N_OVERRIDES: Partial<Record<GameType, string>> = {
+  dotsandboxes: 'explore.filterDotsAndBoxes',
+};
+
 /** 每頁筆數（IMPROVEMENTS Explore 分頁） */
 const PAGE_SIZE = 50;
 
@@ -131,7 +146,9 @@ export default function Explore() {
                   : 'dark:text-slate-300 text-slate-700 hover:dark:bg-slate-700 hover:bg-slate-50'
               }`}
             >
-              {gt === 'all' ? t('explore.filterAll') : t(`explore.filter${gt.charAt(0).toUpperCase()}${gt.slice(1)}`)}
+              {gt === 'all'
+                ? t('explore.filterAll')
+                : t(FILTER_I18N_OVERRIDES[gt as GameType] ?? `explore.filter${gt.charAt(0).toUpperCase()}${gt.slice(1)}`)}
             </button>
           ))}
         </div>
