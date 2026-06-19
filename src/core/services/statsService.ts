@@ -32,6 +32,7 @@ export interface UserStats {
     reversi: GameStats;
     connect4: GameStats;
     dotsandboxes: GameStats;
+    mancala: GameStats;
   };
   updatedAt: number;
 }
@@ -57,6 +58,7 @@ function emptyByGame(): UserStats['byGame'] {
     reversi: { ...DEFAULT_GAME_STATS },
     connect4: { ...DEFAULT_GAME_STATS },
     dotsandboxes: { ...DEFAULT_GAME_STATS },
+    mancala: { ...DEFAULT_GAME_STATS },
   };
 }
 

@@ -19,6 +19,7 @@ const GAME_LABELS: Record<GameType, string> = {
   reversi: 'games.reversi.name',
   connect4: 'games.connect4.name',
   dotsandboxes: 'games.dotsandboxes.name',
+  mancala: 'games.mancala.name',
 };
 
 type IconComponent = ComponentType<{ className?: string }>;
@@ -28,6 +29,7 @@ const GAME_ICONS: Record<GameType, IconComponent> = {
   reversi: gameRegistry.find((g) => g.id === 'reversi')!.icon,
   connect4: gameRegistry.find((g) => g.id === 'connect4')!.icon,
   dotsandboxes: gameRegistry.find((g) => g.id === 'dotsandboxes')!.icon,
+  mancala: gameRegistry.find((g) => g.id === 'mancala')!.icon,
 };
 
 function formatTime(ms: number): string {

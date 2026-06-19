@@ -247,6 +247,7 @@
     "scopeReversi": "黑白棋",
     "scopeConnect4": "四子棋",
     "scopeDotsAndBoxes": "點點連連",
+    "scopeMancala": "播棋",
     "rank": "排名",
     "player": "玩家",
     "elo": "ELO",
@@ -305,12 +306,20 @@
       "edgeTaken": "此邊已畫",
       "extraTurnHint": "你完成了一個方格，可再畫一條邊！"
     },
+    "mancala": {
+      "name": "播棋",
+      "moveFailed": "播種失敗",
+      "loading": "遊戲載入中...",
+      "stateCorrupted": "遊戲狀態損壞，請重新整理或重置房間",
+      "playAgainHint": "房主可在房間頁面按「再來一局」重置棋盤"
+    },
     "verb": {
       "tictactoe": "下棋",
       "gomoku": "落子",
       "reversi": "落子",
       "connect4": "下子",
-      "dotsandboxes": "畫邊"
+      "dotsandboxes": "畫邊",
+      "mancala": "播種"
     },
     "headerStatus": {
       "myTurn_tictactoe": "輪到你：{{symbol}}",
@@ -318,16 +327,19 @@
       "myTurn_reversi": "輪到你：{{symbol}}",
       "myTurn_connect4": "輪到你：{{symbol}}",
       "myTurn_dotsandboxes": "輪到你：{{symbol}}",
+      "myTurn_mancala": "輪到你：{{symbol}}",
       "spectating_tictactoe": "觀戰中 — {{symbol}} 下棋",
       "spectating_gomoku": "觀戰中 — {{symbol}} 落子",
       "spectating_reversi": "觀戰中 — {{symbol}} 落子",
       "spectating_connect4": "觀戰中 — {{symbol}} 下子",
       "spectating_dotsandboxes": "觀戰中 — {{symbol}} 畫邊",
+      "spectating_mancala": "觀戰中 — {{symbol}} 播種",
       "opponentTurn_tictactoe": "對方：{{symbol}} 下棋",
       "opponentTurn_gomoku": "對方：{{symbol}} 落子",
       "opponentTurn_reversi": "對方：{{symbol}} 落子",
       "opponentTurn_connect4": "對方：{{symbol}} 下子",
       "opponentTurn_dotsandboxes": "對方：{{symbol}} 畫邊",
+      "opponentTurn_mancala": "對方：{{symbol}} 播種",
       "waiting": "等待中",
       "draw": "平手",
       "wonBy": "獲勝者：{{name}}"
@@ -420,6 +432,7 @@
     "filterReversi": "黑白棋",
     "filterConnect4": "四子棋",
     "filterDotsAndBoxes": "點點連連",
+    "filterMancala": "播棋",
     "filterAllAI": "全部 AI",
     "filterHideAI": "排除 AI 對戰",
     "filterShowAI": "包含 AI 對戰",

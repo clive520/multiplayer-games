@@ -247,6 +247,7 @@
     "scopeReversi": "Reversi",
     "scopeConnect4": "Connect 4",
     "scopeDotsAndBoxes": "Dots and Boxes",
+    "scopeMancala": "Mancala",
     "rank": "Rank",
     "player": "Player",
     "elo": "ELO",
@@ -305,12 +306,20 @@
       "edgeTaken": "Edge already drawn",
       "extraTurnHint": "You closed a box! You get another turn."
     },
+    "mancala": {
+      "name": "Mancala",
+      "moveFailed": "Failed to sow",
+      "loading": "Loading game...",
+      "stateCorrupted": "Game state corrupted. Please refresh or reset the room.",
+      "playAgainHint": "Host can click \"Play again\" on the room page to reset the board."
+    },
     "verb": {
       "tictactoe": "play",
       "gomoku": "place",
       "reversi": "place",
       "connect4": "drop",
-      "dotsandboxes": "draw"
+      "dotsandboxes": "draw",
+      "mancala": "sow"
     },
     "headerStatus": {
       "myTurn_tictactoe": "Your turn: {{symbol}}",
@@ -318,16 +327,19 @@
       "myTurn_reversi": "Your turn: {{symbol}}",
       "myTurn_connect4": "Your turn: {{symbol}}",
       "myTurn_dotsandboxes": "Your turn: {{symbol}}",
+      "myTurn_mancala": "Your turn: {{symbol}}",
       "spectating_tictactoe": "Spectating — {{symbol}}'s turn to play",
       "spectating_gomoku": "Spectating — {{symbol}}'s turn to place",
       "spectating_reversi": "Spectating — {{symbol}}'s turn to place",
       "spectating_connect4": "Spectating — {{symbol}}'s turn to drop",
       "spectating_dotsandboxes": "Spectating — {{symbol}}'s turn to draw",
+      "spectating_mancala": "Spectating — {{symbol}}'s turn to sow",
       "opponentTurn_tictactoe": "Opponent: {{symbol}} playing",
       "opponentTurn_gomoku": "Opponent: {{symbol}} placing",
       "opponentTurn_reversi": "Opponent: {{symbol}} placing",
       "opponentTurn_connect4": "Opponent: {{symbol}} dropping",
       "opponentTurn_dotsandboxes": "Opponent: {{symbol}} drawing",
+      "opponentTurn_mancala": "Opponent: {{symbol}} sowing",
       "waiting": "Waiting",
       "draw": "Draw",
       "wonBy": "Won by {{name}}"
@@ -420,6 +432,7 @@
     "filterReversi": "Reversi",
     "filterConnect4": "Connect 4",
     "filterDotsAndBoxes": "Dots and Boxes",
+    "filterMancala": "Mancala",
     "filterAllAI": "All AI",
     "filterHideAI": "Exclude AI games",
     "filterShowAI": "Include AI games",

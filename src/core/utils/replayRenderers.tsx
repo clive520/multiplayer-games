@@ -6,6 +6,7 @@ import { BOARD_SIZE as REVERSI_SIZE } from '../../games/reversi/types';
 import { COLS as CONNECT4_COLS } from '../../games/connect4/types';
 import type { MoveRecord } from '../types/game';
 import { DotsAndBoxesReplayBoard } from '../../games/dotsandboxes/DotsAndBoxesReplayBoard';
+import { MancalaReplayBoard } from '../../games/mancala/MancalaReplayBoard';
 
 export interface ReplayRenderers {
   /** 棋盤邊長（3 = 井字、8 = 黑白棋、15 = 五子棋） */
@@ -179,6 +180,8 @@ export function getCustomReplayBoard(
   switch (gameType) {
     case 'dotsandboxes':
       return DotsAndBoxesReplayBoard;
+    case 'mancala':
+      return MancalaReplayBoard;
     default:
       return null;
   }

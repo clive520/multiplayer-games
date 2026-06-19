@@ -146,5 +146,41 @@ export function BoardThumbnail({ gameType, board, cellSize = 18 }: BoardThumbnai
     );
   }
 
+  // mancala：12 pit + 2 store
+  if (gameType === 'mancala') {
+    const cells = board ?? Array(14).fill('0');
+    const pitSize = Math.round(cellSize * 0.5);
+    const xPits = cells.slice(0, 6).map(Number);
+    const oPits = cells.slice(6, 12).map(Number);
+    const xStore = Number(cells[12] ?? '0');
+    const oStore = Number(cells[13] ?? '0');
+    return (
+      <div className="flex items-center gap-1 rounded border border-amber-900/40 bg-amber-100/40 dark:bg-amber-900/20 p-1">
+        <div className="flex flex-col items-center justify-center rounded bg-amber-300/60 dark:bg-amber-800/40" style={{ width: pitSize, height: pitSize * 2 }}>
+          <span className="text-[8px] font-bold text-amber-900 dark:text-amber-200">{xStore}</span>
+        </div>
+        <div className="space-y-1">
+          <div className="flex gap-0.5">
+            {oPits.map((c, i) => (
+              <div key={`o-${i}`} className="flex items-center justify-center rounded-full bg-amber-200/70 dark:bg-amber-900/40" style={{ width: pitSize, height: pitSize }}>
+                <span className="text-[8px] text-amber-900 dark:text-amber-200">{c}</span>
+              </div>
+            ))}
+          </div>
+          <div className="flex gap-0.5">
+            {xPits.map((c, i) => (
+              <div key={`x-${i}`} className="flex items-center justify-center rounded-full bg-amber-200/70 dark:bg-amber-900/40" style={{ width: pitSize, height: pitSize }}>
+                <span className="text-[8px] text-amber-900 dark:text-amber-200">{c}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="flex flex-col items-center justify-center rounded bg-amber-300/60 dark:bg-amber-800/40" style={{ width: pitSize, height: pitSize * 2 }}>
+          <span className="text-[8px] font-bold text-amber-900 dark:text-amber-200">{oStore}</span>
+        </div>
+      </div>
+    );
+  }
+
   return null;
 }

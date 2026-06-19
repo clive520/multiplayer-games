@@ -36,6 +36,7 @@ export function subscribeLeaderboard(
             reversi: { ...DEFAULT_GAME_STATS },
             connect4: { ...DEFAULT_GAME_STATS },
             dotsandboxes: { ...DEFAULT_GAME_STATS },
+            mancala: { ...DEFAULT_GAME_STATS },
           },
           winRate: calculateWinRate(stats),
         };

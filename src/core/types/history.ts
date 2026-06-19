@@ -24,6 +24,7 @@ export const MOVES_CAP: Record<GameType, number> = {
   reversi: 80,         // 棋盤填滿也只 60 步
   connect4: 42,        // 棋盤填滿 = 42 步
   dotsandboxes: 40,    // 4x4 棋盤 = 40 條邊
+  mancala: 200,        // 12 個 pit、正常一局約 50-100 步
 };
 
 /** 每人 saved link 上限 */

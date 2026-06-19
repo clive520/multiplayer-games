@@ -30,6 +30,7 @@ const FILTER_GAME_OPTIONS: ReadonlyArray<GameType | 'all'> = [
  */
 const FILTER_I18N_OVERRIDES: Partial<Record<GameType, string>> = {
   dotsandboxes: 'explore.filterDotsAndBoxes',
+  mancala: 'explore.filterMancala',
 };
 
 /** 每頁筆數（IMPROVEMENTS Explore 分頁） */

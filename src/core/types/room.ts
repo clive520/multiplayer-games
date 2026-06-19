@@ -1,4 +1,4 @@
-export type GameType = 'tictactoe' | 'gomoku' | 'reversi' | 'connect4' | 'dotsandboxes';
+export type GameType = 'tictactoe' | 'gomoku' | 'reversi' | 'connect4' | 'dotsandboxes' | 'mancala';
 
 export type RoomStatus = 'waiting' | 'playing' | 'finished';
 

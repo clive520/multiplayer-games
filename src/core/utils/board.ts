@@ -4,6 +4,8 @@ import { createInitialState as createGomokuState } from '../../games/gomoku/type
 import { createInitialState as createReversiState } from '../../games/reversi/types';
 import { createInitialState as createConnect4State } from '../../games/connect4/types';
 import { createInitialState as createDotsAndBoxesState } from '../../games/dotsandboxes/types';
+import { createInitialState as createMancalaState } from '../../games/mancala/types';
+import { PITS_PER_SIDE, INITIAL_STONES } from '../../games/mancala/types';
 
 /**
  * 取得遊戲的初始棋盤（IMPROVEMENTS #12 Phase B 復盤用）
@@ -34,7 +36,18 @@ export function getInitialBoard(gameType: GameType): ReadonlyArray<string> {
         ...s.boxOwners.flat(),
       ];
     }
+    case 'mancala': {
+      // 14 元素：[X pits 0..5, O pits 0..5, X store, O store]
+      const flat: string[] = [];
+      for (let i = 0; i < PITS_PER_SIDE; i++) flat.push(String(INITIAL_STONES));
+      for (let i = 0; i < PITS_PER_SIDE; i++) flat.push(String(INITIAL_STONES));
+      flat.push('0', '0');
+      return flat;
+    }
     default:
       return [];
   }
 }
+
+// 保留 createMancalaState 給未來使用
+void createMancalaState;

@@ -17,6 +17,7 @@ const SCOPE_I18N_KEY: Record<LeaderboardScope, string> = {
   reversi: 'leaderboard.scopeReversi',
   connect4: 'leaderboard.scopeConnect4',
   dotsandboxes: 'leaderboard.scopeDotsAndBoxes',
+  mancala: 'leaderboard.scopeMancala',
 };
 
 export default function Leaderboard() {
