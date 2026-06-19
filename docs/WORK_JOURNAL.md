@@ -6,6 +6,49 @@
 
 ---
 
+## 2026-06-18（Day 4 續 3）— 新增第 7 個遊戲「播棋 Mancala」
+
+**用戶要求**：執行「選 A」計畫（Mancala → Checkers → 象棋）的第一步。
+
+**決策**：
+- 嚴格照 `NEW_GAME_SOP.md` 走 15 個 phases
+- 標準 Kalah 變體：6+6 pit + 2 store、初始每 pit 4 石頭
+- 上排 X / 下排 O（與井字/五子棋/黑白棋/四子棋/點點連連一致）
+- 特殊機制：播種順序（跳過對手 store）、額外回合（落自己 store）、捕子（落自己空格）
+- AI 啟發式：easy 隨機 / normal 1-ply（store 增量 + 保留石頭）/ hard 2-ply（簡化 minimax）
+
+**實作**：
+1. Phase 0：建 `src/games/mancala/` 資料夾
+2. Phase 1：`types.ts` (MancalaState with pits[2][6] + stores[2])、`engine.ts`（播種邏輯 + 捕子 + extra turn + game-end）、`engine.test.ts` 17 個測試
+3. Phase 2：`sync.ts` (submitMove + acceptUndo)
+4. Phase 3：`ai.ts` 啟發式 AI + `ai.test.ts` 6 個測試
+5. Phase 4：symbols.ts (上排/下排) + Icon.tsx (圓坑 SVG)
+6. Phase 5：GameDefinition + Mancala.tsx UI（兩排 pit + 兩個 store + 點擊高亮 + 石頭視覺化）+ registry
+7. Phase 6：MOVES_CAP 200 + getInitialBoard + BoardThumbnail 縮圖 + **MancalaReplayBoard 專用復盤** + getCustomReplayBoard 註冊
+8. Phase 7：i18n 中英對齊（name, moveFailed, headerStatus 3 個, verb, scopeMancala, filterMancala）
+9. Phase 8-10：rules / indexes **不需改**（state 結構是 number[][] 數字陣列，Firebase 支援；只驗 moveCount 即可）
+10. Phase 11-12：Lobby / Profile / Leaderboard 自動從 registry 讀
+11. Phase 13：**231/231 測試過**、build OK、Vercel 自動部署
+12. Phase 14-15：commit `b10dd5e` + push
+
+**效果**：
+- 231/231 測試過（含 17 個 mancala engine 測試 + 6 個 AI 測試）
+- TS 0 錯誤、build OK
+- Leaderboard / Profile / Lobby 自動包含播棋
+- 探索頁可篩選播棋棋譜
+- 復盤時間軸支援（與實際下棋視覺一致：兩排 pit + 兩個 store）
+
+**踩坑**：
+1. **AI 啟發式測試失敗** — 原本想測「直接 store +1 的步 > 保留石頭的步」，但構造的場景意外觸發了捕子（pit 0 播 1 顆到空格 pit 1 → 捕 O pit 4 的 4 顆 → store +5），AI 選 pit 0 是對的。改測試為「捕子步 > 普通步」，驗證 AI 識字捕子的能力。
+2. **sync.ts 序列化型別** — `MoveRecord.boardAfter` 是 `ReadonlyArray<string>`，但 pits 是 number[]。需 `.map(String)` 轉成字串，還原時 `Number()`。之前 reversi 棋譜也遇過類似問題。
+3. **Explore filter 自動組裝** — `dotsandboxes` 之前發現 `explore.filterDotsandboxes` 找不到 key，現在 `mancala` 直接加入 `FILTER_I18N_OVERRIDES` 覆寫表，預防同樣問題。
+
+**SOP 驗證**：第三次跑 `NEW_GAME_SOP.md`，流程已非常順。NEW_GAME_SOP Phase 7 加註：「**6th+ 遊戲記得在 `FILTER_I18N_OVERRIDES` 加覆寫**」+「**state 是 number 陣列時，boardAfter 要 .map(String)**」。總時長約 1.5 小時。
+
+**下一步**：第 8 個遊戲「西洋跳棋 Checkers」— 6 小時，包含 alpha-beta AI 升級。
+
+---
+
 ## 2026-06-18（Day 4 續 2）— 修復 dotsandboxes 啟動後 RTDB state 損壞
 
 **用戶回報**：「開始遊戲後出現」`RTDB returned invalid dotsandboxes state, ignoring {currentTurn: 'X', moveCount: 0, scores: {…}}`。
