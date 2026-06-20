@@ -13,6 +13,9 @@ import {
 import { resetGameState as resetTictactoeState, submitMove as submitTictactoeMove } from '@/games/tictactoe/sync';
 import { resetGameState as resetGomokuState, submitMove as submitGomokuMove } from '@/games/gomoku/sync';
 import { resetGameState as resetReversiState, submitMove as submitReversiMove, passTurn as passReversiTurn } from '@/games/reversi/sync';
+import { resetGameState as resetConnect4State, submitMove as submitConnect4Move } from '@/games/connect4/sync';
+import { resetGameState as resetDotsAndBoxesState, submitMove as submitDotsAndBoxesMove } from '@/games/dotsandboxes/sync';
+import { resetGameState as resetMancalaState, submitMove as submitMancalaMove } from '@/games/mancala/sync';
 import { ResultScreen } from '../core/components/ResultScreen';
 import { MoveHistory } from '../core/components/MoveHistory';
 import { ChatPanel } from '../core/components/ChatPanel';
@@ -103,6 +106,9 @@ export default function GameRoom() {
     if (gameType === 'tictactoe') return resetTictactoeState(id);
     if (gameType === 'gomoku') return resetGomokuState(id);
     if (gameType === 'reversi') return resetReversiState(id);
+    if (gameType === 'connect4') return resetConnect4State(id);
+    if (gameType === 'dotsandboxes') return resetDotsAndBoxesState(id);
+    if (gameType === 'mancala') return resetMancalaState(id);
   };
 
   const handleCopyCode = async () => {
@@ -239,7 +245,13 @@ export default function GameRoom() {
             ? submitGomokuMove(roomId!, aiPlayer.uid, aiPlayer.symbol, aiPlayer.displayName, move as { row: number; col: number })
             : currentRoom.gameType === 'reversi'
               ? submitReversiMove(roomId!, aiPlayer.uid, aiPlayer.symbol, aiPlayer.displayName, move as { row: number; col: number; pass?: boolean })
-              : Promise.resolve({ applied: false, reason: '未知遊戲' });
+              : currentRoom.gameType === 'connect4'
+                ? submitConnect4Move(roomId!, aiPlayer.uid, aiPlayer.symbol, aiPlayer.displayName, move as { col: number })
+                : currentRoom.gameType === 'dotsandboxes'
+                  ? submitDotsAndBoxesMove(roomId!, aiPlayer.uid, aiPlayer.symbol, aiPlayer.displayName, move as { type: 'h' | 'v'; row: number; col: number })
+                  : currentRoom.gameType === 'mancala'
+                    ? submitMancalaMove(roomId!, aiPlayer.uid, aiPlayer.symbol, aiPlayer.displayName, move as { side: 0 | 1; pit: number })
+                    : Promise.resolve({ applied: false, reason: '未知遊戲' });
       promise.catch((err) => {
         console.error('[AI] submitMove 失敗', err);
       });
