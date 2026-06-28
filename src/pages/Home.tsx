@@ -1,5 +1,6 @@
 import { useAuth } from '../core/auth/useAuth';
 import { signInWithGoogle, signOut } from '../core/auth/googleSignIn';
+import { redirectToSSO } from '../core/auth/ssoSignIn';
 import { useToast } from '../core/components/Toast';
 import { LanguageSwitcher } from '../core/components/LanguageSwitcher';
 import { useTranslation } from 'react-i18next';
@@ -16,6 +17,10 @@ export default function Home() {
       console.error(t('errors.signInFailed'), err);
       toast.error(t('home.signInFailed'));
     }
+  };
+
+  const handleSSOSignIn = () => {
+    redirectToSSO();
   };
 
   const handleSignOut = async () => {
@@ -64,12 +69,25 @@ export default function Home() {
             </button>
           </div>
         ) : (
-          <button
-            onClick={handleSignIn}
-            className="rounded bg-blue-600 px-6 py-3 font-medium dark:text-white text-slate-900 hover:bg-blue-500"
-          >
-            {t('home.signIn')}
-          </button>
+          <div className="flex flex-col items-center gap-3">
+            <button
+              onClick={handleSignIn}
+              className="rounded bg-blue-600 px-6 py-3 font-medium dark:text-white text-slate-900 hover:bg-blue-500"
+            >
+              {t('home.signIn')}
+            </button>
+            <div className="my-1 flex items-center gap-2 text-xs text-slate-500">
+              <span className="h-px w-10 bg-slate-300 dark:bg-slate-600" />
+              {t('home.or')}
+              <span className="h-px w-10 bg-slate-300 dark:bg-slate-600" />
+            </div>
+            <button
+              onClick={handleSSOSignIn}
+              className="rounded bg-emerald-600 px-6 py-3 font-medium text-white hover:bg-emerald-500"
+            >
+              {t('home.signInSSO')}
+            </button>
+          </div>
         )}
       </div>
 

@@ -1,4 +1,9 @@
 {
+  "sso": {
+    "missingToken": "Missing login token, please try again",
+    "processing": "SSO signing in...",
+    "loginFailed": "SSO sign-in failed"
+  },
   "common": {
     "loading": "Loading...",
     "cancel": "Cancel",
@@ -50,6 +55,8 @@
     "subtitle": "Tic-tac-toe, Gomoku, Reversi — play with friends anytime",
     "signedInAs": "Signed in as: {{name}}",
     "signIn": "Sign in with Google",
+    "signInSSO": "Luyang Elementary SSO Sign-in",
+    "or": "or",
     "signOut": "Sign out",
     "signInFailed": "Sign-in failed. Please try again later."
   },

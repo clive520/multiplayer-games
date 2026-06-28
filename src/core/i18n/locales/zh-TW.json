@@ -1,4 +1,9 @@
 {
+  "sso": {
+    "missingToken": "缺少登入 Token，請重新嘗試",
+    "processing": "SSO 登入中...",
+    "loginFailed": "SSO 登入失敗"
+  },
   "common": {
     "loading": "載入中...",
     "cancel": "取消",
@@ -50,6 +55,8 @@
     "subtitle": "井字、五子棋、黑白棋 — 隨時跟朋友對戰",
     "signedInAs": "已登入為：{{name}}",
     "signIn": "使用 Google 帳號登入",
+    "signInSSO": "鹿陽國小單一認證登入",
+    "or": "或",
     "signOut": "登出",
     "signInFailed": "登入失敗，請稍後再試"
   },

@@ -7,6 +7,7 @@ import Profile from './pages/Profile';
 import Settings from './pages/Settings';
 import PublicReplay from './pages/PublicReplay';
 import Explore from './pages/Explore';
+import SSOCallback from './pages/SSOCallback';
 import { RequireAuth } from './core/components/RequireAuth';
 import { useAuth } from './core/auth/useAuth';
 
@@ -81,6 +82,7 @@ export default function App() {
   return (
     <Routes>
       <Route path="/" element={<HomePage />} />
+      <Route path="/auth/sso/callback" element={<SSOCallback />} />
       <Route
         path="/lobby"
         element={
