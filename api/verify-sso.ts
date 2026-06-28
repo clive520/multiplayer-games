@@ -1,6 +1,8 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import jwt from 'jsonwebtoken';
-import admin from 'firebase-admin';
+// firebase-admin 是 CommonJS，用 require 確保拿到完整物件（避免 ESM default import undefined）
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const admin = require('firebase-admin') as typeof import('firebase-admin');
 
 /**
  * 鹿陽國小單一認證系統（SSO）— Token 驗證 Vercel Serverless Function
@@ -21,7 +23,6 @@ import admin from 'firebase-admin';
  *                              點「Generate new private key」下載的 JSON 完整內容（貼成 single-line JSON）
  */
 
-const SSO_URL_NO_SECRET_HINT = 'Missing SSO_JWT_SECRET env var';
 const SERVICE_ACCOUNT_HINT = 'Missing FIREBASE_SERVICE_ACCOUNT env var';
 
 let adminApp: admin.app.App | null = null;
@@ -39,7 +40,7 @@ function getAdminApp(): admin.app.App {
     {
       credential: admin.credential.cert(serviceAccount),
     },
-    'sso-verifier-' + Date.now(),
+    'sso-verifier',
   );
   return adminApp;
 }
