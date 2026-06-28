@@ -1,48 +1,60 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import jwt from 'jsonwebtoken';
-// firebase-admin 是 CommonJS，用 require 確保拿到完整物件（避免 ESM default import undefined）
+// firebase-admin 是 CommonJS；用 require 確保拿到完整物件
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const admin = require('firebase-admin') as typeof import('firebase-admin');
 
 /**
  * 鹿陽國小單一認證系統（SSO）— Token 驗證 Vercel Serverless Function
  *
- * 流程：
- * 1. 前端從 SSO callback URL 取得 JWT token
- * 2. POST 到此 endpoint /api/verify-sso
- * 3. 此 function 用 SSO_JWT_SECRET 驗證 JWT 簽章 + 過期
- * 4. 用 firebase-admin 建立一個 Custom Token（uid = "sso:{ssoUid}"）
- *    custom claims 含 ssoName（作為 displayName 來源）
- * 5. 回傳 { customToken, user } 給前端
- * 6. 前端用 signInWithCustomToken 登入 Firebase
- *    → Firestore / RTDB 安全規則看到 request.auth.uid = "sso:{ssoUid}"
- *
  * 環境變數（Vercel Dashboard → Settings → Environment Variables）：
  * - SSO_JWT_SECRET：鹿陽國小資訊管理員提供的 JWT 密鑰
  * - FIREBASE_SERVICE_ACCOUNT：Firebase Console > Project Settings > Service Accounts
- *                              點「Generate new private key」下載的 JSON 完整內容（貼成 single-line JSON）
+ *                              點「Generate new private key」下載的 JSON 完整內容
  */
 
-const SERVICE_ACCOUNT_HINT = 'Missing FIREBASE_SERVICE_ACCOUNT env var';
+const MISSING_SECRET = 'SSO_JWT_SECRET 環境變數未設定';
+const MISSING_SERVICE_ACCOUNT = 'FIREBASE_SERVICE_ACCOUNT 環境變數未設定';
+const INVALID_SERVICE_ACCOUNT = 'FIREBASE_SERVICE_ACCOUNT 不是合法 JSON';
 
-let adminApp: admin.app.App | null = null;
+// Vercel Serverless 可能 warm reuse — 用 globalThis 持久化 admin app
+interface GlobalWithAdmin {
+  __ssoAdminApp?: admin.app.App;
+}
+const g = globalThis as unknown as GlobalWithAdmin;
 
 function getAdminApp(): admin.app.App {
-  if (adminApp) return adminApp;
+  if (g.__ssoAdminApp) return g.__ssoAdminApp;
 
   const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT;
   if (!serviceAccountJson) {
-    throw new Error(SERVICE_ACCOUNT_HINT);
+    throw new Error(MISSING_SERVICE_ACCOUNT);
   }
-  const serviceAccount = JSON.parse(serviceAccountJson) as admin.ServiceAccount;
 
-  adminApp = admin.initializeApp(
-    {
-      credential: admin.credential.cert(serviceAccount),
-    },
-    'sso-verifier',
-  );
-  return adminApp;
+  let serviceAccount: admin.ServiceAccount;
+  try {
+    serviceAccount = JSON.parse(serviceAccountJson);
+  } catch {
+    throw new Error(INVALID_SERVICE_ACCOUNT);
+  }
+
+  // 處理 warm instance 造成「app already exists」
+  try {
+    g.__ssoAdminApp = admin.initializeApp(
+      {
+        credential: admin.credential.cert(serviceAccount),
+      },
+      'sso-verifier',
+    );
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : '';
+    if (msg.includes('already exists') || msg.includes('EXISTING_APP')) {
+      g.__ssoAdminApp = admin.app('sso-verifier');
+    } else {
+      throw err;
+    }
+  }
+  return g.__ssoAdminApp;
 }
 
 interface SSOPayload {
@@ -58,7 +70,6 @@ export default async function handler(
   req: VercelRequest,
   res: VercelResponse,
 ): Promise<void> {
-  // 允許瀏覽器跨來源呼叫（同網域呼叫其實不需要，但 CORS 預檢仍可能發出 OPTIONS）
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -81,16 +92,24 @@ export default async function handler(
 
   const secret = process.env.SSO_JWT_SECRET;
   if (!secret) {
-    console.error(SSO_URL_NO_SECRET_HINT);
-    res.status(500).json({ error: '伺服器未設定 SSO 密鑰' });
+    console.error('[verify-sso]', MISSING_SECRET);
+    res.status(500).json({ error: MISSING_SECRET });
     return;
   }
 
+  // 1. JWT 驗證
+  let payload: SSOPayload;
   try {
-    const payload = jwt.verify(token, secret, { algorithms: ['HS256'] }) as SSOPayload;
+    payload = jwt.verify(token, secret, { algorithms: ['HS256'] }) as SSOPayload;
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Token 無效或已過期';
+    console.error('[verify-sso] JWT 驗證失敗', message);
+    res.status(401).json({ error: `JWT 驗證失敗：${message}` });
+    return;
+  }
 
-    // 建立自訂 Firebase token
-    // uid 加 "sso:" 前綴避免與 Google 登入的 Firebase uid 衝突
+  // 2. 用 firebase-admin 建 custom token
+  try {
     const firebaseUid = `sso:${payload.uid}`;
     const customClaims = {
       ssoName: payload.name,
@@ -112,8 +131,8 @@ export default async function handler(
       },
     });
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Token 無效或已過期';
-    console.error('[verify-sso] 驗證失敗', message);
-    res.status(401).json({ error: message });
+    const message = err instanceof Error ? err.message : 'firebase-admin 失敗';
+    console.error('[verify-sso] firebase-admin 錯誤', message, err);
+    res.status(500).json({ error: `Firebase Admin 失敗：${message}` });
   }
 }

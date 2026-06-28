@@ -34,6 +34,7 @@ export default function SSOCallback() {
       })
       .catch((err) => {
         const msg = err instanceof Error ? err.message : '登入失敗';
+        console.error('[SSO Callback] 登入失敗', msg);
         setError(msg);
       });
   }, [navigate, t]);
