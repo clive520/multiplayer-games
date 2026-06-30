@@ -56,6 +56,13 @@
     "signedInAs": "Signed in as: {{name}}",
     "signIn": "Sign in with Google",
     "signInSSO": "Luyang Elementary SSO Sign-in",
+    "signInGuest": "Guest Sign-in",
+    "guestTitle": "Guest sign-in",
+    "guestSubtitle": "Enter a nickname (2-12 chars) to start playing.",
+    "guestPlaceholder": "Enter nickname",
+    "guestStart": "Start playing",
+    "guestWelcome": "Welcome, {{name}}!",
+    "guestWarning": "Guest identity is stored in this browser. Clearing browser data will lose this account and your replay history.",
     "or": "or",
     "signOut": "Sign out",
     "signInFailed": "Sign-in failed. Please try again later."

@@ -56,6 +56,13 @@
     "signedInAs": "已登入為：{{name}}",
     "signIn": "使用 Google 帳號登入",
     "signInSSO": "鹿陽國小單一認證登入",
+    "signInGuest": "訪客登入",
+    "guestTitle": "訪客登入",
+    "guestSubtitle": "輸入你想用的暱稱（2-12 字），即可開始遊玩。",
+    "guestPlaceholder": "輸入暱稱",
+    "guestStart": "開始遊玩",
+    "guestWelcome": "歡迎，{{name}}！",
+    "guestWarning": "訪客身分儲存在這個瀏覽器；清除瀏覽器資料會失去這個帳號與棋譜紀錄。",
     "or": "或",
     "signOut": "登出",
     "signInFailed": "登入失敗，請稍後再試"
