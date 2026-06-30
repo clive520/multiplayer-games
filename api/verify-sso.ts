@@ -1,60 +1,51 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
+import type { IncomingMessage, ServerResponse } from 'http';
 import jwt from 'jsonwebtoken';
-// firebase-admin 是 CommonJS；用 require 確保拿到完整物件
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const admin = require('firebase-admin') as typeof import('firebase-admin');
+
+/** Vercel Serverless Function 簽名（簡化型別，避免依賴 @vercel/node） */
+type VercelRequest = IncomingMessage & {
+  body?: unknown;
+  method?: string;
+  query?: Record<string, string>;
+};
+type VercelResponse = ServerResponse & {
+  status: (code: number) => VercelResponse;
+  json: (data: unknown) => void;
+};
 
 /**
- * 鹿陽國小單一認證系統（SSO）— Token 驗證 Vercel Serverless Function
+ * 鹿陽國小 SSO 驗證 + Firebase Custom Token 簽發
  *
- * 環境變數（Vercel Dashboard → Settings → Environment Variables）：
- * - SSO_JWT_SECRET：鹿陽國小資訊管理員提供的 JWT 密鑰
- * - FIREBASE_SERVICE_ACCOUNT：Firebase Console > Project Settings > Service Accounts
- *                              點「Generate new private key」下載的 JSON 完整內容
+ * 設計：
+ * - 用 jsonwebtoken 驗證 SSO 發的 JWT（HS256 + 學校密鑰）
+ * - 用同一個 jsonverify 套件手動簽 Firebase Custom Token（RS256 + service account private key）
+ * - 不用 firebase-admin SDK（太重、gRPC 會讓 Vercel serverless 載入失敗）
+ *
+ * Custom Token 格式（Firebase 規範）：
+ *   header: { alg: "RS256", typ: "JWT" }
+ *   payload: {
+ *     iss: serviceAccount.client_email,
+ *     sub: serviceAccount.client_email,
+ *     aud: "https://identitytoolkit.googleapis.com/google.identity.identitytoolkit.v1.IdentityToolkit",
+ *     iat, exp (1 小時),
+ *     uid: "sso:{ssoUid}",
+ *     claims: { ssoName, ssoUsername, ssoRole, provider }
+ *   }
+ *   簽章：用 serviceAccount.private_key 做 RS256
  */
 
 const MISSING_SECRET = 'SSO_JWT_SECRET 環境變數未設定';
 const MISSING_SERVICE_ACCOUNT = 'FIREBASE_SERVICE_ACCOUNT 環境變數未設定';
 const INVALID_SERVICE_ACCOUNT = 'FIREBASE_SERVICE_ACCOUNT 不是合法 JSON';
+const MISSING_PRIVATE_KEY = '服務帳戶金鑰缺少 private_key';
 
-// Vercel Serverless 可能 warm reuse — 用 globalThis 持久化 admin app
-interface GlobalWithAdmin {
-  __ssoAdminApp?: admin.app.App;
-}
-const g = globalThis as unknown as GlobalWithAdmin;
+const FIREBASE_CUSTOM_TOKEN_AUD =
+  'https://identitytoolkit.googleapis.com/google.identity.identitytoolkit.v1.IdentityToolkit';
+const CUSTOM_TOKEN_TTL_SEC = 60 * 60; // 1 小時（Firebase 規範）
 
-function getAdminApp(): admin.app.App {
-  if (g.__ssoAdminApp) return g.__ssoAdminApp;
-
-  const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT;
-  if (!serviceAccountJson) {
-    throw new Error(MISSING_SERVICE_ACCOUNT);
-  }
-
-  let serviceAccount: admin.ServiceAccount;
-  try {
-    serviceAccount = JSON.parse(serviceAccountJson);
-  } catch {
-    throw new Error(INVALID_SERVICE_ACCOUNT);
-  }
-
-  // 處理 warm instance 造成「app already exists」
-  try {
-    g.__ssoAdminApp = admin.initializeApp(
-      {
-        credential: admin.credential.cert(serviceAccount),
-      },
-      'sso-verifier',
-    );
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : '';
-    if (msg.includes('already exists') || msg.includes('EXISTING_APP')) {
-      g.__ssoAdminApp = admin.app('sso-verifier');
-    } else {
-      throw err;
-    }
-  }
-  return g.__ssoAdminApp;
+interface ServiceAccount {
+  client_email: string;
+  private_key: string;
+  project_id?: string;
 }
 
 interface SSOPayload {
@@ -64,6 +55,51 @@ interface SSOPayload {
   role: string;
   iat: number;
   exp: number;
+}
+
+let cachedServiceAccount: ServiceAccount | null = null;
+
+function getServiceAccount(): ServiceAccount {
+  if (cachedServiceAccount) return cachedServiceAccount;
+
+  const raw = process.env.FIREBASE_SERVICE_ACCOUNT;
+  if (!raw) throw new Error(MISSING_SERVICE_ACCOUNT);
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    throw new Error(INVALID_SERVICE_ACCOUNT);
+  }
+
+  const sa = parsed as Partial<ServiceAccount>;
+  if (!sa.client_email || !sa.private_key) {
+    throw new Error(MISSING_PRIVATE_KEY);
+  }
+
+  cachedServiceAccount = sa as ServiceAccount;
+  return cachedServiceAccount;
+}
+
+/** 簽 Firebase Custom Token（手動 RS256） */
+function createCustomToken(
+  serviceAccount: ServiceAccount,
+  uid: string,
+  claims: Record<string, unknown>,
+): string {
+  const now = Math.floor(Date.now() / 1000);
+  const payload = {
+    iss: serviceAccount.client_email,
+    sub: serviceAccount.client_email,
+    aud: FIREBASE_CUSTOM_TOKEN_AUD,
+    iat: now,
+    exp: now + CUSTOM_TOKEN_TTL_SEC,
+    uid,
+    claims,
+  };
+  // private_key 內容含 \n 跳脫字串（從 JSON 來）；讓 jwt 套件自己處理 PEM 格式
+  const key = serviceAccount.private_key.replace(/\\n/g, '\n');
+  return jwt.sign(payload, key, { algorithm: 'RS256' });
 }
 
 export default async function handler(
@@ -78,7 +114,6 @@ export default async function handler(
     res.status(204).end();
     return;
   }
-
   if (req.method !== 'POST') {
     res.status(405).json({ error: 'Method not allowed' });
     return;
@@ -97,19 +132,20 @@ export default async function handler(
     return;
   }
 
-  // 1. JWT 驗證
+  // 1. 驗證 SSO JWT
   let payload: SSOPayload;
   try {
     payload = jwt.verify(token, secret, { algorithms: ['HS256'] }) as SSOPayload;
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Token 無效或已過期';
+    const message = err instanceof Error ? err.message : 'Token 無效';
     console.error('[verify-sso] JWT 驗證失敗', message);
     res.status(401).json({ error: `JWT 驗證失敗：${message}` });
     return;
   }
 
-  // 2. 用 firebase-admin 建 custom token
+  // 2. 取得 service account 並簽 custom token
   try {
+    const sa = getServiceAccount();
     const firebaseUid = `sso:${payload.uid}`;
     const customClaims = {
       ssoName: payload.name,
@@ -117,9 +153,7 @@ export default async function handler(
       ssoRole: payload.role,
       provider: 'luyang-sso',
     };
-
-    const app = getAdminApp();
-    const customToken = await app.auth().createCustomToken(firebaseUid, customClaims);
+    const customToken = createCustomToken(sa, firebaseUid, customClaims);
 
     res.status(200).json({
       customToken,
@@ -131,8 +165,8 @@ export default async function handler(
       },
     });
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'firebase-admin 失敗';
-    console.error('[verify-sso] firebase-admin 錯誤', message, err);
-    res.status(500).json({ error: `Firebase Admin 失敗：${message}` });
+    const message = err instanceof Error ? err.message : '發 custom token 失敗';
+    console.error('[verify-sso] 服務帳戶/簽章錯誤', message, err);
+    res.status(500).json({ error: `Firebase Custom Token 簽發失敗：${message}` });
   }
 }
