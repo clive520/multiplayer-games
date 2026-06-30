@@ -51,12 +51,33 @@ export async function signInWithSSOToken(token: string): Promise<User> {
     body: JSON.stringify({ token }),
   });
 
-  if (!res.ok) {
-    const data = await res.json().catch(() => ({ error: '未知錯誤' }));
-    throw new Error(data.error ?? 'SSO 驗證失敗');
+  // 把回應內容讀出來，不論成功失敗都要看
+  const text = await res.text();
+  let parsed: unknown = null;
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    // 不是 JSON：可能是 Vercel 的 HTML 錯誤頁
   }
 
-  const { customToken } = (await res.json()) as SSOVerifyResult;
+  if (!res.ok) {
+    let msg = '未知錯誤';
+    if (parsed && typeof parsed === 'object' && 'error' in parsed) {
+      msg = String((parsed as { error: string }).error);
+    } else if (text) {
+      // 截斷 HTML 錯誤頁前 200 字當訊息
+      msg = text.length > 200 ? text.slice(0, 200) + '...' : text;
+    }
+    console.error('[SSO] API 回應', res.status, text);
+    throw new Error(msg);
+  }
+
+  if (!parsed || typeof parsed !== 'object' || !('customToken' in parsed)) {
+    console.error('[SSO] 回應沒有 customToken', text);
+    throw new Error('API 回應格式錯誤');
+  }
+
+  const { customToken } = parsed as SSOVerifyResult;
   const credential = await signInWithCustomToken(auth, customToken);
   return credential.user;
 }
